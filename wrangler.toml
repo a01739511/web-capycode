@@ -1,0 +1,6 @@
+name = "web-capycode"
+compatibility_date = "2026-04-13"
+
+[assets]
+directory = "."
+not_found_handling = "404-page"
