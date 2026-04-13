@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CapyCode | Practicar ordenar l&iacute;neas</title>
+    <title>CapyCode | Ordenar l&iacute;neas</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Metamorphous&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="apple-touch-icon" sizes="180x180" href="assets/favicons/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="assets/favicons/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="assets/favicons/favicon-16x16.png">
@@ -14,77 +14,64 @@
     <link rel="manifest" href="site.webmanifest">
     <link rel="stylesheet" href="style.css">
 </head>
-<body data-requires-auth="true">
-    <div class="app-container" data-game-mode="practice" data-filter-type="ordenar_lineas">
-        <header class="top-nav glass-panel">
-            <div class="nav-left">
-                <a class="brand-link" href="p_opcionMultiple.html">
-                    <img src="assets/magic-wand.svg" alt="" class="wand-icon">
-                    <span class="menu-text">CapyCode</span>
+<body class="scene-body" data-requires-auth="true">
+    <div class="scene-shell gameplay-shell" data-question-types="ordenar_lineas" data-progress-key="order" data-progress-label="NIVEL 5: CICLOS" data-next-page="p_completarPlantilla.html">
+        <header class="scene-topbar glass-surface">
+            <div class="topbar-left">
+                <a class="menu-link" href="mapa.html">
+                    <img src="assets/menu-icon.svg" alt="">
+                    <span>Men&uacute;</span>
                 </a>
-                <nav class="quick-nav" aria-label="Secciones del juego">
-                    <a class="quick-nav-link" href="p_opcionMultiple.html">Misi&oacute;n</a>
-                    <a class="quick-nav-link is-active" href="p_ordenarLineas.html">Ordenar l&iacute;neas</a>
-                </nav>
+                <div class="scene-heading">
+                    <img src="assets/magic-wand.svg" alt="">
+                    <h1>Nivel 5</h1>
+                </div>
             </div>
-
-            <div class="nav-right">
-                <div class="stat-box">
-                    <span class="stat-label">USUARIO</span>
-                    <span class="stat-value" id="player-name">Invitado</span>
+            <div class="topbar-right">
+                <div class="hud-stat">
+                    <span>Racha</span>
+                    <strong data-player-streak>0</strong>
                 </div>
-                <div class="stat-box">
-                    <span class="stat-label">RACHA</span>
-                    <span class="stat-value" id="streak-value">0</span>
+                <div class="hud-stat">
+                    <span>XP Points</span>
+                    <strong data-player-xp>0</strong>
                 </div>
-                <div class="stat-box xp-box">
-                    <span class="stat-label">XP</span>
-                    <span class="stat-value" id="xp-value">0</span>
-                </div>
-                <button class="secondary-btn" type="button" id="logout-button">Salir</button>
+                <a class="profile-link" href="perfil.html">
+                    <img src="assets/user-avatar.svg" alt="Perfil">
+                </a>
             </div>
         </header>
 
-        <section class="progress-section">
-            <div class="progress-info">
-                <div class="mission-texts">
-                    <p class="level-category" id="mission-label">PRACTICA GUIADA</p>
-                    <h1 class="mission-text" id="mission-title">Ordenar l&iacute;neas de c&oacute;digo</h1>
+        <main class="game-stage">
+            <section class="progress-block">
+                <div class="progress-copy">
+                    <p id="mission-label">NIVEL 5: CICLOS</p>
+                    <h2>Progreso de la misi&oacute;n</h2>
                 </div>
-                <span class="progress-ratio" id="progress-ratio">0/0</span>
-            </div>
-            <div class="progress-bar" aria-hidden="true">
-                <div class="progress-fill" id="progress-fill"></div>
-            </div>
-        </section>
-
-        <main class="question-container">
-            <section class="question-header glass-panel">
-                <p class="question-kicker" id="question-type-label">Actividad especializada</p>
-                <h2 class="question-title" id="question-title">Cargando ejercicio...</h2>
+                <span id="progress-ratio">9/12</span>
+                <div class="progress-track">
+                    <div class="progress-meter" id="progress-fill"></div>
+                </div>
             </section>
 
-            <section class="glass-panel content-panel">
-                <div id="question-content" class="question-content"></div>
-                <p class="feedback-message" id="feedback-message" aria-live="polite"></p>
+            <section class="question-banner glass-surface">
+                <h2 id="question-title">Ordena correctamente el c&oacute;digo</h2>
+            </section>
 
-                <div class="action-row">
-                    <button type="button" class="secondary-btn" id="restart-button">Reiniciar pr&aacute;ctica</button>
-                    <button type="button" class="btn-primary" id="primary-action-button">Comprobar</button>
+            <section class="game-panel glass-surface">
+                <div id="question-content"></div>
+                <p class="feedback-banner" id="feedback-message"></p>
+                <div class="action-strip">
+                    <button class="scene-button ghost" id="secondary-action-button" type="button">Reiniciar reto</button>
+                    <button class="scene-button primary" id="primary-action-button" type="button">Comprobar</button>
                 </div>
             </section>
         </main>
-
-        <section class="world-grid">
-            <article class="glass-panel world-card story-card" id="academy-story"></article>
-            <article class="glass-panel world-card map-card" id="academy-map"></article>
-            <article class="glass-panel world-card roster-card" id="mentor-roster"></article>
-        </section>
     </div>
 
-    <script src="js/world-data.js"></script>
+    <script src="js/app-data.js"></script>
+    <script src="js/common.js"></script>
     <script src="js/questions-data.js"></script>
     <script src="js/game.js"></script>
-    <script src="js/world.js"></script>
 </body>
 </html>

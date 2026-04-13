@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CapyCode | Nivel 5</title>
+    <title>CapyCode | Perfil</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Metamorphous&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -15,7 +15,7 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="scene-body" data-requires-auth="true">
-    <div class="scene-shell gameplay-shell" data-question-types="opcion_multiple,respuesta_numerica,seleccionar_lineas" data-progress-key="mission" data-progress-label="NIVEL 5: CICLOS" data-next-page="p_ordenarLineas.html">
+    <div class="scene-shell">
         <header class="scene-topbar glass-surface">
             <div class="topbar-left">
                 <a class="menu-link" href="mapa.html">
@@ -24,54 +24,59 @@
                 </a>
                 <div class="scene-heading">
                     <img src="assets/magic-wand.svg" alt="">
-                    <h1>Nivel 5</h1>
+                    <h1>Perfil Arcano</h1>
                 </div>
             </div>
             <div class="topbar-right">
                 <div class="hud-stat">
-                    <span>Racha</span>
-                    <strong data-player-streak>0</strong>
+                    <span>Usuario</span>
+                    <strong data-player-name>Invitado</strong>
                 </div>
                 <div class="hud-stat">
-                    <span>XP Points</span>
+                    <span>XP</span>
                     <strong data-player-xp>0</strong>
                 </div>
-                <a class="profile-link" href="perfil.html">
-                    <img src="assets/user-avatar.svg" alt="Perfil">
-                </a>
+                <button class="scene-button ghost" type="button" data-action="logout">Salir</button>
             </div>
         </header>
 
-        <main class="game-stage">
-            <section class="progress-block">
-                <div class="progress-copy">
-                    <p id="mission-label">NIVEL 5: CICLOS</p>
-                    <h2>Progreso de la misi&oacute;n</h2>
+        <main class="profile-layout">
+            <section id="profile-hero"></section>
+
+            <section class="glass-surface profile-section">
+                <div class="panel-header">
+                    <div>
+                        <p class="panel-kicker">Progreso</p>
+                        <h2>Ritmo de aprendizaje</h2>
+                    </div>
                 </div>
-                <span id="progress-ratio">8/12</span>
-                <div class="progress-track">
-                    <div class="progress-meter" id="progress-fill"></div>
-                </div>
+                <div class="journey-grid" id="profile-progress"></div>
             </section>
 
-            <section class="question-banner glass-surface">
-                <h2 id="question-title">&iquest;Cu&aacute;l es el output de este c&oacute;digo?</h2>
+            <section class="glass-surface profile-section">
+                <div class="panel-header">
+                    <div>
+                        <p class="panel-kicker">Colecci&oacute;n</p>
+                        <h2>Compa&ntilde;eros desbloqueados</h2>
+                    </div>
+                </div>
+                <div class="collection-grid" id="profile-collection"></div>
             </section>
 
-            <section class="game-panel glass-surface">
-                <div id="question-content"></div>
-                <p class="feedback-banner" id="feedback-message"></p>
-                <div class="action-strip">
-                    <button class="scene-button ghost" id="secondary-action-button" type="button">Reiniciar reto</button>
-                    <button class="scene-button primary" id="primary-action-button" type="button">Comprobar</button>
+            <section class="glass-surface profile-section">
+                <div class="panel-header">
+                    <div>
+                        <p class="panel-kicker">Logros</p>
+                        <h2>Tu recorrido en la academia</h2>
+                    </div>
                 </div>
+                <div class="achievement-grid" id="profile-achievements"></div>
             </section>
         </main>
     </div>
 
     <script src="js/app-data.js"></script>
     <script src="js/common.js"></script>
-    <script src="js/questions-data.js"></script>
-    <script src="js/game.js"></script>
+    <script src="js/profile.js"></script>
 </body>
 </html>

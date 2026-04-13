@@ -1,15 +1,14 @@
 (function () {
     const SESSION_KEY = "capycodeSession";
-    const mode = document.body.dataset.authMode;
     const form = document.getElementById("auth-form");
     const message = document.getElementById("form-message");
 
-    if (!form || !mode) {
+    if (!form || !message) {
         return;
     }
 
     if (readSession()) {
-        window.location.href = "p_opcionMultiple.html";
+        window.location.href = "mapa.html";
         return;
     }
 
@@ -18,10 +17,10 @@
 
         const formData = new FormData(form);
         const username = String(formData.get("username") || "").trim();
-        const password = String(formData.get("password") || "");
+        const password = String(formData.get("password") || "").trim();
 
         if (!username || !password) {
-            showMessage("Completa todos los campos obligatorios.", "error");
+            showMessage("Completa usuario y contrasena para entrar.", "error");
             return;
         }
 
@@ -30,10 +29,6 @@
             return;
         }
 
-        allowAccess(username);
-    });
-
-    function allowAccess(username) {
         localStorage.setItem(
             SESSION_KEY,
             JSON.stringify({
@@ -42,11 +37,11 @@
             })
         );
 
-        showMessage("Acceso correcto. Entrando a la mision...", "success");
+        showMessage("Listo. Te llevamos al mapa de la academia...", "success");
         window.setTimeout(function () {
-            window.location.href = "p_opcionMultiple.html";
-        }, 500);
-    }
+            window.location.href = "mapa.html";
+        }, 450);
+    });
 
     function readSession() {
         try {

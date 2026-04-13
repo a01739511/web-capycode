@@ -4,17 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CapyCode</title>
-    <meta http-equiv="refresh" content="0; url=iniciar_sesion.html">
     <link rel="apple-touch-icon" sizes="180x180" href="assets/favicons/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="assets/favicons/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="assets/favicons/favicon-16x16.png">
     <link rel="icon" href="assets/favicons/favicon.ico">
     <link rel="manifest" href="site.webmanifest">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Metamorphous&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="login-page">
     <div class="login-wrapper">
-        <main class="login-card glass-panel auth-card">
+        <main class="login-card glass-surface">
             <p class="eyebrow">CapyCode</p>
             <h1 class="login-title">Redirigiendo...</h1>
             <p class="auth-description">
@@ -23,5 +25,9 @@
             </p>
         </main>
     </div>
+    <script>
+        const session = localStorage.getItem("capycodeSession");
+        window.location.href = session ? "mapa.html" : "iniciar_sesion.html";
+    </script>
 </body>
 </html>
