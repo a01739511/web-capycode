@@ -1,0 +1,65 @@
+window.CAPYCODE_QUESTIONS = {
+    temas: {
+        algoritmos: {
+            facil: [
+                {
+                    tipo: "ordenar_lineas",
+                    prompt: "Ordena las lineas para imprimir 'Hola Python' tres veces.",
+                    lineas: [
+                        { id: "A", text: "for _ in range(3):" },
+                        { id: "B", text: "    print('Hola Python')" }
+                    ],
+                    orden_correcto: ["A", "B"]
+                },
+                {
+                    tipo: "opcion_multiple",
+                    prompt: "En Python, que hace la funcion range(3)?",
+                    opciones: [
+                        { id: "A", text: "Genera la secuencia 0, 1, 2." },
+                        { id: "B", text: "Genera la secuencia 1, 2, 3." },
+                        { id: "C", text: "Crea una lista vacia." },
+                        { id: "D", text: "Termina un bucle for." }
+                    ],
+                    correct_ids: ["A"]
+                },
+                {
+                    tipo: "drag_and_drop",
+                    prompt: "Completa la plantilla para sumar los numeros de 0 a n, incluido, de forma iterativa.",
+                    plantilla: [
+                        "def suma_hasta(n):",
+                        "    total = 0",
+                        "    for i in {h1}(n + 1):",
+                        "        total += i",
+                        "    return total"
+                    ],
+                    banco_palabras: ["range", "enumerate", "list"],
+                    rellenos: { h1: "range" }
+                },
+                {
+                    tipo: "seleccionar_lineas",
+                    prompt: "Selecciona la linea donde se define la funcion llamada 'suma'.",
+                    lineas: [
+                        { id: "A", text: "def suma(a, b):" },
+                        { id: "B", text: "    return a + b" },
+                        { id: "C", text: "resultado = suma(2, 3)" },
+                        { id: "D", text: "print(resultado)" }
+                    ],
+                    correct_ids: ["A"]
+                },
+                {
+                    tipo: "respuesta_numerica",
+                    prompt: "Que numero imprime el siguiente programa?",
+                    code: [
+                        "contador = 0",
+                        "for _ in range(3):",
+                        "    contador += 2",
+                        "print(contador)"
+                    ],
+                    valor: 6
+                }
+            ],
+            medio: [],
+            dificil: []
+        }
+    }
+};
