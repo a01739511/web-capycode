@@ -23,6 +23,7 @@
             "<div>",
             "<h2 data-player-name></h2>",
             "<p data-player-code></p>",
+            "<p data-player-title></p>",
             "</div>",
             "</div>",
             "<p class=\"panel-kicker\">Equipado actualmente</p>",
@@ -32,6 +33,7 @@
             "<span class=\"item-status\">", equipped.badge || "Equipado", "</span>",
             "<h3>", equipped.name, "</h3>",
             "<p>", equipped.perk, "</p>",
+            "<p class=\"equipped-meta\">Nivel actual: ", profile.level, "</p>",
             "</div>",
             "</article>"
         ].join("");

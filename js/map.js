@@ -53,6 +53,7 @@
             "<div class=\"map-detail-copy\">",
             "<p class=\"panel-kicker\">", status === "locked" ? "Proximamente" : "Estacion activa", "</p>",
             "<h3>", level.place, "</h3>",
+            "<p class=\"map-detail-meta\"><strong>Nivel:</strong> ", level.id, "</p>",
             "<p class=\"map-detail-meta\"><strong>Mentor:</strong> ", level.mentor, "</p>",
             "<p class=\"map-detail-meta\"><strong>Tema:</strong> ", level.content, "</p>",
             "<p>", level.description, "</p>",

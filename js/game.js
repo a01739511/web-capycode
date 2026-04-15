@@ -1,5 +1,6 @@
 (function () {
     const XP_REWARD = 50;
+    const COMPLETION_BONUS = 50;
     const app = document.querySelector("[data-question-types]");
 
     if (!app || !window.CapyCore) {
@@ -37,6 +38,23 @@
     const questionTypes = app.dataset.questionTypes.split(",").map(function (item) {
         return item.trim();
     });
+
+    const completionConfigs = {
+        mission: {
+            activityKey: "nivel-5-mision",
+            bonusXp: COMPLETION_BONUS
+        },
+        order: {
+            activityKey: "nivel-5-orden",
+            bonusXp: COMPLETION_BONUS
+        },
+        template: {
+            activityKey: "nivel-5-plantilla",
+            bonusXp: COMPLETION_BONUS,
+            nextLevel: 6,
+            unlockCharacter: "CapyExplorer"
+        }
+    };
 
     elements.primaryAction.addEventListener("click", onPrimaryAction);
     if (elements.secondaryAction) {
@@ -106,6 +124,13 @@
         elements.feedback.textContent = "";
         elements.feedback.className = "feedback-banner";
         elements.primaryAction.textContent = "Comprobar";
+        elements.primaryAction.disabled = false;
+        elements.primaryAction.style.display = "";
+
+        if (elements.secondaryAction) {
+            elements.secondaryAction.textContent = "Reiniciar reto";
+            elements.secondaryAction.onclick = restartPage;
+        }
 
         switch (question.tipo) {
         case "opcion_multiple":
@@ -165,6 +190,10 @@
 
     function paintSortable() {
         const list = document.getElementById("sortable-list");
+        if (!list) {
+            return;
+        }
+
         list.innerHTML = "";
 
         state.orderItems.forEach(function (item, index) {
@@ -173,7 +202,7 @@
             article.draggable = true;
             article.dataset.index = String(index);
             article.innerHTML = [
-                "<div class=\"drag-pill\"><img src=\"assets/menu-icon.svg\" alt=\"\"></div>",
+                "<div class=\"drag-pill\"><img src=\"assets/menu-icon.svg\" alt=\"Mover linea\"></div>",
                 "<code>", escapeHtml(item.text), "</code>"
             ].join("");
             article.addEventListener("dragstart", handleDragStart);
@@ -291,11 +320,15 @@
         case "ordenar_lineas":
             return {
                 valid: true,
-                correct: state.orderItems.map(function (item) { return item.id; }).join("|") === question.orden_correcto.join("|"),
-                message: "El orden correcto es " + question.orden_correcto.join(" → ") + "."
+                correct: state.orderItems.map(function (item) {
+                    return item.id;
+                }).join("|") === question.orden_correcto.join("|"),
+                message: "El orden correcto es " + question.orden_correcto.join(" -> ") + "."
             };
         case "drag_and_drop":
-            if (Object.keys(question.rellenos).some(function (key) { return !state.blankAnswers[key]; })) {
+            if (Object.keys(question.rellenos).some(function (key) {
+                return !state.blankAnswers[key];
+            })) {
                 return { valid: false, message: "Completa todos los espacios antes de comprobar." };
             }
             return {
@@ -358,8 +391,8 @@
         if (correct) {
             profile.xp += XP_REWARD;
             profile.streak += 1;
-            if (progress.current < progress.total) {
-                profile.missionProgress[progressKey].current += 1;
+            if (progress && progress.current < progress.total) {
+                progress.current += 1;
             }
         } else {
             profile.streak = Math.max(0, profile.streak - 1);
@@ -381,18 +414,24 @@
     }
 
     function renderCompletion() {
-        const profile = window.CapyCore.getProfile();
+        const outcome = window.CapyCore.completeActivity(app.dataset.progressKey, completionConfigs[app.dataset.progressKey]);
+        const profile = outcome.profile;
         const equipped = (window.CAPYCODE_APP_DATA.shopItems || []).find(function (item) {
             return item.id === profile.equippedCharacter;
         });
+        const nextPage = app.dataset.nextPage || "mapa.html";
+        const headline = outcome.firstCompletion ? "Conocimiento Magico desbloqueado" : "Mision ya dominada";
+        const rewardCopy = outcome.firstCompletion
+            ? "Has ganado +" + COMPLETION_BONUS + " puntos de magia por completar esta estacion."
+            : "Esta estacion ya estaba completada. Puedes repetirla para seguir practicando.";
 
-        elements.questionTitle.textContent = "Conocimiento Magico desbloqueado";
+        elements.questionTitle.textContent = headline;
         elements.questionContent.innerHTML = [
             "<div class=\"completion-card\">",
             "<p class=\"panel-kicker\">Recompensa</p>",
-            "<h3>Has ganado +", XP_REWARD, " Puntos de Magia</h3>",
+            "<h3>", rewardCopy, "</h3>",
             equipped ? "<img src=\"" + equipped.image + "\" alt=\"" + equipped.name + "\">" : "",
-            "<a class=\"magic-cta\" href=\"" + (app.dataset.nextPage || "mapa.html") + "\">Siguiente nivel</a>",
+            "<a class=\"magic-cta\" href=\"" + nextPage + "\">" + buildNextCtaLabel(nextPage) + "</a>",
             "</div>"
         ].join("");
         elements.feedback.textContent = "";
@@ -403,11 +442,22 @@
                 window.location.href = "mapa.html";
             };
         }
+        renderProgress();
+    }
+
+    function buildNextCtaLabel(nextPage) {
+        if (nextPage === "mapa.html") {
+            return "Volver al mapa";
+        }
+        return "Ir al siguiente reto";
     }
 
     function renderProgress() {
         const profile = window.CapyCore.getProfile();
         const progress = profile.missionProgress[app.dataset.progressKey];
+        if (!progress) {
+            return;
+        }
         elements.missionLabel.textContent = app.dataset.progressLabel || "NIVEL 5: CICLOS";
         elements.progressRatio.textContent = progress.current + "/" + progress.total;
         elements.progressFill.style.width = ((progress.current / progress.total) * 100) + "%";
@@ -417,7 +467,9 @@
         state.currentIndex = 0;
         renderQuestion();
         renderProgress();
+        elements.feedback.textContent = "";
         elements.primaryAction.style.display = "";
+        elements.primaryAction.disabled = false;
     }
 
     function renderEmptyState(message) {

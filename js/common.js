@@ -50,7 +50,7 @@
         try {
             const saved = localStorage.getItem(key);
             if (saved) {
-                return JSON.parse(saved);
+                return normalizeProfile(JSON.parse(saved), username);
             }
         } catch (error) {
             return buildDefaultProfile(username);
@@ -60,11 +60,12 @@
     }
 
     function saveProfile(profile) {
-        localStorage.setItem(PROFILE_PREFIX + profile.username, JSON.stringify(profile));
+        const normalized = normalizeProfile(profile, profile.username);
+        localStorage.setItem(PROFILE_PREFIX + normalized.username, JSON.stringify(normalized));
     }
 
     function buildDefaultProfile(username) {
-        return {
+        return normalizeProfile({
             username: username,
             userCode: buildUserCode(username),
             title: "Aprendiz de Capythilda",
@@ -74,11 +75,51 @@
             equippedCharacter: "CapyBlack",
             unlockedCharacters: ["CapyBlack", "CapyAqua", "CapyKing"],
             completedLevels: [1, 2, 3, 4, 5],
+            completedActivities: [],
             missionProgress: {
                 mission: { current: 8, total: 12 },
                 order: { current: 9, total: 12 },
                 template: { current: 10, total: 12 }
             }
+        }, username);
+    }
+
+    function normalizeProfile(profile, fallbackUsername) {
+        const username = profile && profile.username ? profile.username : fallbackUsername || "Aprendiz";
+        const normalized = {
+            username: username,
+            userCode: profile && profile.userCode ? profile.userCode : buildUserCode(username),
+            title: profile && profile.title ? profile.title : buildTitle(profile && profile.level),
+            level: readNumber(profile && profile.level, 1),
+            xp: readNumber(profile && profile.xp, 0),
+            streak: readNumber(profile && profile.streak, 0),
+            equippedCharacter: profile && profile.equippedCharacter ? profile.equippedCharacter : "CapyBlack",
+            unlockedCharacters: Array.isArray(profile && profile.unlockedCharacters) ? profile.unlockedCharacters.slice() : ["CapyBlack"],
+            completedLevels: Array.isArray(profile && profile.completedLevels) ? profile.completedLevels.slice() : [],
+            completedActivities: Array.isArray(profile && profile.completedActivities) ? profile.completedActivities.slice() : [],
+            missionProgress: {
+                mission: normalizeProgress(profile && profile.missionProgress && profile.missionProgress.mission, 8, 12),
+                order: normalizeProgress(profile && profile.missionProgress && profile.missionProgress.order, 9, 12),
+                template: normalizeProgress(profile && profile.missionProgress && profile.missionProgress.template, 10, 12)
+            }
+        };
+
+        normalized.title = buildTitle(normalized.level);
+        normalized.unlockedCharacters = uniqueList(normalized.unlockedCharacters);
+        normalized.completedLevels = uniqueNumberList(normalized.completedLevels);
+        normalized.completedActivities = uniqueList(normalized.completedActivities);
+
+        if (!normalized.unlockedCharacters.includes("CapyBlack")) {
+            normalized.unlockedCharacters.unshift("CapyBlack");
+        }
+
+        return normalized;
+    }
+
+    function normalizeProgress(progress, defaultCurrent, defaultTotal) {
+        return {
+            current: readNumber(progress && progress.current, defaultCurrent),
+            total: readNumber(progress && progress.total, defaultTotal)
         };
     }
 
@@ -89,6 +130,22 @@
                 return sum + char.charCodeAt(0);
             }, 0);
         return "A" + String(10000000 + (base % 90000000));
+    }
+
+    function buildTitle(level) {
+        if (level >= 7) {
+            return "Archimago del Bosque";
+        }
+        if (level >= 6) {
+            return "Guardian del Portal";
+        }
+        if (level >= 5) {
+            return "Aprendiz de Capythilda";
+        }
+        if (level >= 3) {
+            return "Explorador Arcano";
+        }
+        return "Novato del Grimorio";
     }
 
     function updateHud() {
@@ -135,8 +192,69 @@
         return profile.unlockedCharacters.includes(itemId);
     }
 
+    function completeActivity(progressKey, config) {
+        const profile = getProfile();
+        const progress = profile.missionProgress[progressKey];
+        const activityKey = config && config.activityKey ? config.activityKey : progressKey;
+        const bonusXp = config && config.bonusXp ? Number(config.bonusXp) : 0;
+        const nextLevel = config && config.nextLevel ? Number(config.nextLevel) : null;
+        const unlockCharacter = config && config.unlockCharacter ? config.unlockCharacter : "";
+        let firstCompletion = false;
+
+        if (progress) {
+            progress.current = progress.total;
+        }
+
+        if (!profile.completedActivities.includes(activityKey)) {
+            profile.completedActivities.push(activityKey);
+            profile.xp += bonusXp;
+            firstCompletion = true;
+        }
+
+        if (nextLevel && nextLevel > profile.level) {
+            profile.level = nextLevel;
+        }
+
+        if (nextLevel && !profile.completedLevels.includes(nextLevel - 1)) {
+            profile.completedLevels.push(nextLevel - 1);
+        }
+
+        if (unlockCharacter && !profile.unlockedCharacters.includes(unlockCharacter)) {
+            profile.unlockedCharacters.push(unlockCharacter);
+        }
+
+        profile.title = buildTitle(profile.level);
+        saveProfile(profile);
+        updateHud();
+        return {
+            firstCompletion: firstCompletion,
+            profile: profile
+        };
+    }
+
     function formatNumber(value) {
         return Number(value).toLocaleString("es-MX");
+    }
+
+    function uniqueList(items) {
+        return items.filter(function (item, index) {
+            return items.indexOf(item) === index;
+        });
+    }
+
+    function uniqueNumberList(items) {
+        return items
+            .map(function (item) {
+                return Number(item);
+            })
+            .filter(function (item, index, list) {
+                return Number.isFinite(item) && list.indexOf(item) === index;
+            });
+    }
+
+    function readNumber(value, fallback) {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : fallback;
     }
 
     window.CapyCore = {
@@ -148,6 +266,7 @@
         getShopItem: getShopItem,
         isUnlocked: isUnlocked,
         formatNumber: formatNumber,
-        updateHud: updateHud
+        updateHud: updateHud,
+        completeActivity: completeActivity
     };
 }());
