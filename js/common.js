@@ -8,6 +8,8 @@
             ensureSession();
         }
 
+        applySidebarState();
+        renderSidebarNav();
         updateHud();
         renderSidebarSkins();
         bindLogout();
@@ -203,6 +205,26 @@
         });
     }
 
+    function renderSidebarNav() {
+        const currentPage = window.location.pathname.split("/").pop() || "mapa.html";
+        const items = [
+            { href: "mapa.html", label: "Mapa", icon: "assets/nav-map.svg" },
+            { href: "tienda.html", label: "Tienda", icon: "assets/nav-store.svg" },
+            { href: "about.html", label: "Historia", icon: "assets/nav-story.svg" }
+        ];
+
+        document.querySelectorAll("[data-sidebar-nav]").forEach(function (nav) {
+            nav.innerHTML = items.map(function (item) {
+                return [
+                    "<a href=\"", item.href, "\"", currentPage === item.href ? " aria-current=\"page\" class=\"is-active\"" : "", ">",
+                    "<img class=\"sidebar-nav-icon\" src=\"", item.icon, "\" alt=\"\">",
+                    "<span>", item.label, "</span>",
+                    "</a>"
+                ].join("");
+            }).join("");
+        });
+    }
+
     function bindSidebarToggle() {
         const sidebar = document.querySelector("[data-app-sidebar]");
         if (!sidebar) {
@@ -210,33 +232,13 @@
         }
 
         const toggleButtons = document.querySelectorAll("[data-action=\"toggle-sidebar\"]");
-        const closeTargets = document.querySelectorAll("[data-sidebar-close]");
-        const hasLayoutSidebar = sidebar.closest(".sidebar-layout") !== null;
 
         toggleButtons.forEach(function (button) {
             button.addEventListener("click", function () {
-                if (hasLayoutSidebar) {
-                    document.body.classList.toggle("sidebar-collapsed");
-                    return;
-                }
-
-                document.body.classList.toggle("drawer-open");
+                document.body.classList.toggle("sidebar-collapsed");
+                localStorage.setItem("capycodeSidebarCollapsed", document.body.classList.contains("sidebar-collapsed") ? "true" : "false");
             });
         });
-
-        closeTargets.forEach(function (target) {
-            target.addEventListener("click", closeSidebar);
-        });
-
-        document.addEventListener("keydown", function (event) {
-            if (event.key === "Escape") {
-                closeSidebar();
-            }
-        });
-    }
-
-    function closeSidebar() {
-        document.body.classList.remove("drawer-open");
     }
 
     function getShopItem(id) {
@@ -312,6 +314,12 @@
     function readNumber(value, fallback) {
         const parsed = Number(value);
         return Number.isFinite(parsed) ? parsed : fallback;
+    }
+
+    function applySidebarState() {
+        if (localStorage.getItem("capycodeSidebarCollapsed") === "true") {
+            document.body.classList.add("sidebar-collapsed");
+        }
     }
 
     window.CapyCore = {

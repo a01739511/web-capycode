@@ -2,32 +2,17 @@
     const root = document.getElementById("map-levels");
     const spotlight = document.getElementById("map-spotlight");
     const tooltip = document.getElementById("map-tooltip");
-    const sidebarSkin = document.getElementById("sidebar-skin");
     const data = window.CAPYCODE_APP_DATA;
 
-    if (!root || !spotlight || !tooltip || !sidebarSkin || !data || !window.CapyCore) {
+    if (!root || !spotlight || !tooltip || !data || !window.CapyCore) {
         return;
     }
 
     const profile = window.CapyCore.getProfile();
     const currentLevel = profile.level;
 
-    renderSidebarSkin();
     renderLevels();
     updateSpotlight(getLevelById(currentLevel) || data.levels[0]);
-
-    function renderSidebarSkin() {
-        const equipped = window.CapyCore.getShopItem(profile.equippedCharacter) || data.shopItems[0];
-
-        sidebarSkin.innerHTML = [
-            "<p class=\"panel-kicker\">Skin activa</p>",
-            "<div class=\"sidebar-skin-art\"><img src=\"", equipped.image, "\" alt=\"", equipped.name, "\"></div>",
-            "<div class=\"sidebar-skin-copy\">",
-            "<strong>", equipped.name, "</strong>",
-            "<span>", equipped.perk, "</span>",
-            "</div>"
-        ].join("");
-    }
 
     function renderLevels() {
         root.innerHTML = data.levels.map(function (level) {
@@ -48,17 +33,17 @@
 
             node.addEventListener("mouseenter", function (event) {
                 updateSpotlight(level);
-                showTooltip(level, event);
+                showTooltip(level, event, node);
             });
 
             node.addEventListener("mousemove", function (event) {
-                updateTooltipPosition(event);
+                updateTooltipPosition(event, node);
             });
 
             node.addEventListener("mouseleave", hideTooltip);
             node.addEventListener("focus", function (event) {
                 updateSpotlight(level);
-                showTooltip(level, event);
+                showTooltip(level, event, node);
             });
             node.addEventListener("blur", hideTooltip);
         });
@@ -72,7 +57,7 @@
         spotlight.textContent = level.topic;
     }
 
-    function showTooltip(level, event) {
+    function showTooltip(level, event, node) {
         if (!level) {
             return;
         }
@@ -87,23 +72,27 @@
             status === "locked" ? "<span class=\"map-state-pill is-locked\">Bloqueado</span>" : "<span class=\"map-state-pill\">Listo para jugar</span>"
         ].join("");
         tooltip.classList.remove("is-hidden");
-        updateTooltipPosition(event);
+        updateTooltipPosition(event, node);
     }
 
-    function updateTooltipPosition(event) {
+    function updateTooltipPosition(event, node) {
         const offsetX = 20;
         const offsetY = 20;
         const width = tooltip.offsetWidth || 260;
         const height = tooltip.offsetHeight || 180;
-        let left = event.clientX + offsetX;
-        let top = event.clientY + offsetY;
+        const hasPointer = event && typeof event.clientX === "number" && typeof event.clientY === "number";
+        const rect = !hasPointer && node ? node.getBoundingClientRect() : null;
+        const baseX = hasPointer ? event.clientX : (rect ? rect.left + rect.width / 2 : window.innerWidth / 2);
+        const baseY = hasPointer ? event.clientY : (rect ? rect.top + rect.height / 2 : window.innerHeight / 2);
+        let left = baseX + offsetX;
+        let top = baseY + offsetY;
 
         if (left + width > window.innerWidth - 16) {
-            left = event.clientX - width - 16;
+            left = baseX - width - 16;
         }
 
         if (top + height > window.innerHeight - 16) {
-            top = event.clientY - height - 16;
+            top = baseY - height - 16;
         }
 
         tooltip.style.left = left + "px";

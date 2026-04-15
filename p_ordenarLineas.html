@@ -15,69 +15,68 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="scene-body" data-requires-auth="true">
-    <div class="nav-scrim" data-sidebar-close></div>
-    <aside class="app-drawer glass-surface" data-app-sidebar>
-        <a class="sidebar-brand" href="mapa.html">CapyCode</a>
-        <nav class="sidebar-nav">
-            <a href="perfil.html">Perfil</a>
-            <a href="mapa.html">Mapa</a>
-            <a href="tienda.html">Tienda</a>
-            <a href="about.html">Historia</a>
-        </nav>
-        <div class="sidebar-skin-card" data-sidebar-skin></div>
-    </aside>
-    <div class="scene-shell gameplay-shell" data-question-types="ordenar_lineas" data-progress-key="order" data-progress-label="NIVEL 5: CICLOS" data-next-page="p_completarPlantilla.html">
-        <header class="scene-topbar glass-surface">
-            <button class="menu-link" type="button" data-action="toggle-sidebar">
-                <img src="assets/menu-icon.svg" alt="">
-                <span>Men&uacute;</span>
-            </button>
-            <div class="topbar-right">
-                <div class="hud-stat">
-                    <span>Racha</span>
-                    <strong data-player-streak>0</strong>
-                </div>
-                <div class="hud-stat">
-                    <span>XP Points</span>
-                    <strong data-player-xp>0</strong>
-                </div>
-                <a class="profile-link" href="perfil.html">
-                    <img src="assets/user-avatar.svg" alt="Perfil">
-                </a>
+    <div class="sidebar-layout">
+        <aside class="sidebar-panel app-sidebar glass-surface" data-app-sidebar>
+            <a class="sidebar-brand" href="mapa.html">CapyCode</a>
+            <nav class="sidebar-nav" data-sidebar-nav></nav>
+            <div class="sidebar-skin-card" data-sidebar-skin></div>
+        </aside>
+
+        <div class="sidebar-main">
+            <div class="gameplay-shell" data-question-types="ordenar_lineas" data-progress-key="order" data-progress-label="NIVEL 5: CICLOS" data-next-page="p_completarPlantilla.html">
+                <header class="scene-topbar glass-surface">
+                    <button class="menu-link" type="button" data-action="toggle-sidebar">
+                        <img src="assets/menu-icon.svg" alt="">
+                        <span>Men&uacute;</span>
+                    </button>
+                    <div class="topbar-right">
+                        <div class="hud-stat">
+                            <span>Racha</span>
+                            <strong data-player-streak>0</strong>
+                        </div>
+                        <div class="hud-stat">
+                            <span>XP Points</span>
+                            <strong data-player-xp>0</strong>
+                        </div>
+                        <a class="profile-link" href="perfil.html">
+                            <img src="assets/user-avatar.svg" alt="Perfil">
+                        </a>
+                    </div>
+                </header>
+
+                <main class="game-stage">
+                    <section class="glass-surface page-hero page-hero-compact">
+                        <p class="panel-kicker">Nivel 5</p>
+                        <h1>Ordenar l&iacute;neas</h1>
+                        <p class="page-subtitle">Arrastra cada l&iacute;nea hasta reconstruir correctamente el hechizo de c&oacute;digo.</p>
+                    </section>
+
+                    <section class="progress-block">
+                        <div class="progress-copy">
+                            <p id="mission-label">NIVEL 5: CICLOS</p>
+                            <h2>Progreso de la misi&oacute;n</h2>
+                        </div>
+                        <span id="progress-ratio">9/12</span>
+                        <div class="progress-track">
+                            <div class="progress-meter" id="progress-fill"></div>
+                        </div>
+                    </section>
+
+                    <section class="question-banner glass-surface">
+                        <h2 id="question-title">Ordena correctamente el c&oacute;digo</h2>
+                    </section>
+
+                    <section class="game-panel glass-surface">
+                        <div id="question-content"></div>
+                        <p class="feedback-banner" id="feedback-message"></p>
+                        <div class="action-strip">
+                            <button class="scene-button ghost" id="secondary-action-button" type="button">Reiniciar reto</button>
+                            <button class="scene-button primary" id="primary-action-button" type="button">Comprobar</button>
+                        </div>
+                    </section>
+                </main>
             </div>
-        </header>
-
-        <main class="game-stage">
-            <section class="glass-surface page-hero page-hero-compact">
-                <p class="panel-kicker">Nivel 5</p>
-                <h1>Ordenar l&iacute;neas</h1>
-                <p class="page-subtitle">Arrastra cada l&iacute;nea hasta reconstruir correctamente el hechizo de c&oacute;digo.</p>
-            </section>
-
-            <section class="progress-block">
-                <div class="progress-copy">
-                    <p id="mission-label">NIVEL 5: CICLOS</p>
-                    <h2>Progreso de la misi&oacute;n</h2>
-                </div>
-                <span id="progress-ratio">9/12</span>
-                <div class="progress-track">
-                    <div class="progress-meter" id="progress-fill"></div>
-                </div>
-            </section>
-
-            <section class="question-banner glass-surface">
-                <h2 id="question-title">Ordena correctamente el c&oacute;digo</h2>
-            </section>
-
-            <section class="game-panel glass-surface">
-                <div id="question-content"></div>
-                <p class="feedback-banner" id="feedback-message"></p>
-                <div class="action-strip">
-                    <button class="scene-button ghost" id="secondary-action-button" type="button">Reiniciar reto</button>
-                    <button class="scene-button primary" id="primary-action-button" type="button">Comprobar</button>
-                </div>
-            </section>
-        </main>
+        </div>
     </div>
 
     <script src="js/app-data.js"></script>

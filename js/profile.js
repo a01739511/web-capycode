@@ -29,6 +29,7 @@
         "<div class=\"profile-hero-actions\">",
         "<a class=\"scene-button primary\" href=\"mapa.html\">Continuar aventura</a>",
         "<a class=\"scene-button ghost\" href=\"tienda.html\">Ver tienda</a>",
+        "<button class=\"scene-button ghost\" type=\"button\" data-action=\"logout\">Salir</button>",
         "</div>",
         "</div>",
         "<div class=\"profile-hero-art\">",
