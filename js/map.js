@@ -1,18 +1,33 @@
 (function () {
     const root = document.getElementById("map-levels");
     const spotlight = document.getElementById("map-spotlight");
-    const detailRoot = document.getElementById("map-detail");
+    const tooltip = document.getElementById("map-tooltip");
+    const sidebarSkin = document.getElementById("sidebar-skin");
     const data = window.CAPYCODE_APP_DATA;
 
-    if (!root || !spotlight || !detailRoot || !data || !window.CapyCore) {
+    if (!root || !spotlight || !tooltip || !sidebarSkin || !data || !window.CapyCore) {
         return;
     }
 
     const profile = window.CapyCore.getProfile();
     const currentLevel = profile.level;
 
+    renderSidebarSkin();
     renderLevels();
     updateSpotlight(getLevelById(currentLevel) || data.levels[0]);
+
+    function renderSidebarSkin() {
+        const equipped = window.CapyCore.getShopItem(profile.equippedCharacter) || data.shopItems[0];
+
+        sidebarSkin.innerHTML = [
+            "<p class=\"panel-kicker\">Skin activa</p>",
+            "<div class=\"sidebar-skin-art\"><img src=\"", equipped.image, "\" alt=\"", equipped.name, "\"></div>",
+            "<div class=\"sidebar-skin-copy\">",
+            "<strong>", equipped.name, "</strong>",
+            "<span>", equipped.perk, "</span>",
+            "</div>"
+        ].join("");
+    }
 
     function renderLevels() {
         root.innerHTML = data.levels.map(function (level) {
@@ -29,13 +44,23 @@
         }).join("");
 
         root.querySelectorAll("[data-level-id]").forEach(function (node) {
-            node.addEventListener("mouseenter", function () {
-                updateSpotlight(getLevelById(Number(node.dataset.levelId)));
+            const level = getLevelById(Number(node.dataset.levelId));
+
+            node.addEventListener("mouseenter", function (event) {
+                updateSpotlight(level);
+                showTooltip(level, event);
             });
 
-            node.addEventListener("focus", function () {
-                updateSpotlight(getLevelById(Number(node.dataset.levelId)));
+            node.addEventListener("mousemove", function (event) {
+                updateTooltipPosition(event);
             });
+
+            node.addEventListener("mouseleave", hideTooltip);
+            node.addEventListener("focus", function (event) {
+                updateSpotlight(level);
+                showTooltip(level, event);
+            });
+            node.addEventListener("blur", hideTooltip);
         });
     }
 
@@ -44,25 +69,49 @@
             return;
         }
 
-        const status = resolveStatus(level.id, currentLevel);
         spotlight.textContent = level.topic;
+    }
 
-        detailRoot.innerHTML = [
-            "<article class=\"map-detail-card glass-surface\">",
-            "<div class=\"map-detail-art\"><img src=\"", level.image, "\" alt=\"", level.topic, "\"></div>",
-            "<div class=\"map-detail-copy\">",
+    function showTooltip(level, event) {
+        if (!level) {
+            return;
+        }
+
+        const status = resolveStatus(level.id, currentLevel);
+        tooltip.innerHTML = [
             "<p class=\"panel-kicker\">", status === "locked" ? "Proximamente" : "Estacion activa", "</p>",
-            "<h3>", level.place, "</h3>",
-            "<p class=\"map-detail-meta\"><strong>Nivel:</strong> ", level.id, "</p>",
-            "<p class=\"map-detail-meta\"><strong>Mentor:</strong> ", level.mentor, "</p>",
-            "<p class=\"map-detail-meta\"><strong>Tema:</strong> ", level.content, "</p>",
-            "<p>", level.description, "</p>",
-            status === "locked"
-                ? "<span class=\"map-state-pill is-locked\">Bloqueado</span>"
-                : "<a class=\"scene-button primary map-detail-link\" href=\"" + level.href + "\">Entrar al nivel</a>",
-            "</div>",
-            "</article>"
+            "<h3>", level.title, "</h3>",
+            "<p><strong>Lugar:</strong> ", level.place, "</p>",
+            "<p><strong>Mentor:</strong> ", level.mentor, "</p>",
+            "<p><strong>Tema:</strong> ", level.content, "</p>",
+            status === "locked" ? "<span class=\"map-state-pill is-locked\">Bloqueado</span>" : "<span class=\"map-state-pill\">Listo para jugar</span>"
         ].join("");
+        tooltip.classList.remove("is-hidden");
+        updateTooltipPosition(event);
+    }
+
+    function updateTooltipPosition(event) {
+        const offsetX = 20;
+        const offsetY = 20;
+        const width = tooltip.offsetWidth || 260;
+        const height = tooltip.offsetHeight || 180;
+        let left = event.clientX + offsetX;
+        let top = event.clientY + offsetY;
+
+        if (left + width > window.innerWidth - 16) {
+            left = event.clientX - width - 16;
+        }
+
+        if (top + height > window.innerHeight - 16) {
+            top = event.clientY - height - 16;
+        }
+
+        tooltip.style.left = left + "px";
+        tooltip.style.top = top + "px";
+    }
+
+    function hideTooltip() {
+        tooltip.classList.add("is-hidden");
     }
 
     function resolveStatus(levelId, current) {

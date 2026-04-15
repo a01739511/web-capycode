@@ -15,18 +15,23 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="scene-body" data-requires-auth="true">
+    <div class="nav-scrim" data-sidebar-close></div>
+    <aside class="app-drawer glass-surface" data-app-sidebar>
+        <a class="sidebar-brand" href="mapa.html">CapyCode</a>
+        <nav class="sidebar-nav">
+            <a href="perfil.html">Perfil</a>
+            <a href="mapa.html">Mapa</a>
+            <a href="tienda.html">Tienda</a>
+            <a href="about.html">Historia</a>
+        </nav>
+        <div class="sidebar-skin-card" data-sidebar-skin></div>
+    </aside>
     <div class="scene-shell gameplay-shell" data-question-types="opcion_multiple,respuesta_numerica,seleccionar_lineas" data-progress-key="mission" data-progress-label="NIVEL 5: CICLOS" data-next-page="p_ordenarLineas.html">
         <header class="scene-topbar glass-surface">
-            <div class="topbar-left">
-                <a class="menu-link" href="mapa.html">
-                    <img src="assets/menu-icon.svg" alt="">
-                    <span>Men&uacute;</span>
-                </a>
-                <div class="scene-heading">
-                    <img src="assets/magic-wand.svg" alt="">
-                    <h1>Nivel 5</h1>
-                </div>
-            </div>
+            <button class="menu-link" type="button" data-action="toggle-sidebar">
+                <img src="assets/menu-icon.svg" alt="">
+                <span>Men&uacute;</span>
+            </button>
             <div class="topbar-right">
                 <div class="hud-stat">
                     <span>Racha</span>
@@ -43,6 +48,12 @@
         </header>
 
         <main class="game-stage">
+            <section class="glass-surface page-hero page-hero-compact">
+                <p class="panel-kicker">Nivel 5</p>
+                <h1>Ciclos</h1>
+                <p class="page-subtitle">Resuelve acertijos de salida, selecci&oacute;n y lectura de c&oacute;digo dentro del c&iacute;rculo de repetici&oacute;n.</p>
+            </section>
+
             <section class="progress-block">
                 <div class="progress-copy">
                     <p id="mission-label">NIVEL 5: CICLOS</p>

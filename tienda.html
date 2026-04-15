@@ -15,18 +15,23 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="scene-body" data-requires-auth="true">
+    <div class="nav-scrim" data-sidebar-close></div>
+    <aside class="app-drawer glass-surface" data-app-sidebar>
+        <a class="sidebar-brand" href="mapa.html">CapyCode</a>
+        <nav class="sidebar-nav">
+            <a href="perfil.html">Perfil</a>
+            <a href="mapa.html">Mapa</a>
+            <a class="is-active" href="tienda.html">Tienda</a>
+            <a href="about.html">Historia</a>
+        </nav>
+        <div class="sidebar-skin-card" data-sidebar-skin></div>
+    </aside>
     <div class="scene-shell">
         <header class="scene-topbar glass-surface">
-            <div class="topbar-left">
-                <a class="menu-link" href="mapa.html">
-                    <img src="assets/menu-icon.svg" alt="">
-                    <span>Men&uacute;</span>
-                </a>
-                <div class="scene-heading">
-                    <img src="assets/magic-wand.svg" alt="">
-                    <h1>Tienda M&aacute;gica</h1>
-                </div>
-            </div>
+            <button class="menu-link" type="button" data-action="toggle-sidebar">
+                <img src="assets/menu-icon.svg" alt="">
+                <span>Men&uacute;</span>
+            </button>
             <div class="topbar-right">
                 <div class="hud-stat">
                     <span>Racha</span>
@@ -43,6 +48,12 @@
         </header>
 
         <main class="shop-layout">
+            <section class="glass-surface page-hero page-hero-compact">
+                <p class="panel-kicker">Tienda</p>
+                <h1>Tienda M&aacute;gica</h1>
+                <p class="page-subtitle">Compra, desbloquea y equipa skins para seguir avanzando por la academia.</p>
+            </section>
+
             <section class="glass-surface player-panel" id="store-player-card"></section>
 
             <section class="glass-surface shop-panel">

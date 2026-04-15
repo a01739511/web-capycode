@@ -9,7 +9,9 @@
         }
 
         updateHud();
+        renderSidebarSkins();
         bindLogout();
+        bindSidebarToggle();
     });
 
     function ensureSession() {
@@ -180,6 +182,61 @@
         document.querySelectorAll("[data-action=\"logout\"]").forEach(function (button) {
             button.addEventListener("click", logout);
         });
+    }
+
+    function renderSidebarSkins() {
+        const profile = getProfile();
+        const equipped = getShopItem(profile.equippedCharacter);
+        if (!equipped) {
+            return;
+        }
+
+        document.querySelectorAll("[data-sidebar-skin]").forEach(function (element) {
+            element.innerHTML = [
+                "<p class=\"panel-kicker\">Skin activa</p>",
+                "<div class=\"sidebar-skin-art\"><img src=\"", equipped.image, "\" alt=\"", equipped.name, "\"></div>",
+                "<div class=\"sidebar-skin-copy\">",
+                "<strong>", equipped.name, "</strong>",
+                "<span>", equipped.perk, "</span>",
+                "</div>"
+            ].join("");
+        });
+    }
+
+    function bindSidebarToggle() {
+        const sidebar = document.querySelector("[data-app-sidebar]");
+        if (!sidebar) {
+            return;
+        }
+
+        const toggleButtons = document.querySelectorAll("[data-action=\"toggle-sidebar\"]");
+        const closeTargets = document.querySelectorAll("[data-sidebar-close]");
+        const hasLayoutSidebar = sidebar.closest(".sidebar-layout") !== null;
+
+        toggleButtons.forEach(function (button) {
+            button.addEventListener("click", function () {
+                if (hasLayoutSidebar) {
+                    document.body.classList.toggle("sidebar-collapsed");
+                    return;
+                }
+
+                document.body.classList.toggle("drawer-open");
+            });
+        });
+
+        closeTargets.forEach(function (target) {
+            target.addEventListener("click", closeSidebar);
+        });
+
+        document.addEventListener("keydown", function (event) {
+            if (event.key === "Escape") {
+                closeSidebar();
+            }
+        });
+    }
+
+    function closeSidebar() {
+        document.body.classList.remove("drawer-open");
     }
 
     function getShopItem(id) {
