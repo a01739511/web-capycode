@@ -2,26 +2,39 @@
     const root = document.getElementById("map-levels");
     const spotlight = document.getElementById("map-spotlight");
     const tooltip = document.getElementById("map-tooltip");
+    const stage = root ? root.closest(".map-stage") : null;
     const data = window.CAPYCODE_APP_DATA;
+    const LOCK_ICON_PATH = "assets/lock-icon.svg";
 
-    if (!root || !spotlight || !tooltip || !data || !window.CapyCore) {
+    if (!root || !spotlight || !tooltip || !stage || !data || !window.CapyCore) {
         return;
     }
 
     const profile = window.CapyCore.getProfile();
     const currentLevel = profile.level;
+    let activeNode = null;
+    let activeLevel = null;
 
     renderLevels();
     updateSpotlight(getLevelById(currentLevel) || data.levels[0]);
+
+    window.addEventListener("resize", syncTooltipPosition);
+    window.addEventListener("scroll", syncTooltipPosition, true);
 
     function renderLevels() {
         root.innerHTML = data.levels.map(function (level) {
             const status = resolveStatus(level.id, currentLevel);
             const href = status === "locked" ? "#" : level.href;
+            const lockMarkup = status === "locked"
+                ? "<span class=\"level-lock-badge\" aria-hidden=\"true\"><img src=\"" + LOCK_ICON_PATH + "\" alt=\"\"></span>"
+                : "";
 
             return [
-                "<a class=\"level-node is-", status, "\" href=\"", href, "\" data-level-id=\"", level.id, "\" style=\"left:", level.x, "; top:", level.y, ";\">",
+                "<a class=\"level-node is-", status, "\" href=\"", href, "\" data-level-id=\"", level.id, "\" aria-disabled=\"", status === "locked" ? "true" : "false", "\" style=\"left:", level.x, "; top:", level.y, ";\">",
+                "<span class=\"level-orb-shell\">",
                 "<span class=\"level-orb\">", level.id, "</span>",
+                lockMarkup,
+                "</span>",
                 "<span class=\"level-label\">", level.title, "</span>",
                 "<span class=\"level-topic\">", level.topic, "</span>",
                 "</a>"
@@ -31,21 +44,23 @@
         root.querySelectorAll("[data-level-id]").forEach(function (node) {
             const level = getLevelById(Number(node.dataset.levelId));
 
-            node.addEventListener("mouseenter", function (event) {
+            node.addEventListener("mouseenter", function () {
                 updateSpotlight(level);
-                showTooltip(level, event, node);
-            });
-
-            node.addEventListener("mousemove", function (event) {
-                updateTooltipPosition(event, node);
+                showTooltip(level, node);
             });
 
             node.addEventListener("mouseleave", hideTooltip);
-            node.addEventListener("focus", function (event) {
+            node.addEventListener("focus", function () {
                 updateSpotlight(level);
-                showTooltip(level, event, node);
+                showTooltip(level, node);
             });
             node.addEventListener("blur", hideTooltip);
+
+            if (resolveStatus(level.id, currentLevel) === "locked") {
+                node.addEventListener("click", function (event) {
+                    event.preventDefault();
+                });
+            }
         });
     }
 
@@ -57,7 +72,7 @@
         spotlight.textContent = level.topic;
     }
 
-    function showTooltip(level, event, node) {
+    function showTooltip(level, node) {
         if (!level) {
             return;
         }
@@ -72,28 +87,51 @@
             status === "locked" ? "<span class=\"map-state-pill is-locked\">Bloqueado</span>" : "<span class=\"map-state-pill\">Listo para jugar</span>"
         ].join("");
         tooltip.classList.remove("is-hidden");
-        updateTooltipPosition(event, node);
+        activeLevel = level;
+        activeNode = node || null;
+        updateTooltipPosition(node);
     }
 
-    function updateTooltipPosition(event, node) {
-        const offsetX = 20;
-        const offsetY = 20;
+    function updateTooltipPosition(node) {
+        if (!node) {
+            return;
+        }
+
+        const anchor = node.querySelector(".level-orb-shell") || node;
+        const gap = 10;
         const width = tooltip.offsetWidth || 260;
         const height = tooltip.offsetHeight || 180;
-        const hasPointer = event && typeof event.clientX === "number" && typeof event.clientY === "number";
-        const rect = !hasPointer && node ? node.getBoundingClientRect() : null;
-        const baseX = hasPointer ? event.clientX : (rect ? rect.left + rect.width / 2 : window.innerWidth / 2);
-        const baseY = hasPointer ? event.clientY : (rect ? rect.top + rect.height / 2 : window.innerHeight / 2);
-        let left = baseX + offsetX;
-        let top = baseY + offsetY;
-
-        if (left + width > window.innerWidth - 16) {
-            left = baseX - width - 16;
-        }
-
-        if (top + height > window.innerHeight - 16) {
-            top = baseY - height - 16;
-        }
+        const safeMargin = 16;
+        const rect = anchor.getBoundingClientRect();
+        const stageRect = stage.getBoundingClientRect();
+        const baseX = rect.left - stageRect.left + rect.width / 2;
+        const baseY = rect.top - stageRect.top + rect.height / 2;
+        const positions = [
+            {
+                left: rect.right - stageRect.left + gap,
+                top: baseY - height / 2
+            },
+            {
+                left: rect.left - stageRect.left - width - gap,
+                top: baseY - height / 2
+            },
+            {
+                left: baseX - width / 2,
+                top: rect.top - stageRect.top - height - gap
+            },
+            {
+                left: baseX - width / 2,
+                top: rect.bottom - stageRect.top + gap
+            }
+        ];
+        const bestPosition = positions.find(function (position) {
+            return position.left >= safeMargin &&
+                position.top >= safeMargin &&
+                position.left + width <= stageRect.width - safeMargin &&
+                position.top + height <= stageRect.height - safeMargin;
+        }) || positions[0];
+        const left = Math.max(safeMargin, Math.min(bestPosition.left, stageRect.width - width - safeMargin));
+        const top = Math.max(safeMargin, Math.min(bestPosition.top, stageRect.height - height - safeMargin));
 
         tooltip.style.left = left + "px";
         tooltip.style.top = top + "px";
@@ -101,6 +139,16 @@
 
     function hideTooltip() {
         tooltip.classList.add("is-hidden");
+        activeLevel = null;
+        activeNode = null;
+    }
+
+    function syncTooltipPosition() {
+        if (!activeLevel || !activeNode || tooltip.classList.contains("is-hidden")) {
+            return;
+        }
+
+        updateTooltipPosition(activeNode);
     }
 
     function resolveStatus(levelId, current) {

@@ -195,12 +195,14 @@
 
         document.querySelectorAll("[data-sidebar-skin]").forEach(function (element) {
             element.innerHTML = [
+                "<a class=\"sidebar-skin-link\" href=\"perfil.html#profile-collection-section\">",
                 "<p class=\"panel-kicker\">Skin activa</p>",
                 "<div class=\"sidebar-skin-art\"><img src=\"", equipped.image, "\" alt=\"", equipped.name, "\"></div>",
                 "<div class=\"sidebar-skin-copy\">",
                 "<strong>", equipped.name, "</strong>",
                 "<span>", equipped.perk, "</span>",
-                "</div>"
+                "</div>",
+                "</a>"
             ].join("");
         });
     }

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -14,7 +14,7 @@
     <link rel="manifest" href="site.webmanifest">
     <link rel="stylesheet" href="style.css">
 </head>
-<body class="scene-body" data-requires-auth="true">
+<body class="scene-body quiz-page" data-requires-auth="true">
     <div class="sidebar-layout">
         <aside class="sidebar-panel app-sidebar glass-surface" data-app-sidebar>
             <a class="sidebar-brand" href="mapa.html">CapyCode</a>
@@ -23,7 +23,7 @@
         </aside>
 
         <div class="sidebar-main">
-            <div class="gameplay-shell" data-question-types="ordenar_lineas" data-progress-key="order" data-progress-label="NIVEL 5: CICLOS" data-next-page="p_completarPlantilla.html">
+            <div class="gameplay-shell" data-question-types="ordenar_lineas" data-progress-key="order" data-progress-label="NIVEL 5: CICLOS" data-hero-tag="Ruta del nivel 5" data-next-page="p_completarPlantilla.html">
                 <header class="scene-topbar glass-surface">
                     <button class="menu-link" type="button" data-action="toggle-sidebar">
                         <img src="assets/menu-icon.svg" alt="">
@@ -45,20 +45,22 @@
                 </header>
 
                 <main class="game-stage">
-                    <section class="glass-surface page-hero page-hero-compact">
-                        <p class="panel-kicker">Nivel 5</p>
-                        <h1>Ordenar l&iacute;neas</h1>
-                        <p class="page-subtitle">Arrastra cada l&iacute;nea hasta reconstruir correctamente el hechizo de c&oacute;digo.</p>
-                    </section>
-
-                    <section class="progress-block">
-                        <div class="progress-copy">
-                            <p id="mission-label">NIVEL 5: CICLOS</p>
-                            <h2>Progreso de la misi&oacute;n</h2>
+                    <section class="mission-hero glass-surface">
+                        <div class="mission-hero-copy">
+                            <span class="mission-tag mission-tag-top" id="mission-label">Ruta del nivel 5</span>
+                            <div class="mission-hero-heading">
+                                <h1>Ordenar l&iacute;neas</h1>
+                            </div>
+                            <p class="page-subtitle">Arrastra cada l&iacute;nea hasta reconstruir correctamente el hechizo de c&oacute;digo.</p>
                         </div>
-                        <span id="progress-ratio">9/12</span>
-                        <div class="progress-track">
-                            <div class="progress-meter" id="progress-fill"></div>
+                        <div class="mission-hero-progress">
+                            <div class="mission-progress-head">
+                                <p class="panel-kicker">Progreso</p>
+                                <strong id="progress-ratio">9/12</strong>
+                            </div>
+                            <div class="progress-track">
+                                <div class="progress-meter" id="progress-fill"></div>
+                            </div>
                         </div>
                     </section>
 

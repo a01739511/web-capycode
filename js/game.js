@@ -2,6 +2,16 @@
     const XP_REWARD = 50;
     const COMPLETION_BONUS = 50;
     const app = document.querySelector("[data-question-types]");
+    const PYTHON_KEYWORDS = new Set([
+        "and", "as", "assert", "break", "class", "continue", "def", "del", "elif",
+        "else", "except", "False", "finally", "for", "from", "global", "if", "import",
+        "in", "is", "lambda", "None", "nonlocal", "not", "or", "pass", "raise",
+        "return", "True", "try", "while", "with", "yield"
+    ]);
+    const PYTHON_BUILTINS = new Set([
+        "print", "range", "enumerate", "list", "len", "input", "int", "float",
+        "str", "bool", "sum", "min", "max"
+    ]);
 
     if (!app || !window.CapyCore) {
         return;
@@ -19,12 +29,14 @@
         selectedOption: null,
         selectedLines: [],
         blankAnswers: {},
+        activeBlankKey: "",
         orderItems: [],
         numericAnswer: "",
         awaitingNext: false
     };
 
     const elements = {
+        stage: document.querySelector(".game-stage"),
         missionLabel: document.getElementById("mission-label"),
         progressRatio: document.getElementById("progress-ratio"),
         progressFill: document.getElementById("progress-fill"),
@@ -57,9 +69,6 @@
     };
 
     elements.primaryAction.addEventListener("click", onPrimaryAction);
-    if (elements.secondaryAction) {
-        elements.secondaryAction.addEventListener("click", restartPage);
-    }
 
     start();
 
@@ -115,17 +124,21 @@
         state.selectedOption = null;
         state.selectedLines = [];
         state.blankAnswers = {};
+        state.activeBlankKey = "";
         state.orderItems = [];
         state.numericAnswer = "";
         state.awaitingNext = false;
 
         elements.questionTitle.textContent = question.prompt;
         elements.questionContent.innerHTML = "";
+        elements.questionContent.classList.remove("has-internal-scroll");
+        clearCompletionOverlay();
         elements.feedback.textContent = "";
         elements.feedback.className = "feedback-banner";
         elements.primaryAction.textContent = "Comprobar";
         elements.primaryAction.disabled = false;
         elements.primaryAction.style.display = "";
+        app.dataset.activeQuestionType = question.tipo;
 
         if (elements.secondaryAction) {
             elements.secondaryAction.textContent = "Reiniciar reto";
@@ -163,7 +176,10 @@
             button.type = "button";
             button.className = "answer-card";
             button.dataset.optionId = option.id;
-            button.innerHTML = "<span class=\"answer-marker\">" + option.id + "</span><span>" + escapeHtml(option.text) + "</span>";
+            button.innerHTML = [
+                "<span class=\"answer-marker\">", option.id, "</span>",
+                "<span class=\"answer-card-text\">", escapeHtml(option.text), "</span>"
+            ].join("");
             button.addEventListener("click", function () {
                 state.selectedOption = option.id;
                 grid.querySelectorAll(".answer-card").forEach(function (item) {
@@ -203,7 +219,7 @@
             article.dataset.index = String(index);
             article.innerHTML = [
                 "<div class=\"drag-pill\"><img src=\"assets/menu-icon.svg\" alt=\"Mover linea\"></div>",
-                "<code>", escapeHtml(item.text), "</code>"
+                buildCodeLineMarkup(item.text, index + 1, state.orderItems.length)
             ].join("");
             article.addEventListener("dragstart", handleDragStart);
             article.addEventListener("dragover", handleDragOver);
@@ -213,48 +229,89 @@
     }
 
     function renderTemplate(question) {
-        const card = document.createElement("div");
-        card.className = "code-stage";
+        elements.questionContent.classList.add("has-internal-scroll");
 
-        question.plantilla.forEach(function (line) {
-            const row = document.createElement("div");
-            row.className = "template-row";
+        if (!state.activeBlankKey) {
+            state.activeBlankKey = getFirstBlankKey(question);
+        }
 
-            line.split(/(\{[^}]+\})/g).filter(Boolean).forEach(function (token) {
-                if (token.startsWith("{") && token.endsWith("}")) {
-                    const key = token.slice(1, -1);
-                    const select = document.createElement("select");
-                    select.className = "inline-select";
-                    select.innerHTML = "<option value=\"\">[]</option>" + question.banco_palabras.map(function (word) {
-                        return "<option value=\"" + word + "\">" + word + "</option>";
-                    }).join("");
-                    select.addEventListener("change", function () {
-                        state.blankAnswers[key] = select.value;
-                    });
-                    row.appendChild(select);
-                } else {
-                    const span = document.createElement("span");
-                    span.textContent = token;
-                    row.appendChild(span);
-                }
+        const builder = document.createElement("div");
+        builder.className = "template-builder";
+
+        const stage = document.createElement("div");
+        stage.className = "code-stage";
+        stage.innerHTML = question.plantilla.map(function (line, index) {
+            return [
+                "<div class=\"template-row\">",
+                "<span class=\"code-line-number\">", formatLineNumber(index + 1, question.plantilla.length), "</span>",
+                "<div class=\"template-row-body code-line-content\">", buildTemplateLineMarkup(line), "</div>",
+                "</div>"
+            ].join("");
+        }).join("");
+
+        const bankPanel = document.createElement("div");
+        bankPanel.className = "template-bank-panel";
+        bankPanel.innerHTML = [
+            "<div class=\"template-bank-head\">",
+            "<div>",
+            "<p class=\"panel-kicker\">Banco de palabras</p>",
+            "<p>Toca un hueco del c&oacute;digo y luego una palabra para colocarla.</p>",
+            "</div>",
+            "<button class=\"template-clear-button\" type=\"button\">Vaciar hueco</button>",
+            "</div>",
+            "<div class=\"template-word-bank\">",
+            question.banco_palabras.map(function (word) {
+                const isUsed = Object.keys(state.blankAnswers).some(function (key) {
+                    return state.blankAnswers[key] === word;
+                });
+
+                return [
+                    "<button class=\"word-chip", isUsed ? " is-used" : "", "\" data-word=\"", escapeAttribute(word), "\" type=\"button\">",
+                    escapeHtml(word),
+                    "</button>"
+                ].join("");
+            }).join(""),
+            "</div>"
+        ].join("");
+
+        builder.appendChild(stage);
+        builder.appendChild(bankPanel);
+        elements.questionContent.innerHTML = "";
+        elements.questionContent.appendChild(builder);
+
+        stage.querySelectorAll("[data-blank-key]").forEach(function (button) {
+            button.addEventListener("click", function () {
+                state.activeBlankKey = button.dataset.blankKey;
+                renderTemplate(question);
             });
-
-            card.appendChild(row);
         });
 
-        elements.questionContent.appendChild(card);
+        bankPanel.querySelectorAll("[data-word]").forEach(function (button) {
+            button.addEventListener("click", function () {
+                fillActiveBlank(question, button.dataset.word);
+            });
+        });
+
+        bankPanel.querySelector(".template-clear-button").addEventListener("click", function () {
+            clearActiveBlank(question);
+        });
     }
 
     function renderSelectLines(question) {
         const stack = document.createElement("div");
         stack.className = "answer-stack";
 
-        question.lineas.forEach(function (line) {
+        question.lineas.forEach(function (line, index) {
             const button = document.createElement("button");
             button.type = "button";
-            button.className = "answer-card";
+            button.className = "answer-card selection-card";
             button.dataset.lineId = line.id;
-            button.innerHTML = "<span class=\"answer-marker\">" + line.id + "</span><code>" + escapeHtml(line.text) + "</code>";
+            button.innerHTML = [
+                "<span class=\"answer-marker\">", line.id, "</span>",
+                "<div class=\"answer-card-copy\">",
+                buildCodeLineMarkup(line.text, index + 1, question.lineas.length),
+                "</div>"
+            ].join("");
             button.addEventListener("click", function () {
                 toggleSelectedLine(line.id);
                 stack.querySelectorAll(".answer-card").forEach(function (item) {
@@ -269,9 +326,8 @@
 
     function renderNumeric(question) {
         const wrapper = document.createElement("div");
-        wrapper.className = "code-stage";
-        wrapper.innerHTML = "<pre><code>" + escapeHtml(question.code.join("\n")) + "</code></pre>";
-        elements.questionContent.appendChild(wrapper);
+        wrapper.className = "numeric-layout";
+        wrapper.appendChild(createCodeStage(question.code));
 
         const input = document.createElement("input");
         input.type = "number";
@@ -280,7 +336,9 @@
         input.addEventListener("input", function () {
             state.numericAnswer = input.value;
         });
-        elements.questionContent.appendChild(input);
+
+        wrapper.appendChild(input);
+        elements.questionContent.appendChild(wrapper);
     }
 
     function onPrimaryAction() {
@@ -381,6 +439,21 @@
                 }
             });
         }
+
+        if (question.tipo === "drag_and_drop") {
+            Object.keys(question.rellenos).forEach(function (key) {
+                const button = elements.questionContent.querySelector("[data-blank-key=\"" + key + "\"]");
+                if (!button) {
+                    return;
+                }
+
+                if (question.rellenos[key] === state.blankAnswers[key]) {
+                    button.classList.add("is-filled");
+                } else if (!correct) {
+                    button.classList.add("is-active");
+                }
+            });
+        }
     }
 
     function updateProfile(correct) {
@@ -420,29 +493,35 @@
             return item.id === profile.equippedCharacter;
         });
         const nextPage = app.dataset.nextPage || "mapa.html";
-        const headline = outcome.firstCompletion ? "Conocimiento Magico desbloqueado" : "Mision ya dominada";
+        const headline = outcome.firstCompletion ? "Nivel completado" : "Mision dominada";
         const rewardCopy = outcome.firstCompletion
-            ? "Has ganado +" + COMPLETION_BONUS + " puntos de magia por completar esta estacion."
+            ? "Has ganado +" + COMPLETION_BONUS + " XP extra por completar esta estacion."
             : "Esta estacion ya estaba completada. Puedes repetirla para seguir practicando.";
+        const celebrationImage = getCelebrationCharacterImage(equipped);
 
-        elements.questionTitle.textContent = headline;
-        elements.questionContent.innerHTML = [
-            "<div class=\"completion-card\">",
-            "<p class=\"panel-kicker\">Recompensa</p>",
-            "<h3>", rewardCopy, "</h3>",
-            equipped ? "<img src=\"" + equipped.image + "\" alt=\"" + equipped.name + "\">" : "",
-            "<a class=\"magic-cta\" href=\"" + nextPage + "\">" + buildNextCtaLabel(nextPage) + "</a>",
+        app.classList.add("is-complete");
+        document.body.classList.add("quiz-complete");
+
+        document.body.insertAdjacentHTML("beforeend", [
+            "<div class=\"completion-overlay\" data-completion-overlay>",
+            "<div class=\"completion-spotlight\" aria-hidden=\"true\"></div>",
+            "<div class=\"completion-confetti\" aria-hidden=\"true\">",
+            buildConfettiMarkup(),
+            "</div>",
+            "<section class=\"completion-screen glass-surface\">",
+            "<div class=\"completion-screen-copy\">",
+            "<p class=\"panel-kicker\">", outcome.firstCompletion ? "Misi\u00f3n superada" : "Pr\u00e1ctica completada", "</p>",
+            "<h2>", headline, "</h2>",
+            "<p class=\"completion-lead\">", rewardCopy, "</p>",
+            celebrationImage ? "<div class=\"completion-screen-art\"><img src=\"" + celebrationImage + "\" alt=\"" + escapeHtml(equipped ? equipped.name : "Personaje") + "\"></div>" : "",
+            "<div class=\"completion-actions\">",
+            "<a class=\"magic-cta\" href=\"", nextPage, "\">", buildNextCtaLabel(nextPage), "</a>",
+            "<a class=\"scene-button ghost\" href=\"mapa.html\">Salir al mapa</a>",
+            "</div>",
+            "</div>",
+            "</section>",
             "</div>"
-        ].join("");
-        elements.feedback.textContent = "";
-        elements.primaryAction.style.display = "none";
-        if (elements.secondaryAction) {
-            elements.secondaryAction.textContent = "Volver al mapa";
-            elements.secondaryAction.onclick = function () {
-                window.location.href = "mapa.html";
-            };
-        }
-        renderProgress();
+        ].join(""));
     }
 
     function buildNextCtaLabel(nextPage) {
@@ -458,12 +537,40 @@
         if (!progress) {
             return;
         }
-        elements.missionLabel.textContent = app.dataset.progressLabel || "NIVEL 5: CICLOS";
+
+        const percentage = (progress.current / progress.total) * 100;
+        elements.missionLabel.textContent = app.dataset.heroTag || "Ruta del nivel";
         elements.progressRatio.textContent = progress.current + "/" + progress.total;
-        elements.progressFill.style.width = ((progress.current / progress.total) * 100) + "%";
+        animateProgressMeter(percentage);
+    }
+
+    function animateProgressMeter(percentage) {
+        const nextValue = Math.max(0, Math.min(100, percentage));
+        const previousValue = Number(elements.progressFill.dataset.progressValue || 0);
+
+        elements.progressFill.dataset.progressValue = String(nextValue);
+
+        if (!elements.progressFill.dataset.progressReady) {
+            elements.progressFill.style.width = previousValue + "%";
+            elements.progressFill.dataset.progressReady = "true";
+            window.requestAnimationFrame(function () {
+                elements.progressFill.style.width = nextValue + "%";
+            });
+            return;
+        }
+
+        if (Math.abs(previousValue - nextValue) < 0.01) {
+            elements.progressFill.style.width = nextValue + "%";
+            return;
+        }
+
+        window.requestAnimationFrame(function () {
+            elements.progressFill.style.width = nextValue + "%";
+        });
     }
 
     function restartPage() {
+        clearCompletionOverlay();
         state.currentIndex = 0;
         renderQuestion();
         renderProgress();
@@ -491,6 +598,205 @@
             return;
         }
         state.selectedLines.push(lineId);
+    }
+
+    function fillActiveBlank(question, word) {
+        let targetKey = state.activeBlankKey;
+
+        if (!targetKey || !Object.prototype.hasOwnProperty.call(question.rellenos, targetKey)) {
+            targetKey = getFirstEmptyBlank(question) || getFirstBlankKey(question);
+        }
+
+        if (!targetKey) {
+            return;
+        }
+
+        state.blankAnswers[targetKey] = word;
+        state.activeBlankKey = getFirstEmptyBlank(question) || targetKey;
+        renderTemplate(question);
+    }
+
+    function clearActiveBlank(question) {
+        if (!state.activeBlankKey) {
+            return;
+        }
+
+        delete state.blankAnswers[state.activeBlankKey];
+        renderTemplate(question);
+    }
+
+    function getFirstBlankKey(question) {
+        return Object.keys(question.rellenos)[0] || "";
+    }
+
+    function getFirstEmptyBlank(question) {
+        return Object.keys(question.rellenos).find(function (key) {
+            return !state.blankAnswers[key];
+        }) || "";
+    }
+
+    function buildTemplateLineMarkup(line) {
+        return line.split(/(\{[^}]+\})/g).filter(Boolean).map(function (token) {
+            if (token.startsWith("{") && token.endsWith("}")) {
+                const key = token.slice(1, -1);
+                const value = state.blankAnswers[key] || "[elige]";
+                const classes = [
+                    "code-blank",
+                    state.blankAnswers[key] ? "is-filled" : "is-empty",
+                    state.activeBlankKey === key ? "is-active" : ""
+                ].filter(Boolean).join(" ");
+
+                return [
+                    "<button class=\"", classes, "\" type=\"button\" data-blank-key=\"", escapeAttribute(key), "\">",
+                    escapeHtml(value),
+                    "</button>"
+                ].join("");
+            }
+
+            return highlightPython(token);
+        }).join("");
+    }
+
+    function buildConfettiMarkup() {
+        return new Array(18).fill(null).map(function (_, index) {
+            return "<span class=\"confetti-piece confetti-piece-" + ((index % 6) + 1) + "\" style=\"--piece-index:" + index + ";\"></span>";
+        }).join("");
+    }
+
+    function clearCompletionOverlay() {
+        app.classList.remove("is-complete");
+        document.body.classList.remove("quiz-complete");
+        document.querySelectorAll("[data-completion-overlay]").forEach(function (overlay) {
+            overlay.remove();
+        });
+    }
+
+    function getCelebrationCharacterImage(equipped) {
+        const imageMap = {
+            CapyBlack: "assets/characters/no_bg/Capy_Black.png",
+            CapyAqua: "assets/characters/no_bg/Capy_Aqua..png",
+            CapyCandy: "assets/characters/no_bg/Capy_Candy.png",
+            CapyConstelation: "assets/characters/no_bg/Capy_Constelation.png",
+            CapyEarth: "assets/characters/no_bg/Capy_Earth.png",
+            CapyExplorer: "assets/characters/no_bg/Capy_Explorer.png",
+            CapyKing: "assets/characters/no_bg/Capy_King.png",
+            CapyRuna: "assets/characters/no_bg/Capy_Runa.png",
+            CapySun: "assets/characters/no_bg/Capy_Sun.png"
+        };
+
+        if (equipped && imageMap[equipped.id]) {
+            return imageMap[equipped.id];
+        }
+
+        return equipped ? equipped.image : "";
+    }
+
+    function createCodeStage(lines) {
+        const wrapper = document.createElement("div");
+        wrapper.className = "code-stage";
+        wrapper.innerHTML = lines.map(function (line, index) {
+            return buildCodeLineMarkup(line, index + 1, lines.length);
+        }).join("");
+        return wrapper;
+    }
+
+    function buildCodeLineMarkup(text, lineNumber, totalLines) {
+        return [
+            "<div class=\"code-line\">",
+            "<span class=\"code-line-number\">", formatLineNumber(lineNumber, totalLines), "</span>",
+            "<span class=\"code-line-content\">", highlightPython(text), "</span>",
+            "</div>"
+        ].join("");
+    }
+
+    function formatLineNumber(lineNumber, totalLines) {
+        const width = String(totalLines).length;
+        return String(lineNumber).padStart(width, "0");
+    }
+
+    function highlightPython(source) {
+        let index = 0;
+        let html = "";
+
+        while (index < source.length) {
+            const remaining = source.slice(index);
+            const whitespace = remaining.match(/^\s+/);
+            const comment = remaining.match(/^#.*/);
+            const stringLiteral = remaining.match(/^("""[\s\S]*?"""|'''[\s\S]*?'''|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')/);
+            const numberLiteral = remaining.match(/^\d+(?:\.\d+)?/);
+            const identifier = remaining.match(/^[A-Za-z_][A-Za-z0-9_]*/);
+            const operator = remaining.match(/^(==|!=|<=|>=|\+=|-=|\*=|\/=|%=|\/\/=|\*\*=|\/\/|\*\*|->|=|\+|-|\*|\/|%|<|>)/);
+            const punctuation = remaining.match(/^[:.,()[\]{}]/);
+
+            if (whitespace) {
+                html += escapeHtml(whitespace[0]);
+                index += whitespace[0].length;
+                continue;
+            }
+
+            if (comment) {
+                html += wrapToken("comment", comment[0]);
+                break;
+            }
+
+            if (stringLiteral) {
+                html += wrapToken("string", stringLiteral[0]);
+                index += stringLiteral[0].length;
+                continue;
+            }
+
+            if (numberLiteral) {
+                html += wrapToken("number", numberLiteral[0]);
+                index += numberLiteral[0].length;
+                continue;
+            }
+
+            if (identifier) {
+                html += wrapToken(resolveIdentifierClass(source, index, identifier[0]), identifier[0]);
+                index += identifier[0].length;
+                continue;
+            }
+
+            if (operator) {
+                html += wrapToken("operator", operator[0]);
+                index += operator[0].length;
+                continue;
+            }
+
+            if (punctuation) {
+                html += wrapToken("punctuation", punctuation[0]);
+                index += punctuation[0].length;
+                continue;
+            }
+
+            html += escapeHtml(remaining.charAt(0));
+            index += 1;
+        }
+
+        return html;
+    }
+
+    function resolveIdentifierClass(source, startIndex, value) {
+        const prefix = source.slice(0, startIndex);
+        const suffix = source.slice(startIndex + value.length);
+
+        if (PYTHON_KEYWORDS.has(value)) {
+            return "keyword";
+        }
+
+        if (PYTHON_BUILTINS.has(value)) {
+            return "builtin";
+        }
+
+        if (/\bdef\s+$/.test(prefix) || /\bclass\s+$/.test(prefix) || /^\s*\(/.test(suffix)) {
+            return "function";
+        }
+
+        return "variable";
+    }
+
+    function wrapToken(type, value) {
+        return "<span class=\"code-token-" + type + "\">" + escapeHtml(value) + "</span>";
     }
 
     function handleDragStart(event) {
@@ -545,5 +851,9 @@
             .replace(/>/g, "&gt;")
             .replace(/"/g, "&quot;")
             .replace(/'/g, "&#39;");
+    }
+
+    function escapeAttribute(value) {
+        return escapeHtml(value).replace(/`/g, "&#96;");
     }
 }());

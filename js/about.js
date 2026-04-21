@@ -1,85 +1,141 @@
 (function () {
     const storyRoot = document.getElementById("about-story");
-    const mentorsRoot = document.getElementById("about-mentors");
+    const mapRoot = document.getElementById("about-map");
     const extrasRoot = document.getElementById("about-extras");
     const data = window.CAPYCODE_APP_DATA;
+    let activeStationId = "";
 
-    if (!storyRoot || !mentorsRoot || !extrasRoot || !data) {
+    if (!storyRoot || !mapRoot || !extrasRoot || !data) {
         return;
     }
 
-    storyRoot.innerHTML = [
-        "<p class=\"panel-kicker\">Historia</p>",
-        "<h1>", data.academy.title, "</h1>",
-        "<p class=\"page-subtitle\">", data.academy.subtitle, "</p>",
-        "<p class=\"story-copy\">", data.academy.intro, "</p>",
-        data.academy.longStory.map(function (paragraph) {
-            return "<p>" + paragraph + "</p>";
-        }).join(""),
-        "<img class=\"world-map-image\" src=\"", data.map.image, "\" alt=\"Mapa de la academia\">"
-    ].join("");
+    renderPage();
+    bindStationExplorer();
 
-    mentorsRoot.innerHTML = data.mentors.map(function (mentor) {
-        return [
-            "<article class=\"mentor-card\">",
-            "<img src=\"", mentor.image, "\" alt=\"", mentor.name, "\">",
+    function renderPage() {
+        const stations = data.storyStations || [];
+        const entrance = data.academy && data.academy.entrance ? data.academy.entrance : null;
+
+        if (!activeStationId && stations.length) {
+            activeStationId = stations[0].id;
+        }
+
+        storyRoot.innerHTML = [
+            "<p class=\"panel-kicker\">Historia</p>",
+            "<h1>", data.academy.title, "</h1>",
+            "<p class=\"page-subtitle\">", data.academy.subtitle, "</p>",
+            "<p class=\"story-copy\">", data.academy.intro, "</p>",
+            data.academy.longStory.map(function (paragraph) {
+                return "<p>" + paragraph + "</p>";
+            }).join(""),
+            entrance ? [
+                "<div class=\"about-highlight\">",
+                "<p class=\"panel-kicker\">Primera parada</p>",
+                "<h2>", entrance.title, "</h2>",
+                "<p>", entrance.description, "</p>",
+                "</div>"
+            ].join("") : ""
+        ].join("");
+
+        mapRoot.innerHTML = [
+            "<p class=\"panel-kicker\">Mapa narrativo</p>",
+            "<h2>El sendero de la academia</h2>",
+            "<p class=\"page-subtitle\">Cada estacion del bosque representa una parte del aprendizaje. El mapa vive aparte para que puedas apreciarlo completo.</p>",
+            "<img class=\"world-map-image world-map-image-large\" src=\"", data.map.image, "\" alt=\"Mapa de la Academia CapyCode\">",
+            "<p class=\"about-map-caption\">", data.map.caption, "</p>"
+        ].join("");
+
+        renderExtras();
+    }
+
+    function renderExtras() {
+        const stations = data.storyStations || [];
+        const activeStation = stations.find(function (station) {
+            return station.id === activeStationId;
+        }) || stations[0];
+
+        extrasRoot.innerHTML = [
+            "<section class=\"info-grid-section about-explorer\">",
+            "<div class=\"panel-header\">",
             "<div>",
-            "<h3>", mentor.name, "</h3>",
-            "<p class=\"mentor-role\">", mentor.role, "</p>",
-            "<p>", mentor.focus, "</p>",
+            "<p class=\"panel-kicker\">Sendero encantado</p>",
+            "<h2>Explora cada estacion</h2>",
+            "</div>",
+            "</div>",
+            "<div class=\"story-station-shell\">",
+            "<div class=\"story-station-list\">",
+            stations.map(function (station) {
+                return [
+                    "<button class=\"story-station-tab", station.id === activeStation.id ? " is-active" : "", "\" type=\"button\" data-station-id=\"", station.id, "\">",
+                    "<span class=\"story-station-order\">", station.order, "</span>",
+                    "<strong>", station.title, "</strong>",
+                    "<span>", station.place, "</span>",
+                    "</button>"
+                ].join("");
+            }).join(""),
+            "</div>",
+            buildStationDetail(activeStation),
+            "</div>",
+            "</section>",
+            "<section class=\"info-grid-section\">",
+            "<p class=\"panel-kicker\">Lore del bosque</p>",
+            "<h2>Elementos clave de CapyCode</h2>",
+            "<div class=\"lore-grid\">",
+            (data.worldLore || []).map(function (item) {
+                return [
+                    "<article class=\"lore-card\">",
+                    "<h3>", item.title, "</h3>",
+                    "<p>", item.description, "</p>",
+                    "</article>"
+                ].join("");
+            }).join(""),
+            "</div>",
+            "</section>",
+            "<section class=\"info-grid-section about-closing\">",
+            "<p class=\"panel-kicker\">Destino final</p>",
+            "<h2>Pruebas de Magia Mayor</h2>",
+            "<p>Capythilda vuelve a aparecer como jueza del claro encantado. En esta ultima parte, el aprendiz combina condicionales, ciclos, funciones, listas y archivos para resolver retos integradores y obtener el diploma capibarico.</p>",
+            "<div class=\"about-closing-actions\">",
+            "<a class=\"scene-button primary\" href=\"mapa.html\">Volver al mapa</a>",
+            "<a class=\"scene-button ghost\" href=\"tienda.html\">Ver vestuarios</a>",
+            "</div>",
+            "</section>"
+        ].join("");
+    }
+
+    function buildStationDetail(station) {
+        if (!station) {
+            return "";
+        }
+
+        return [
+            "<article class=\"story-station-detail\">",
+            "<div class=\"story-station-visual\">",
+            "<img src=\"", station.image, "\" alt=\"", station.title, "\">",
+            "</div>",
+            "<div class=\"story-station-copy\">",
+            "<p class=\"panel-kicker\">", station.order, "</p>",
+            "<h3>", station.title, "</h3>",
+            "<div class=\"story-station-meta\">",
+            "<span><strong>Lugar:</strong> ", station.place, "</span>",
+            "<span><strong>Guia:</strong> ", station.mentor, "</span>",
+            "</div>",
+            "<p class=\"story-station-topic\">", station.content, "</p>",
+            "<p>", station.description, "</p>",
             "</div>",
             "</article>"
         ].join("");
-    }).join("");
+    }
 
-    extrasRoot.innerHTML = [
-        "<section class=\"info-grid-section\">",
-        "<h2>Ruta narrativa</h2>",
-        "<div class=\"route-grid\">",
-        data.levels.map(function (level) {
-            return [
-                "<article class=\"route-card\">",
-                "<span class=\"route-index\">Nivel ", level.id, "</span>",
-                "<h3>", level.topic, "</h3>",
-                "<p><strong>Lugar:</strong> ", level.place, "</p>",
-                "<p><strong>Mentor:</strong> ", level.mentor, "</p>",
-                "</article>"
-            ].join("");
-        }).join(""),
-        "</div>",
-        "</section>",
-        "<section class=\"info-grid-section\">",
-        "<h2>Mini juegos</h2>",
-        "<div class=\"tag-grid\">",
-        data.miniGames.map(function (item) {
-            return "<span class=\"info-tag\">" + item + "</span>";
-        }).join(""),
-        "</div>",
-        "</section>",
-        "<section class=\"info-grid-section\">",
-        "<h2>Tablero visual</h2>",
-        "<div class=\"visual-board\">",
-        "<img src=\"assets/Libros.jpeg\" alt=\"Biblioteca flotante\">",
-        "<img src=\"assets/Torre.jpeg\" alt=\"Torre de Capythilda\">",
-        "<img src=\"assets/Infinito.jpeg\" alt=\"Circulo de repeticion\">",
-        "<img src=\"assets/world/paleta-capycode.jpeg\" alt=\"Paleta de color CapyCode\">",
-        "</div>",
-        "</section>",
-        "<section class=\"info-grid-section\">",
-        "<h2>Pociones y articulos</h2>",
-        "<div class=\"potion-list\">",
-        data.potions.map(function (potion) {
-            return "<article class=\"potion-card\"><h3>" + potion.name + "</h3><p>" + potion.color + "</p><p>" + potion.effect + "</p></article>";
-        }).join(""),
-        "</div>",
-        "</section>",
-        "<section class=\"info-grid-section\">",
-        "<h2>Paleta visual</h2>",
-        "<div class=\"palette-strip\">",
-        data.palette.map(function (color) {
-            return "<div class=\"palette-chip\"><span class=\"palette-swatch\" style=\"background:" + color.hex + "\"></span><strong>" + color.name + "</strong><span>" + color.hex + "</span></div>";
-        }).join(""),
-        "</div>",
-        "</section>"
-    ].join("");
+    function bindStationExplorer() {
+        extrasRoot.addEventListener("click", function (event) {
+            const trigger = event.target.closest("[data-station-id]");
+            if (!trigger) {
+                return;
+            }
+
+            activeStationId = trigger.dataset.stationId;
+            renderExtras();
+        });
+    }
 }());

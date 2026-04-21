@@ -4,11 +4,136 @@ window.CAPYCODE_APP_DATA = {
         subtitle: "Un sendero encantado donde cada tema es una estacion del bosque magico.",
         intro: "Capythilda recibe a cada aprendiz con un grimorio, una varita-codigo y un companero capaz de convertir conceptos de programacion en retos claros, visuales y jugables.",
         longStory: [
-            "La entrada ocurre en la Torre de Capythilda, donde el jugador conoce la historia del reino, elige identidad y entiende como funciona la magia del codigo.",
-            "Despues, el mapa avanza por estaciones inspiradas en los temas del curso: algoritmos, tipos de datos, expresiones, condicionales, ciclos y funciones.",
-            "Cada lugar mezcla narrativa y practica con mini juegos de opcion multiple, ordenar lineas, completar plantillas, seleccionar lineas y retos de respuesta numerica."
-        ]
+            "La Academia CapyCode se despliega como un sendero encantado entre arboles brillantes, construcciones flotantes y criaturas magicas que representan desafios de codigo.",
+            "Todo comienza en la Torre de Capythilda, donde la directora entrega el primer grimorio, presenta la varita-codigo y explica que cada estacion del bosque guarda una pieza del conocimiento arcano de la programacion.",
+            "Desde ahi, cada aprendiz recorre bibliotecas vivientes, laboratorios de cristales, altares de runas, torres con puertas duales, circulos infinitos, forjas encantadas y archivos subterraneos hasta llegar a las Pruebas de Magia Mayor."
+        ],
+        entrance: {
+            title: "Entrada: La Torre de Capythilda",
+            description: "Capythilda da la bienvenida, entrega el grimorio inicial, presenta el mundo de CapyCode y acompana la eleccion del avatar con el que empieza la aventura.",
+            image: "assets/Torre.jpeg"
+        }
     },
+    storyStations: [
+        {
+            id: "entrada",
+            order: "Tutorial",
+            title: "La Torre de Capythilda",
+            place: "Entrada principal de la academia",
+            mentor: "Capythilda, la directora",
+            content: "Bienvenida, uso de la varita-codigo, primer grimorio e introduccion al mundo.",
+            description: "Es la primera parada del viaje. Aqui el aprendiz entiende que el codigo es una forma de magia ordenada y descubre que cada decision en el sendero abre nuevas puertas del bosque.",
+            image: "assets/Torre.jpeg"
+        },
+        {
+            id: "algoritmo",
+            order: "Nivel 1",
+            title: "Grimorio del Algoritmo Antiguo",
+            place: "Biblioteca flotante",
+            mentor: "Algorithmo el Criptico",
+            content: "Algoritmos, logica basica, secuencia, seleccion y repeticion.",
+            description: "Los libros se abren solos y revelan patrones para pensar antes de lanzar un hechizo. Aqui nace la logica del viaje.",
+            image: "assets/Libros.jpeg"
+        },
+        {
+            id: "tipos",
+            order: "Nivel 2",
+            title: "Pocimas de Tipo Puro",
+            place: "Laboratorio burbujeante en una caverna de cristales",
+            mentor: "Datara la Destiladora",
+            content: "int, float, bool, str y conversion de tipos.",
+            description: "Cada frasco representa una esencia distinta. Mezclar mal los tipos rompe la formula; dominarlos permite crear pocimas exactas.",
+            image: "assets/characters/CapyCandy.png"
+        },
+        {
+            id: "expresiones",
+            order: "Nivel 3",
+            title: "El Altar de las Expresiones",
+            place: "Santuario magico con runas flotantes",
+            mentor: "Expron el Preciso",
+            content: "Operaciones aritmeticas, relacionales y logicas.",
+            description: "Las runas responden a cada combinacion correcta y muestran como una expresion puede alterar el destino de un hechizo.",
+            image: "assets/characters/CapyConstelation.png"
+        },
+        {
+            id: "condicionales",
+            order: "Nivel 4",
+            title: "Hechizos Condicionales",
+            place: "Torre de puertas vivas",
+            mentor: "Elsemina la Dual",
+            content: "if, if-else, if-elif-else y estructuras de decision.",
+            description: "Cada puerta se abre con una respuesta distinta. Aprender a elegir el camino correcto define el avance del aprendiz.",
+            image: "assets/characters/CapySun.png"
+        },
+        {
+            id: "ciclos",
+            order: "Nivel 5",
+            title: "Circulo de Repeticion Infinita",
+            place: "Circulo de piedras magicas que giran eternamente",
+            mentor: "Whilegon el Repetidor",
+            content: "while, for, break y continue.",
+            description: "Los cantos del bosque se repiten como un bucle sin fin hasta que el aprendiz comprende cuando continuar, cuando romper y como iterar con control.",
+            image: "assets/Infinito.jpeg"
+        },
+        {
+            id: "funciones",
+            order: "Nivel 6",
+            title: "Taller de Funciones Encantadas",
+            place: "Forja magica de runas sobre metal caliente",
+            mentor: "Funcilda la Forjadora",
+            content: "Definicion de funciones, parametros, retorno y reutilizacion.",
+            description: "En esta forja los hechizos se personalizan, toman entradas y devuelven resultados para resolver retos mas grandes sin repetir trabajo.",
+            image: "assets/characters/CapyKing.png"
+        },
+        {
+            id: "listas",
+            order: "Nivel 7",
+            title: "Biblioteca de Criaturas de Datos",
+            place: "Biblioteca viviente",
+            mentor: "Liston el Domador",
+            content: "Listas, listas de listas, acceso y manipulacion.",
+            description: "Las listas se mueven como serpientes de palabras. Domarlas significa aprender a guardar, recorrer y transformar colecciones vivas.",
+            image: "assets/characters/CapyRuna.png"
+        },
+        {
+            id: "archivos",
+            order: "Nivel 8",
+            title: "El Archivo Perdido",
+            place: "Archivo oculto bajo tierra",
+            mentor: "Archivara la Olvidada",
+            content: "Lectura y escritura de archivos de texto plano.",
+            description: "Pergaminos voladores custodian registros ancestrales. Aqui el aprendiz descubre como guardar memoria fuera del hechizo activo.",
+            image: "assets/world/mapa-academia.jpeg"
+        },
+        {
+            id: "final",
+            order: "Final",
+            title: "Pruebas de Magia Mayor",
+            place: "Claro encantado de desafios integradores",
+            mentor: "Capythilda, jueza del bosque",
+            content: "Proyecto final, retos integradores y diploma capibarico.",
+            description: "Las pruebas finales combinan todo lo aprendido. Solo quien domina el sendero completo recibe el reconocimiento de la academia.",
+            image: "assets/characters/Capythilda.png"
+        }
+    ],
+    worldLore: [
+        {
+            title: "El Grimorio Inicial",
+            description: "Cada aprendiz recibe un libro vivo que reacciona a sus avances y guarda los hechizos aprendidos durante el sendero."
+        },
+        {
+            title: "La Varita-Codigo",
+            description: "No lanza magia por si sola: traduce intencion, logica y estructura en conjuros que solo funcionan cuando el codigo esta bien construido."
+        },
+        {
+            title: "El Bosque de Estaciones",
+            description: "La academia no se aprende en salones cerrados, sino recorriendo lugares que representan conceptos y decisiones reales del pensamiento computacional."
+        },
+        {
+            title: "El Diploma Capibarico",
+            description: "La prueba final no es solo una meta academica; es la confirmacion de que el aprendiz ya puede conjurar soluciones por su cuenta."
+        }
+    ],
     palette: [
         { name: "Moon Mist", hex: "#EEEDF4" },
         { name: "Rose Dust", hex: "#ECD2E5" },
@@ -32,7 +157,7 @@ window.CAPYCODE_APP_DATA = {
         { name: "Recuperador de racha", color: "Amarillo", effect: "Permite reiniciar una racha de forma rapida." }
     ],
     map: {
-        background: "assets/fondo.png",
+        background: "assets/fondo1.png",
         image: "assets/world/mapa-academia.jpeg",
         caption: "El recorrido conecta biblioteca, altar, torre, circulo y talleres del bosque."
     },
@@ -47,8 +172,8 @@ window.CAPYCODE_APP_DATA = {
             description: "Los libros se abren solos y muestran como pensar paso a paso antes de escribir codigo.",
             image: "assets/Libros.jpeg",
             href: "p_opcionMultiple.html",
-            x: "72%",
-            y: "82%"
+            x: "17.8%",
+            y: "55%"
         },
         {
             id: 2,
@@ -60,8 +185,8 @@ window.CAPYCODE_APP_DATA = {
             description: "Cada frasco representa un tipo de dato y el jugador aprende a combinarlos sin romper la mezcla.",
             image: "assets/characters/CapyCandy.png",
             href: "p_completarPlantilla.html",
-            x: "56%",
-            y: "66%"
+            x: "33.8%",
+            y: "42.2%"
         },
         {
             id: 3,
@@ -73,8 +198,8 @@ window.CAPYCODE_APP_DATA = {
             description: "Las runas flotantes reaccionan a cada expresion correcta y revelan como se evalua una condicion.",
             image: "assets/characters/CapyConstelation.png",
             href: "p_opcionMultiple.html",
-            x: "38%",
-            y: "51%"
+            x: "32.5%",
+            y: "74.6%"
         },
         {
             id: 4,
@@ -86,8 +211,8 @@ window.CAPYCODE_APP_DATA = {
             description: "Cada puerta responde a una decision distinta y ayuda a entender que camino toma el programa.",
             image: "assets/Torre.jpeg",
             href: "p_opcionMultiple.html",
-            x: "52%",
-            y: "36%"
+            x: "49.5%",
+            y: "60.7%"
         },
         {
             id: 5,
@@ -99,8 +224,8 @@ window.CAPYCODE_APP_DATA = {
             description: "El agua del portal repite patrones hasta que el aprendiz domina ciclos y progreso de mision.",
             image: "assets/Infinito.jpeg",
             href: "p_ordenarLineas.html",
-            x: "69%",
-            y: "23%"
+            x: "67.9%",
+            y: "40%"
         },
         {
             id: 6,
@@ -112,8 +237,8 @@ window.CAPYCODE_APP_DATA = {
             description: "Aqui los hechizos se guardan, se nombran y se reutilizan para resolver problemas mayores.",
             image: "assets/characters/CapyKing.png",
             href: "#",
-            x: "48%",
-            y: "12%"
+            x: "89.1%",
+            y: "52.7%"
         },
         {
             id: 7,
@@ -125,8 +250,8 @@ window.CAPYCODE_APP_DATA = {
             description: "Las criaturas guardan datos en estantes encantados y muestran como leer, guardar y recorrer estructuras.",
             image: "assets/characters/CapyRuna.png",
             href: "#",
-            x: "31%",
-            y: "6%"
+            x: "77.7%",
+            y: "73.4%"
         }
     ],
     mentors: [

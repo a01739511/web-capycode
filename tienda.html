@@ -45,12 +45,11 @@
 
             <main class="shop-layout">
                 <section class="glass-surface page-hero page-hero-compact shop-intro">
-                    <p class="panel-kicker">Tienda</p>
+                    <p class="panel-kicker"></p>
                     <h1>Tienda M&aacute;gica</h1>
                     <p class="page-subtitle">Compra, desbloquea y equipa skins para seguir avanzando por la academia.</p>
+                    <p class="shop-intro-note">Explora la colecci&oacute;n completa y toca cualquier compa&ntilde;ero para ver su historia, costo y magia especial.</p>
                 </section>
-
-                <section class="glass-surface player-panel shop-player" id="store-player-card"></section>
 
                 <section class="glass-surface shop-panel shop-catalog">
                     <div class="panel-header">
@@ -72,6 +71,14 @@
                 <a class="scene-button primary" href="p_opcionMultiple.html">Ver misiones</a>
             </section>
         </div>
+    </div>
+
+    <div class="shop-modal is-hidden" id="shop-modal" aria-hidden="true">
+        <div class="shop-modal-backdrop" data-shop-close></div>
+        <section class="glass-surface shop-modal-card" role="dialog" aria-modal="true" aria-labelledby="shop-modal-title">
+            <button class="shop-modal-close" type="button" aria-label="Cerrar detalle" data-shop-close>&times;</button>
+            <div class="shop-modal-content" id="shop-modal-content"></div>
+        </section>
     </div>
 
     <script src="js/app-data.js"></script>
