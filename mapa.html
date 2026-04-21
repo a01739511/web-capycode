@@ -28,6 +28,7 @@
                     <img src="assets/menu-icon.svg" alt="">
                     <span>Men&uacute;</span>
                 </button>
+                <div class="topbar-page-title" aria-label="Mapa">Mapa</div>
                 <div class="topbar-right">
                     <div class="hud-stat">
                         <span>Racha</span>
@@ -44,11 +45,23 @@
             </header>
 
             <main class="map-stage glass-surface">
-                <div class="map-overlay-copy">
-                    <h1>Mapa de la academia</h1>
-                    <p class="panel-kicker">Ruta actual</p>
-                    <h2 id="map-spotlight">Circulo de Repeticion Infinita</h2>
-                    <p class="page-subtitle">Explora las estaciones del bosque y entra a la siguiente mision disponible desde el mapa.</p>
+                <div class="map-stage-head">
+                    <div class="map-overlay-copy">
+                        <button class="map-route-trigger" type="button" id="map-route-trigger" aria-haspopup="dialog" aria-expanded="false">
+                            <div class="map-route-trigger-copy">
+                                <p class="panel-kicker" id="route-order">Ruta 1</p>
+                                <h1 id="route-title">Bosque de la Academia</h1>
+                            </div>
+                            <span class="map-route-trigger-hint">Cambiar ruta</span>
+                        </button>
+                        <div class="map-route-popover is-hidden" id="map-route-popover" aria-hidden="true">
+                            <div class="map-route-popover-head">
+                                <p class="panel-kicker">Rutas</p>
+                                <h2>Selecciona una ruta</h2>
+                            </div>
+                            <div class="map-route-list" id="map-route-list"></div>
+                        </div>
+                    </div>
                 </div>
                 <div class="map-levels" id="map-levels"></div>
                 <div class="map-tooltip glass-surface is-hidden" id="map-tooltip"></div>
@@ -58,6 +71,7 @@
 
     <script src="js/app-data.js"></script>
     <script src="js/common.js"></script>
+    <script src="js/vendor/vanilla-tilt.min.js"></script>
     <script src="js/map.js"></script>
 </body>
 </html>

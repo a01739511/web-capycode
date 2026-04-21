@@ -16,20 +16,34 @@
         const profile = window.CapyCore.getProfile();
 
         gridRoot.innerHTML = data.shopItems.map(function (item) {
-            const owned = window.CapyCore.isUnlocked(item.id, profile);
-            const equippedNow = profile.equippedCharacter === item.id;
+            const state = getItemState(item, profile);
 
             return [
-                "<button class=\"shop-item-card shop-item-tile",
-                owned ? " is-owned" : "",
-                equippedNow ? " is-equipped" : "",
-                "\" type=\"button\" data-item-open=\"", item.id, "\" aria-haspopup=\"dialog\" aria-label=\"Ver detalles de ", item.name, "\">",
+                "<article class=\"shop-item-card shop-item-tile",
+                state.owned ? " is-owned" : "",
+                state.equippedNow ? " is-equipped" : "",
+                state.statusTone === "is-locked" ? " is-locked" : "",
+                "\" data-tilt-card=\"true\" aria-label=\"Vestuario ", item.name, "\">",
                 "<span class=\"shop-card-glow\" aria-hidden=\"true\"></span>",
+                "<div class=\"shop-card-top\">",
+                "<span class=\"shop-card-status ", state.statusTone, "\">", state.statusLabel, "</span>",
+                "<span class=\"shop-card-price\">", getPriceLabel(item.price), "</span>",
+                "</div>",
                 "<div class=\"shop-art-frame shop-art-frame-magic\">",
                 "<img src=\"", item.image, "\" alt=\"", item.name, "\">",
                 "</div>",
+                "<div class=\"shop-item-copy\">",
                 "<span class=\"shop-item-name\">", item.name, "</span>",
-                "</button>"
+                "<p class=\"shop-item-perk\">", item.perk, "</p>",
+                "</div>",
+                "<p class=\"shop-meta-note\">", state.metaNote, "</p>",
+                "<div class=\"shop-item-actions\">",
+                "<button class=\"shop-action", state.actionClass ? (" " + state.actionClass) : "", "\" type=\"button\" data-item-action-inline=\"", item.id, "\"", state.actionDisabled ? " disabled" : "", ">",
+                state.actionLabel,
+                "</button>",
+                "<button class=\"shop-secondary-action\" type=\"button\" data-item-open=\"", item.id, "\" aria-haspopup=\"dialog\" aria-label=\"Ver detalle de ", item.name, "\">Detalle</button>",
+                "</div>",
+                "</article>"
             ].join("");
         }).join("");
 
@@ -38,11 +52,19 @@
         }
 
         window.CapyCore.updateHud();
+        initializeTilt();
     }
 
     function bindEvents() {
         gridRoot.addEventListener("click", function (event) {
+            const inlineAction = event.target.closest("[data-item-action-inline]");
             const trigger = event.target.closest("[data-item-open]");
+
+            if (inlineAction) {
+                handleAction(inlineAction.dataset.itemActionInline);
+                return;
+            }
+
             if (!trigger) {
                 return;
             }
@@ -96,13 +118,7 @@
             return;
         }
 
-        const owned = window.CapyCore.isUnlocked(item.id, profile);
-        const equippedNow = profile.equippedCharacter === item.id;
-        const affordable = profile.xp >= item.price;
-        const buttonLabel = equippedNow ? "Equipado" : (owned ? "Equipar ahora" : (affordable ? "Desbloquear y equipar" : "Bloqueado"));
-        const buttonDisabled = !owned && !affordable;
-        const lockedPoints = Math.max(item.price - profile.xp, 0);
-        const statusLabel = equippedNow ? "Vestuario activo" : (owned ? "Ya desbloqueado" : "Aun sellado");
+        const state = getItemState(item, profile);
 
         modalContentRoot.innerHTML = [
             "<div class=\"shop-modal-media\">",
@@ -115,19 +131,40 @@
             "<h2 id=\"shop-modal-title\">", item.name, "</h2>",
             "<p class=\"shop-modal-description\">", getItemDescription(item), "</p>",
             "<div class=\"shop-modal-tags\">",
-            "<span class=\"shop-modal-tag\">", statusLabel, "</span>",
+            "<span class=\"shop-modal-tag\">", state.statusLabel, "</span>",
             "<span class=\"shop-modal-tag\">Costo: ", getPriceLabel(item.price), "</span>",
             "<span class=\"shop-modal-tag\">Afinidad: ", item.perk, "</span>",
             "</div>",
-            "<p class=\"shop-modal-note\">", getSupportCopy(owned, equippedNow, affordable, lockedPoints), "</p>",
+            "<p class=\"shop-modal-note\">", getSupportCopy(state), "</p>",
             "<div class=\"shop-modal-actions\">",
-            "<button class=\"shop-action", equippedNow ? " is-equipped" : "", "\" type=\"button\" data-item-action=\"", item.id, "\"", buttonDisabled ? " disabled" : "", ">",
-            buttonLabel,
+            "<button class=\"shop-action", state.actionClass ? (" " + state.actionClass) : "", "\" type=\"button\" data-item-action=\"", item.id, "\"", state.actionDisabled ? " disabled" : "", ">",
+            state.actionLabel,
             "</button>",
             "<a class=\"scene-button ghost\" href=\"p_opcionMultiple.html\">Conseguir XP</a>",
             "</div>",
             "</div>"
         ].join("");
+    }
+
+    function initializeTilt() {
+        if (!window.VanillaTilt) {
+            return;
+        }
+
+        gridRoot.querySelectorAll("[data-tilt-card]").forEach(function (card) {
+            if (card.vanillaTilt) {
+                card.vanillaTilt.destroy();
+            }
+
+            window.VanillaTilt.init(card, {
+                max: 6,
+                speed: 420,
+                scale: 1.015,
+                perspective: 1400,
+                glare: false,
+                gyroscope: false
+            });
+        });
     }
 
     function handleAction(itemId) {
@@ -157,11 +194,76 @@
         renderStore();
     }
 
+    function getItemState(item, profile) {
+        const owned = window.CapyCore.isUnlocked(item.id, profile);
+        const equippedNow = profile.equippedCharacter === item.id;
+        const affordable = profile.xp >= item.price;
+        const lockedPoints = Math.max(item.price - profile.xp, 0);
+
+        if (equippedNow) {
+            return {
+                owned: owned,
+                equippedNow: equippedNow,
+                affordable: affordable,
+                lockedPoints: lockedPoints,
+                statusLabel: "Equipado",
+                statusTone: "is-equipped",
+                actionLabel: "En uso",
+                actionDisabled: true,
+                actionClass: "is-equipped",
+                metaNote: "Activo en tu perfil."
+            };
+        }
+
+        if (owned) {
+            return {
+                owned: owned,
+                equippedNow: equippedNow,
+                affordable: affordable,
+                lockedPoints: lockedPoints,
+                statusLabel: "Desbloqueado",
+                statusTone: "is-owned",
+                actionLabel: "Equipar",
+                actionDisabled: false,
+                actionClass: "",
+                metaNote: "Listo para equipar."
+            };
+        }
+
+        if (affordable) {
+            return {
+                owned: owned,
+                equippedNow: equippedNow,
+                affordable: affordable,
+                lockedPoints: lockedPoints,
+                statusLabel: "Por comprar",
+                statusTone: "is-buyable",
+                actionLabel: "Comprar",
+                actionDisabled: false,
+                actionClass: "is-buyable",
+                metaNote: "Compra disponible."
+            };
+        }
+
+        return {
+            owned: owned,
+            equippedNow: equippedNow,
+            affordable: affordable,
+            lockedPoints: lockedPoints,
+            statusLabel: "XP insuficiente",
+            statusTone: "is-locked",
+            actionLabel: "No alcanza",
+            actionDisabled: true,
+            actionClass: "is-locked",
+            metaNote: "Te faltan XP " + window.CapyCore.formatNumber(lockedPoints) + "."
+        };
+    }
+
     function renderSidebarSkin(item) {
         document.querySelectorAll("[data-sidebar-skin]").forEach(function (element) {
             element.innerHTML = [
                 "<a class=\"sidebar-skin-link\" href=\"perfil.html#profile-collection-section\">",
-                "<p class=\"panel-kicker\">Skin activa</p>",
+                "<p class=\"panel-kicker\">Vestuario activo</p>",
                 "<div class=\"sidebar-skin-art\"><img src=\"", item.image, "\" alt=\"", item.name, "\"></div>",
                 "<div class=\"sidebar-skin-copy\">",
                 "<strong>", item.name, "</strong>",
@@ -176,20 +278,20 @@
         return price === 0 ? "Gratis" : "XP " + window.CapyCore.formatNumber(price);
     }
 
-    function getSupportCopy(owned, equippedNow, affordable, lockedPoints) {
-        if (equippedNow) {
-            return "Este es tu compa&ntilde;ero activo. Puedes cerrar esta ventana y seguir explorando la colecci&oacute;n.";
+    function getSupportCopy(state) {
+        if (state.equippedNow) {
+            return "Este es tu vestuario activo. Puedes cerrar esta ventana y seguir explorando la colecci&oacute;n.";
         }
 
-        if (owned) {
+        if (state.owned) {
             return "Ya forma parte de tu colecci&oacute;n. Equ&iacute;palo para cambiar el estilo de tu aventura.";
         }
 
-        if (affordable) {
+        if (state.affordable) {
             return "Tienes puntos suficientes para desbloquearlo ahora mismo y sumarlo a tu equipo.";
         }
 
-        return "Te faltan XP " + window.CapyCore.formatNumber(lockedPoints) + " para romper el sello de este vestuario.";
+        return "Te faltan XP " + window.CapyCore.formatNumber(state.lockedPoints) + " para romper el sello de este vestuario.";
     }
 
     function getItemDescription(item) {
@@ -205,6 +307,6 @@
             CapyConstelation: "Viajero estelar que lee mapas del cielo y encuentra respuestas donde otros solo ven oscuridad."
         };
 
-        return descriptions[item.id] || ("Un compa&ntilde;ero de la academia con la afinidad especial de " + item.perk + ".");
+        return descriptions[item.id] || ("Un vestuario de la academia con la afinidad especial de " + item.perk + ".");
     }
 }());

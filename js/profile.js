@@ -34,7 +34,7 @@
         }
 
         heroRoot.innerHTML = [
-            "<article class=\"profile-hero-card glass-surface\">",
+            "<article class=\"profile-hero-card glass-surface\" data-interactive-tilt=\"profile-hero\">",
             "<div class=\"profile-hero-copy\">",
             "<p class=\"panel-kicker\">Perfil del aventurero</p>",
             "<h2 data-player-name></h2>",
@@ -44,11 +44,9 @@
             "<div><span>Racha</span><strong data-player-streak></strong></div>",
             "<div><span>XP</span><strong data-player-xp></strong></div>",
             "</div>",
-            "<p class=\"profile-note\">Tu compa&ntilde;ero activo es ", equipped.name, ". Revisa tu armario, cambia de vestuario cuando quieras y sigue sumando poder para la siguiente expedici&oacute;n.</p>",
+            "<p class=\"profile-note\">Tu vestuario activo es ", equipped.name, ". Revisa tu armario, cambia de vestuario cuando quieras y sigue sumando poder para la siguiente expedici&oacute;n.</p>",
             "<div class=\"profile-hero-actions\">",
-            "<a class=\"scene-button primary\" href=\"mapa.html\">Continuar aventura</a>",
-            "<a class=\"scene-button ghost\" href=\"tienda.html\">Ver tienda</a>",
-            "<button class=\"scene-button ghost\" type=\"button\" data-action=\"logout\">Salir</button>",
+            "<button class=\"scene-button danger\" type=\"button\" data-action=\"logout\">Cerrar sesi&oacute;n</button>",
             "</div>",
             "</div>",
             "<div class=\"profile-hero-stage\">",
@@ -63,6 +61,7 @@
         collectionCountRoot.textContent = unlockedItems.length + "/" + data.shopItems.length;
         renderCollection(profile);
         window.CapyCore.updateHud();
+        window.CapyCore.refreshInteractiveTilts();
     }
 
     function renderCollection(profile) {
@@ -84,12 +83,17 @@
             "<img src=\"", getTransparentImage(currentItem), "\" alt=\"", currentItem.name, "\">",
             "</div>",
             "<div class=\"collection-focus-copy\">",
+            "<div class=\"collection-focus-summary\">",
             "<span class=\"collection-status\">", equippedNow ? "Equipado" : "Desbloqueado", "</span>",
             "<h3>", currentItem.name, "</h3>",
             "<p class=\"collection-focus-perk\">", currentItem.perk, "</p>",
             "<p class=\"collection-focus-description\">", getItemDescription(currentItem), "</p>",
-            "<div class=\"collection-focus-footer\">",
+            "</div>",
+            "<div class=\"collection-focus-actions\">",
+            "<div class=\"collection-focus-price-block\">",
+            "<span class=\"collection-focus-price-label\">", currentItem.price === 0 ? "Estado" : "Costo", "</span>",
             "<strong>", currentItem.price === 0 ? "Vestuario base" : ("XP " + window.CapyCore.formatNumber(currentItem.price)), "</strong>",
+            "</div>",
             "<button class=\"shop-action", equippedNow ? " is-equipped" : "", "\" type=\"button\" data-collection-equip=\"", currentItem.id, "\"", equippedNow ? " disabled" : "", ">",
             equippedNow ? "Equipado" : "Equipar",
             "</button>",
@@ -202,8 +206,8 @@
     function renderSidebarSkin(item) {
         document.querySelectorAll("[data-sidebar-skin]").forEach(function (element) {
             element.innerHTML = [
-                "<a class=\"sidebar-skin-link\" href=\"perfil.html#profile-collection-section\">",
-                "<p class=\"panel-kicker\">Skin activa</p>",
+                "<a class=\"sidebar-skin-link\" data-interactive-tilt=\"sidebar-card\" href=\"perfil.html#profile-collection-section\">",
+                "<p class=\"panel-kicker\">Vestuario activo</p>",
                 "<div class=\"sidebar-skin-art\"><img src=\"", item.image, "\" alt=\"", item.name, "\"></div>",
                 "<div class=\"sidebar-skin-copy\">",
                 "<strong>", item.name, "</strong>",
@@ -212,6 +216,8 @@
                 "</a>"
             ].join("");
         });
+
+        window.CapyCore.refreshInteractiveTilts();
     }
 
     function getItemDescription(item) {
@@ -227,6 +233,6 @@
             CapyConstelation: "Trae visi&oacute;n estelar y una lectura m&aacute;s clara del camino entre portales y desaf&iacute;os."
         };
 
-        return descriptions[item.id] || ("Un compa&ntilde;ero con la afinidad especial de " + item.perk + ".");
+        return descriptions[item.id] || ("Un vestuario con la afinidad especial de " + item.perk + ".");
     }
 }());

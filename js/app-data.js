@@ -2,7 +2,7 @@ window.CAPYCODE_APP_DATA = {
     academy: {
         title: "La Academia CapyCode",
         subtitle: "Un sendero encantado donde cada tema es una estacion del bosque magico.",
-        intro: "Capythilda recibe a cada aprendiz con un grimorio, una varita-codigo y un companero capaz de convertir conceptos de programacion en retos claros, visuales y jugables.",
+        intro: "Capythilda recibe a cada aprendiz con un grimorio, una varita-codigo y un recorrido capaz de convertir conceptos de programacion en retos claros, visuales y jugables.",
         longStory: [
             "La Academia CapyCode se despliega como un sendero encantado entre arboles brillantes, construcciones flotantes y criaturas magicas que representan desafios de codigo.",
             "Todo comienza en la Torre de Capythilda, donde la directora entrega el primer grimorio, presenta la varita-codigo y explica que cada estacion del bosque guarda una pieza del conocimiento arcano de la programacion.",
@@ -157,13 +157,25 @@ window.CAPYCODE_APP_DATA = {
         { name: "Recuperador de racha", color: "Amarillo", effect: "Permite reiniciar una racha de forma rapida." }
     ],
     map: {
+        currentRouteId: "ruta-bosque-academia",
+        title: "Mapa de la academia",
         background: "assets/fondo1.png",
         image: "assets/world/mapa-academia.jpeg",
-        caption: "El recorrido conecta biblioteca, altar, torre, circulo y talleres del bosque."
+        caption: "El recorrido conecta biblioteca, altar, torre, circulo y talleres del bosque.",
+        routes: [
+            {
+                id: "ruta-bosque-academia",
+                order: "Ruta 1",
+                title: "Bosque de la Academia",
+                background: "assets/fondo1.png",
+                unlockLevel: 1
+            }
+        ]
     },
     levels: [
         {
             id: 1,
+            routeId: "ruta-bosque-academia",
             title: "Nivel 1",
             topic: "Grimorio del Algoritmo Antiguo",
             place: "Biblioteca flotante",
@@ -177,6 +189,7 @@ window.CAPYCODE_APP_DATA = {
         },
         {
             id: 2,
+            routeId: "ruta-bosque-academia",
             title: "Nivel 2",
             topic: "Pocimas de Tipo Puro",
             place: "Laboratorio de cristales",
@@ -190,6 +203,7 @@ window.CAPYCODE_APP_DATA = {
         },
         {
             id: 3,
+            routeId: "ruta-bosque-academia",
             title: "Nivel 3",
             topic: "Altar de las Expresiones",
             place: "Santuario de runas",
@@ -203,6 +217,7 @@ window.CAPYCODE_APP_DATA = {
         },
         {
             id: 4,
+            routeId: "ruta-bosque-academia",
             title: "Nivel 4",
             topic: "Hechizos Condicionales",
             place: "Torre de puertas vivas",
@@ -216,6 +231,7 @@ window.CAPYCODE_APP_DATA = {
         },
         {
             id: 5,
+            routeId: "ruta-bosque-academia",
             title: "Nivel 5",
             topic: "Circulo de Repeticion Infinita",
             place: "Fuente del bosque brillante",
@@ -229,6 +245,7 @@ window.CAPYCODE_APP_DATA = {
         },
         {
             id: 6,
+            routeId: "ruta-bosque-academia",
             title: "Nivel 6",
             topic: "Funciones Encantadas",
             place: "Taller de hechizos reutilizables",
@@ -242,6 +259,7 @@ window.CAPYCODE_APP_DATA = {
         },
         {
             id: 7,
+            routeId: "ruta-bosque-academia",
             title: "Nivel 7",
             topic: "Biblioteca de Criaturas y Archivos",
             place: "Archivo viviente",
@@ -373,7 +391,7 @@ window.CAPYCODE_APP_DATA = {
     achievements: [
         { title: "Conocimiento Magico", description: "Ganaste tus primeros 50 puntos de magia." },
         { title: "Racha Encendida", description: "Mantienes encendida la energia del bosque brillante." },
-        { title: "Coleccionista Arcano", description: "Desbloqueaste nuevos companeros en la tienda." },
+        { title: "Coleccionista Arcano", description: "Desbloqueaste nuevos vestuarios en la tienda." },
         { title: "Explorador del Mapa", description: "Recorriste las estaciones principales de la academia." }
     ]
 };

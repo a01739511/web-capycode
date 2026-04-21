@@ -14,6 +14,7 @@
         renderSidebarSkins();
         bindLogout();
         bindSidebarToggle();
+        refreshInteractiveTilts();
     });
 
     function ensureSession() {
@@ -195,8 +196,8 @@
 
         document.querySelectorAll("[data-sidebar-skin]").forEach(function (element) {
             element.innerHTML = [
-                "<a class=\"sidebar-skin-link\" href=\"perfil.html#profile-collection-section\">",
-                "<p class=\"panel-kicker\">Skin activa</p>",
+                "<a class=\"sidebar-skin-link\" data-interactive-tilt=\"sidebar-card\" href=\"perfil.html#profile-collection-section\">",
+                "<p class=\"panel-kicker\">Vestuario activo</p>",
                 "<div class=\"sidebar-skin-art\"><img src=\"", equipped.image, "\" alt=\"", equipped.name, "\"></div>",
                 "<div class=\"sidebar-skin-copy\">",
                 "<strong>", equipped.name, "</strong>",
@@ -205,6 +206,8 @@
                 "</a>"
             ].join("");
         });
+
+        refreshInteractiveTilts();
     }
 
     function renderSidebarNav() {
@@ -234,13 +237,62 @@
         }
 
         const toggleButtons = document.querySelectorAll("[data-action=\"toggle-sidebar\"]");
+        let animationTimer = 0;
 
         toggleButtons.forEach(function (button) {
             button.addEventListener("click", function () {
-                document.body.classList.toggle("sidebar-collapsed");
-                localStorage.setItem("capycodeSidebarCollapsed", document.body.classList.contains("sidebar-collapsed") ? "true" : "false");
+                window.clearTimeout(animationTimer);
+                document.body.classList.add("sidebar-animating");
+
+                window.requestAnimationFrame(function () {
+                    document.body.classList.toggle("sidebar-collapsed");
+                    localStorage.setItem("capycodeSidebarCollapsed", document.body.classList.contains("sidebar-collapsed") ? "true" : "false");
+                });
+
+                animationTimer = window.setTimeout(function () {
+                    document.body.classList.remove("sidebar-animating");
+                }, 420);
             });
         });
+    }
+
+    function refreshInteractiveTilts() {
+        if (!window.VanillaTilt) {
+            return;
+        }
+
+        document.querySelectorAll("[data-interactive-tilt]").forEach(function (element) {
+            const tiltType = element.dataset.interactiveTilt || "";
+            const options = getTiltOptions(tiltType);
+
+            if (element.vanillaTilt) {
+                element.vanillaTilt.destroy();
+            }
+
+            window.VanillaTilt.init(element, options);
+        });
+    }
+
+    function getTiltOptions(tiltType) {
+        if (tiltType === "profile-hero") {
+            return {
+                max: 5,
+                speed: 420,
+                scale: 1.012,
+                perspective: 1500,
+                glare: false,
+                gyroscope: false
+            };
+        }
+
+        return {
+            max: 4,
+            speed: 420,
+            scale: 1.01,
+            perspective: 1500,
+            glare: false,
+            gyroscope: false
+        };
     }
 
     function getShopItem(id) {
@@ -334,6 +386,7 @@
         isUnlocked: isUnlocked,
         formatNumber: formatNumber,
         updateHud: updateHud,
-        completeActivity: completeActivity
+        completeActivity: completeActivity,
+        refreshInteractiveTilts: refreshInteractiveTilts
     };
 }());
