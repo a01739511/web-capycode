@@ -9,6 +9,7 @@
     const stage = root ? root.closest(".map-stage") : null;
     const data = window.CAPYCODE_APP_DATA;
     const LOCK_ICON_PATH = "assets/lock-icon.svg";
+    const LEVEL_ORB_PATH = "assets/esfera_nivel.png";
     const ACTIVE_ROUTE_KEY = "capycodeActiveRouteId";
 
     if (!root || !routeList || !routeTrigger || !routePopover || !routeOrder || !routeTitle || !tooltip || !stage || !data || !window.CapyCore) {
@@ -41,7 +42,10 @@
             return [
                 "<a class=\"level-node is-", status, "\" href=\"", href, "\" data-level-id=\"", level.id, "\" aria-disabled=\"", status === "locked" ? "true" : "false", "\" style=\"left:", level.x, "; top:", level.y, ";\">",
                 "<span class=\"level-orb-shell\">",
-                "<span class=\"level-orb\">", level.id, "</span>",
+                "<span class=\"level-orb\">",
+                "<img class=\"level-orb-image\" src=\"", LEVEL_ORB_PATH, "\" alt=\"\" aria-hidden=\"true\">",
+                "<span class=\"level-orb-number\">", level.id, "</span>",
+                "</span>",
                 lockMarkup,
                 "</span>",
                 "<span class=\"level-label\">", level.title, "</span>",
