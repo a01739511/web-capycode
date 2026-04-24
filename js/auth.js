@@ -21,7 +21,7 @@
         const minimumPasswordLength = document.body.dataset.authMode === "register" ? 8 : 3;
 
         if (!username || !password) {
-            showMessage("Completa usuario y contrasena para entrar.", "error");
+            showMessage("Completa usuario y contraseña para entrar.", "error");
             return;
         }
 

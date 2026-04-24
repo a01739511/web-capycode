@@ -362,6 +362,10 @@ select {
 .topbar-page-title {
     grid-area: title;
     justify-self: center;
+    max-width: min(58vw, 640px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     text-align: center;
     font-family: var(--font-display);
     font-size: clamp(1.1rem, 2.2vw, 1.45rem);
@@ -479,7 +483,7 @@ body.sidebar-collapsed .scene-shell {
 
 .mission-hero {
     display: grid;
-    grid-template-columns: minmax(210px, 0.8fr) minmax(220px, 0.48fr) minmax(0, 1fr);
+    grid-template-columns: minmax(220px, 0.48fr) minmax(0, 1fr);
     gap: 0.75rem;
     align-items: center;
     padding: 0.72rem 0.85rem;
@@ -1751,7 +1755,7 @@ body.sidebar-animating .sidebar-main {
 .map-route-popover {
     position: relative;
     z-index: 12;
-    width: min(360px, calc(100vw - 2rem));
+    width: min(430px, calc(100vw - 2rem));
     position: absolute;
     top: calc(100% + 0.75rem);
     left: 0;
@@ -1759,7 +1763,7 @@ body.sidebar-animating .sidebar-main {
     display: grid;
     grid-template-rows: auto minmax(0, 1fr);
     gap: 0.75rem;
-    max-height: min(560px, calc(60svh - 13rem));
+    max-height: min(620px, calc(72svh - 8rem));
     border-radius: 24px;
     background:
         radial-gradient(circle at top, rgba(143, 238, 255, 0.12), transparent 42%),
@@ -2191,6 +2195,9 @@ body.sidebar-animating .sidebar-main {
     gap: 0.75rem;
     pointer-events: none;
     overflow: hidden;
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    transition: opacity 0.14s ease, transform 0.14s ease, visibility 0.14s ease;
 }
 
 .map-tooltip::before {
@@ -2204,6 +2211,7 @@ body.sidebar-animating .sidebar-main {
 .map-tooltip.is-hidden {
     opacity: 0;
     visibility: hidden;
+    transform: translateY(5px) scale(0.985);
 }
 
 .map-tooltip h3 {
@@ -2866,12 +2874,10 @@ body.is-modal-open {
     grid-template-columns: 1.15fr 0.85fr;
     gap: 1rem;
     align-items: center;
-    transform-style: preserve-3d;
-    will-change: transform;
 }
 
 .profile-hero-copy {
-    transform: translateZ(20px);
+    min-width: 0;
 }
 
 .profile-hero-copy h2 {
@@ -2896,6 +2902,21 @@ body.is-modal-open {
     padding: 0.65rem 0.75rem;
     border-radius: 18px;
     background: rgba(255, 255, 255, 0.06);
+}
+
+.profile-metric-card.has-icon {
+    display: grid;
+    grid-template-columns: 30px minmax(0, 1fr);
+    align-items: center;
+    column-gap: 0.55rem;
+}
+
+.profile-metric-card.has-icon img {
+    grid-row: 1 / span 2;
+    width: 30px;
+    height: 30px;
+    object-fit: contain;
+    filter: drop-shadow(0 8px 16px rgba(255, 199, 95, 0.28));
 }
 
 .profile-metrics span {
@@ -2928,7 +2949,6 @@ body.is-modal-open {
 .profile-hero-stage {
     display: grid;
     place-items: center;
-    transform: translateZ(28px);
 }
 
 .profile-hero-art-shell {
@@ -4255,6 +4275,7 @@ body.is-modal-open {
     }
 
     .topbar-page-title {
+        max-width: 100%;
         font-size: 1.05rem;
     }
 
@@ -4349,6 +4370,10 @@ body.is-modal-open {
         grid-template-rows: auto minmax(0, 1fr);
     }
 
+    .quiz-page .mission-hero {
+        grid-template-columns: 1fr;
+    }
+
     .mission-hero-heading,
     .mission-progress-head {
         align-items: start;
@@ -4417,7 +4442,7 @@ body.is-modal-open {
     }
 
     .map-route-popover {
-        width: min(100%, 320px);
+        width: min(100%, 360px);
     }
 
     .shop-item-card {

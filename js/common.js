@@ -230,7 +230,8 @@
             { href: "mapa.html", label: "Mapa", icon: "assets/nav-map.svg" },
             { href: "tienda.html", label: "Tienda", icon: "assets/nav-store.svg" },
             { href: "about.html", label: "Historia", icon: "assets/nav-story.svg" },
-            { href: "tutorial.html", label: "Tutorial", icon: "assets/magic-wand.svg" }
+            { href: "tutorial.html", label: "Tutorial", icon: "assets/magic-wand.svg" },
+            { href: "perfil.html", label: "Perfil", icon: "assets/user-avatar.svg" }
         ];
 
         document.querySelectorAll("[data-sidebar-nav]").forEach(function (nav) {
@@ -282,7 +283,7 @@
                 key: "Tab",
                 label: "Siguiente control",
                 description: "Avanza por botones, enlaces, campos y tarjetas interactivas.",
-                group: "Navegacion",
+                group: "Navegación",
                 order: 1,
                 displayOnly: true
             },
@@ -292,7 +293,7 @@
                 shiftKey: true,
                 label: "Control anterior",
                 description: "Regresa al control interactivo previo.",
-                group: "Navegacion",
+                group: "Navegación",
                 order: 2,
                 displayOnly: true
             },
@@ -300,8 +301,8 @@
                 id: "activate-focused",
                 key: "Enter",
                 label: "Activar",
-                description: "Activa el boton o enlace enfocado.",
-                group: "Navegacion",
+                description: "Activa el botón o enlace enfocado.",
+                group: "Navegación",
                 order: 3,
                 displayOnly: true
             },
@@ -342,7 +343,7 @@
                 id: "nav-tutorial",
                 key: "u",
                 label: "Tutorial",
-                description: "Abre la pagina de tutorial y hotkeys.",
+                description: "Abre la página de tutorial y hotkeys.",
                 group: "Atajos globales",
                 order: 13,
                 action: function () {
@@ -363,7 +364,7 @@
             {
                 id: "toggle-sidebar",
                 key: "s",
-                label: "Menu lateral",
+                label: "Menú lateral",
                 description: "Contrae o expande la barra lateral.",
                 group: "Atajos globales",
                 order: 15,

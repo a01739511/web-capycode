@@ -34,15 +34,15 @@
         }
 
         heroRoot.innerHTML = [
-            "<article class=\"profile-hero-card glass-surface\" data-interactive-tilt=\"profile-hero\">",
+            "<article class=\"profile-hero-card glass-surface\">",
             "<div class=\"profile-hero-copy\">",
             "<p class=\"panel-kicker\">Perfil del aventurero</p>",
             "<h2 data-player-name></h2>",
             "<p class=\"profile-title\" data-player-title></p>",
             "<div class=\"profile-metrics\">",
-            "<div><span>Nivel</span><strong>", profile.level, "</strong></div>",
-            "<div><span>Racha</span><strong data-player-streak></strong></div>",
-            "<div><span>XP</span><strong data-player-xp></strong></div>",
+            "<div class=\"profile-metric-card\"><span>Nivel</span><strong>", profile.level, "</strong></div>",
+            "<div class=\"profile-metric-card has-icon\"><img src=\"assets/hud-streak.svg\" alt=\"\" aria-hidden=\"true\"><span>Racha</span><strong data-player-streak></strong></div>",
+            "<div class=\"profile-metric-card has-icon\"><img src=\"assets/hud-xp.svg\" alt=\"\" aria-hidden=\"true\"><span>XP</span><strong data-player-xp></strong></div>",
             "</div>",
             "<p class=\"profile-note\">Tu vestuario activo es ", getItemName(equipped), ". Revisa tu armario, cambia de vestuario cuando quieras.</p>",
             "<div class=\"profile-hero-actions\">",

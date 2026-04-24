@@ -394,7 +394,7 @@
             routesWithPlaceholders.push({
                 id: "ruta-proximamente-" + (routesWithPlaceholders.length + 1),
                 order: "Ruta " + (routesWithPlaceholders.length + 1),
-                title: "Proximamente",
+                title: "Próximamente",
                 background: data.map && data.map.background ? data.map.background : "",
                 unlockLevel: 999,
                 isComingSoon: true
@@ -444,7 +444,7 @@
 
         if (isComingSoon) {
             return {
-                label: "Proximamente",
+                label: "Próximamente",
                 isLocked: false,
                 isComingSoon: true,
                 isSelectable: false

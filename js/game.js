@@ -233,7 +233,7 @@
             renderNumeric(question);
             break;
         default:
-            renderEmptyState("Este reto aun no esta soportado.");
+            renderEmptyState("Este reto aún no está soportado.");
             break;
         }
     }
@@ -296,13 +296,13 @@
             article.draggable = true;
             article.dataset.index = String(index);
             article.innerHTML = [
-                "<div class=\"drag-pill\"><img src=\"assets/menu-icon.svg\" alt=\"Mover linea\"></div>",
+                "<div class=\"drag-pill\"><img src=\"assets/menu-icon.svg\" alt=\"Mover línea\"></div>",
                 "<div class=\"sortable-row-code\">",
                 buildCodeLineMarkup(item.text, index + 1, state.orderItems.length),
                 "</div>",
                 "<div class=\"sortable-row-controls\">",
-                "<button class=\"order-move-button\" type=\"button\" data-order-move=\"up\" aria-label=\"Subir linea ", index + 1, "\"", index === 0 ? " disabled" : "", ">&uarr;</button>",
-                "<button class=\"order-move-button\" type=\"button\" data-order-move=\"down\" aria-label=\"Bajar linea ", index + 1, "\"", index === state.orderItems.length - 1 ? " disabled" : "", ">&darr;</button>",
+                "<button class=\"order-move-button\" type=\"button\" data-order-move=\"up\" aria-label=\"Subir línea ", index + 1, "\"", index === 0 ? " disabled" : "", ">&uarr;</button>",
+                "<button class=\"order-move-button\" type=\"button\" data-order-move=\"down\" aria-label=\"Bajar línea ", index + 1, "\"", index === state.orderItems.length - 1 ? " disabled" : "", ">&darr;</button>",
                 "</div>"
             ].join("");
             article.addEventListener("dragstart", handleDragStart);
@@ -454,7 +454,7 @@
         updateProfile(result.correct);
         clearFeedback();
         resetVisibleSelections(question);
-        showAnswerPopup(result.correct ? "Respuesta correcta" : "Respuesta incorrecta", result.correct ? "Puedes avanzar al siguiente reto." : "Ajusta tu respuesta e intentalo otra vez.", result.correct ? "success" : "error");
+        showAnswerPopup(result.correct ? "Respuesta correcta" : "Respuesta incorrecta", result.correct ? "Puedes avanzar al siguiente reto." : "Ajusta tu respuesta e inténtalo otra vez.", result.correct ? "success" : "error");
 
         if (result.correct) {
             state.awaitingNext = true;
@@ -472,7 +472,7 @@
         switch (question.tipo) {
         case "opcion_multiple":
             if (!state.selectedOption) {
-                return { valid: false, message: "Selecciona una opcion antes de comprobar." };
+                return { valid: false, message: "Selecciona una opción antes de comprobar." };
             }
             return {
                 valid: true,
@@ -502,7 +502,7 @@
             };
         case "seleccionar_lineas":
             if (!state.selectedLines.length) {
-                return { valid: false, message: "Selecciona al menos una linea." };
+                return { valid: false, message: "Selecciona al menos una línea." };
             }
             return {
                 valid: true,
@@ -511,7 +511,7 @@
             };
         case "respuesta_numerica":
             if (state.numericAnswer === "") {
-                return { valid: false, message: "Escribe un numero antes de comprobar." };
+                return { valid: false, message: "Escribe un número antes de comprobar." };
             }
             return {
                 valid: true,
@@ -563,12 +563,12 @@
             : "Reto completado";
         const rewardCopy = isFinalStage
             ? (outcome && outcome.firstCompletion
-                ? "Has ganado +" + COMPLETION_BONUS + " XP extra y el siguiente nivel ya quedo desbloqueado en el mapa."
+                ? "Has ganado +" + COMPLETION_BONUS + " XP extra y el siguiente nivel ya quedó desbloqueado en el mapa."
                 : "Este nivel ya estaba completado. Puedes repetirlo para seguir practicando.")
-            : "Has superado esta prueba. Continua con el siguiente tipo de ejercicio para avanzar por el nivel.";
+            : "Has superado esta prueba. Continúa con el siguiente tipo de ejercicio para avanzar por el nivel.";
         const celebrationImage = getCelebrationCharacterImage(equipped);
         const completionKicker = isFinalStage
-            ? (outcome && outcome.firstCompletion ? "Nivel superado" : "Practica completada")
+            ? (outcome && outcome.firstCompletion ? "Nivel superado" : "Práctica completada")
             : "Reto superado";
 
         app.classList.add("is-complete");
@@ -698,13 +698,32 @@
             return "Ruta de algoritmos";
         }
 
-        const parts = [levelMeta.title];
+        const route = getRouteMeta(levelMeta.routeId);
+        const parts = [];
+
+        if (route && route.order) {
+            parts.push(route.order);
+        }
+
+        if (levelMeta.title) {
+            parts.push(levelMeta.title);
+        }
 
         if (levelMeta.topic) {
             parts.push(levelMeta.topic);
         }
 
         return parts.join(" - ");
+    }
+
+    function getRouteMeta(routeId) {
+        const routes = window.CAPYCODE_APP_DATA && window.CAPYCODE_APP_DATA.map && Array.isArray(window.CAPYCODE_APP_DATA.map.routes)
+            ? window.CAPYCODE_APP_DATA.map.routes
+            : [];
+
+        return routes.find(function (route) {
+            return route.id === routeId;
+        }) || null;
     }
 
     function moveOrderItem(index, direction) {
