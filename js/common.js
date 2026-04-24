@@ -73,18 +73,18 @@
         return normalizeProfile({
             username: username,
             userCode: buildUserCode(username),
-            title: "Aprendiz de Capythilda",
-            level: 5,
-            xp: 2450,
-            streak: 15,
+            title: "Novato del Grimorio",
+            level: 1,
+            xp: 0,
+            streak: 0,
             equippedCharacter: "CapyBlack",
-            unlockedCharacters: ["CapyBlack", "CapyAqua", "CapyKing"],
-            completedLevels: [1, 2, 3, 4, 5],
+            unlockedCharacters: ["CapyBlack"],
+            completedLevels: [],
             completedActivities: [],
             missionProgress: {
-                mission: { current: 8, total: 12 },
-                order: { current: 9, total: 12 },
-                template: { current: 10, total: 12 }
+                mission: { current: 0, total: 5 },
+                order: { current: 0, total: 5 },
+                template: { current: 0, total: 5 }
             }
         }, username);
     }
@@ -103,16 +103,29 @@
             completedLevels: Array.isArray(profile && profile.completedLevels) ? profile.completedLevels.slice() : [],
             completedActivities: Array.isArray(profile && profile.completedActivities) ? profile.completedActivities.slice() : [],
             missionProgress: {
-                mission: normalizeProgress(profile && profile.missionProgress && profile.missionProgress.mission, 8, 12),
-                order: normalizeProgress(profile && profile.missionProgress && profile.missionProgress.order, 9, 12),
-                template: normalizeProgress(profile && profile.missionProgress && profile.missionProgress.template, 10, 12)
+                mission: normalizeProgress(profile && profile.missionProgress && profile.missionProgress.mission, 0, 5),
+                order: normalizeProgress(profile && profile.missionProgress && profile.missionProgress.order, 0, 5),
+                template: normalizeProgress(profile && profile.missionProgress && profile.missionProgress.template, 0, 5)
             }
         };
+        const totalLevels = getTotalPlayableLevels();
 
         normalized.title = buildTitle(normalized.level);
         normalized.unlockedCharacters = uniqueList(normalized.unlockedCharacters);
-        normalized.completedLevels = uniqueNumberList(normalized.completedLevels);
+        normalized.completedLevels = uniqueNumberList(normalized.completedLevels).filter(function (levelId) {
+            return levelId >= 1 && levelId <= totalLevels;
+        });
         normalized.completedActivities = uniqueList(normalized.completedActivities);
+
+        if (normalized.completedLevels.length) {
+            const highestCompleted = Math.max.apply(null, normalized.completedLevels);
+            if (normalized.level <= highestCompleted) {
+                normalized.level = Math.min(highestCompleted + 1, totalLevels + 1);
+            }
+        }
+
+        normalized.level = Math.max(1, Math.min(normalized.level, totalLevels + 1));
+        normalized.title = buildTitle(normalized.level);
 
         if (!normalized.unlockedCharacters.includes("CapyBlack")) {
             normalized.unlockedCharacters.unshift("CapyBlack");
@@ -285,6 +298,17 @@
             };
         }
 
+        if (tiltType === "shop-card") {
+            return {
+                max: 6,
+                speed: 420,
+                scale: 1.015,
+                perspective: 1400,
+                glare: false,
+                gyroscope: false
+            };
+        }
+
         return {
             max: 4,
             speed: 420,
@@ -345,6 +369,49 @@
         };
     }
 
+    function completeLevel(levelId, config) {
+        const profile = getProfile();
+        const numericLevelId = readNumber(levelId, 0);
+        const totalLevels = getTotalPlayableLevels();
+        const bonusXp = config && config.bonusXp ? Number(config.bonusXp) : 0;
+        const unlockCharacter = config && config.unlockCharacter ? config.unlockCharacter : "";
+        const nextLevel = Math.min(numericLevelId + 1, totalLevels + 1);
+        let firstCompletion = false;
+
+        if (numericLevelId < 1 || numericLevelId > totalLevels) {
+            return {
+                firstCompletion: false,
+                profile: profile
+            };
+        }
+
+        if (!profile.completedLevels.includes(numericLevelId)) {
+            profile.completedLevels.push(numericLevelId);
+            profile.xp += bonusXp;
+            firstCompletion = true;
+        }
+
+        if (nextLevel > profile.level) {
+            profile.level = nextLevel;
+        }
+
+        if (unlockCharacter && !profile.unlockedCharacters.includes(unlockCharacter)) {
+            profile.unlockedCharacters.push(unlockCharacter);
+        }
+
+        profile.title = buildTitle(profile.level);
+        saveProfile(profile);
+        updateHud();
+        return {
+            firstCompletion: firstCompletion,
+            profile: profile
+        };
+    }
+
+    function getTotalPlayableLevels() {
+        return Math.max(1, Array.isArray(data.levels) ? data.levels.length : 1);
+    }
+
     function formatNumber(value) {
         return Number(value).toLocaleString("es-MX");
     }
@@ -387,6 +454,7 @@
         formatNumber: formatNumber,
         updateHud: updateHud,
         completeActivity: completeActivity,
+        completeLevel: completeLevel,
         refreshInteractiveTilts: refreshInteractiveTilts
     };
 }());

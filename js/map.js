@@ -17,7 +17,8 @@
     }
 
     const profile = window.CapyCore.getProfile();
-    const currentLevel = profile.level;
+    const currentLevel = Number(profile.level || 1);
+    const completedLevels = new Set(Array.isArray(profile.completedLevels) ? profile.completedLevels.map(Number) : []);
     const routes = getRoutes();
     let activeRoute = resolveActiveRoute();
     let activeNode = null;
@@ -32,8 +33,10 @@
     window.addEventListener("scroll", syncTooltipPosition, true);
 
     function renderLevels() {
-        root.innerHTML = getRouteLevels().map(function (level) {
-            const status = resolveStatus(level.id, currentLevel);
+        const routeLevels = getPositionedRouteLevels();
+
+        root.innerHTML = buildAmbientOrbMarkup(routeLevels) + routeLevels.map(function (level) {
+            const status = resolveStatus(level.id);
             const href = status === "locked" ? "#" : level.href;
             const lockMarkup = status === "locked"
                 ? "<span class=\"level-lock-badge\" aria-hidden=\"true\"><img src=\"" + LOCK_ICON_PATH + "\" alt=\"\"></span>"
@@ -67,12 +70,36 @@
             });
             node.addEventListener("blur", hideTooltip);
 
-            if (resolveStatus(level.id, currentLevel) === "locked") {
+            if (resolveStatus(level.id) === "locked") {
                 node.addEventListener("click", function (event) {
                     event.preventDefault();
                 });
             }
         });
+    }
+
+    function buildAmbientOrbMarkup(routeLevels) {
+        const occupiedAnchors = new Set(routeLevels.map(function (level) {
+            return getPositionKey(level);
+        }));
+
+        return getRouteLayoutAnchors(activeRoute.id).map(function (anchor, index) {
+            return Object.assign({
+                number: index + 1
+            }, anchor);
+        }).filter(function (anchor) {
+            return !occupiedAnchors.has(getPositionKey(anchor));
+        }).map(function (anchor, index) {
+            return [
+                "<span class=\"ambient-level-orb is-variant-", (index % 3) + 1, "\" aria-hidden=\"true\" style=\"left:", anchor.x, "; top:", anchor.y, ";\">",
+                "<span class=\"ambient-level-orb-shell\">",
+                "<img class=\"ambient-level-orb-image\" src=\"", LEVEL_ORB_PATH, "\" alt=\"\">",
+                "<span class=\"ambient-level-orb-core\"></span>",
+                "<span class=\"ambient-level-orb-number\">", anchor.number, "</span>",
+                "</span>",
+                "</span>"
+            ].join("");
+        }).join("");
     }
 
     function renderRouteCopy() {
@@ -175,8 +202,8 @@
             return;
         }
 
-        const status = resolveStatus(level.id, currentLevel);
-        const statusCopy = status === "locked" ? "Bloqueado" : (status === "current" ? "Actual" : "Desbloqueado");
+        const status = resolveStatus(level.id);
+        const statusCopy = getStatusLabel(status);
         tooltip.innerHTML = [
             "<div class=\"map-tooltip-head\">",
             "<p class=\"map-tooltip-order\">", level.title, "</p>",
@@ -185,6 +212,7 @@
             "<h3>", level.topic, "</h3>",
             "<p class=\"map-tooltip-description\">", level.description, "</p>",
             "<div class=\"map-tooltip-meta\">",
+            level.difficulty ? buildTooltipCard("Dificultad", level.difficulty, "") : "",
             buildTooltipCard("Contenido", level.content, "is-content is-wide"),
             "</div>"
         ].join("");
@@ -253,14 +281,30 @@
         updateTooltipPosition(activeNode);
     }
 
-    function resolveStatus(levelId, current) {
-        if (levelId < current) {
-            return "unlocked";
+    function resolveStatus(levelId) {
+        if (completedLevels.has(levelId)) {
+            return "completed";
         }
-        if (levelId === current) {
+        if (levelId === currentLevel) {
             return "current";
         }
+        if (levelId < currentLevel) {
+            return "unlocked";
+        }
         return "locked";
+    }
+
+    function getStatusLabel(status) {
+        if (status === "completed") {
+            return "Completado";
+        }
+        if (status === "current") {
+            return "En curso";
+        }
+        if (status === "unlocked") {
+            return "Desbloqueado";
+        }
+        return "Bloqueado";
     }
 
     function getLevelById(id) {
@@ -277,6 +321,60 @@
         return (data.levels || []).filter(function (level) {
             return !level.routeId || level.routeId === routeId;
         });
+    }
+
+    function getPositionedRouteLevels() {
+        const routeAnchors = getRouteLayoutAnchors(activeRoute.id);
+
+        return getRouteLevels().slice().sort(function (left, right) {
+            return left.id - right.id;
+        }).map(function (level, index) {
+            const anchor = routeAnchors[index];
+
+            return Object.assign({}, level, anchor ? {
+                x: anchor.x,
+                y: anchor.y
+            } : null);
+        });
+    }
+
+    function getRouteLayoutAnchors(routeId) {
+        const routeItem = routes.find(function (item) {
+            return item.id === routeId;
+        });
+
+        if (routeItem && Array.isArray(routeItem.levelAnchors) && routeItem.levelAnchors.length) {
+            return routeItem.levelAnchors;
+        }
+
+        if (data.map && Array.isArray(data.map.levelAnchors) && data.map.levelAnchors.length) {
+            return data.map.levelAnchors;
+        }
+
+        return getFallbackLevelAnchors();
+    }
+
+    function getFallbackLevelAnchors() {
+        const seenPositions = new Set();
+
+        return (data.levels || []).filter(function (level) {
+            const key = getPositionKey(level);
+            if (seenPositions.has(key)) {
+                return false;
+            }
+
+            seenPositions.add(key);
+            return true;
+        }).map(function (level) {
+            return {
+                x: level.x,
+                y: level.y
+            };
+        });
+    }
+
+    function getPositionKey(point) {
+        return [point && point.x ? point.x : "", point && point.y ? point.y : ""].join("|");
     }
 
     function getRoutes() {

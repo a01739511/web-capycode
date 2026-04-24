@@ -61,7 +61,6 @@
         collectionCountRoot.textContent = unlockedItems.length + "/" + data.shopItems.length;
         renderCollection(profile);
         window.CapyCore.updateHud();
-        window.CapyCore.refreshInteractiveTilts();
     }
 
     function renderCollection(profile) {
@@ -78,7 +77,8 @@
             "<div class=\"collection-carousel-main\">",
             "<button class=\"collection-nav\" type=\"button\" data-collection-nav=\"prev\" aria-label=\"Mostrar personaje anterior\">&#8249;</button>",
             buildSideCard(previousItem, "prev"),
-            "<article class=\"collection-focus-card", equippedNow ? " is-equipped" : "", "\">",
+            "<article class=\"collection-focus-card", equippedNow ? " is-equipped" : "", "\" data-interactive-tilt=\"shop-card\">",
+            "<span class=\"collection-focus-glow\" aria-hidden=\"true\"></span>",
             "<div class=\"collection-focus-art\">",
             "<img src=\"", getTransparentImage(currentItem), "\" alt=\"", currentItem.name, "\">",
             "</div>",
@@ -111,6 +111,8 @@
             }).join(""),
             "</div>"
         ].join("");
+
+        window.CapyCore.refreshInteractiveTilts();
     }
 
     function buildSideCard(item, variant) {

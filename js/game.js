@@ -2,6 +2,13 @@
     const XP_REWARD = 50;
     const COMPLETION_BONUS = 50;
     const app = document.querySelector("[data-question-types]");
+    const QUESTION_SCREENS = [
+        { type: "opcion_multiple", page: "p_opcionMultiple.html" },
+        { type: "respuesta_numerica", page: "p_respuestaNumerica.html" },
+        { type: "seleccionar_lineas", page: "p_seleccionarLineas.html" },
+        { type: "ordenar_lineas", page: "p_ordenarLineas.html" },
+        { type: "drag_and_drop", page: "p_completarPlantilla.html" }
+    ];
     const PYTHON_KEYWORDS = new Set([
         "and", "as", "assert", "break", "class", "continue", "def", "del", "elif",
         "else", "except", "False", "finally", "for", "from", "global", "if", "import",
@@ -24,8 +31,10 @@
     }
 
     const state = {
+        levelQuestions: [],
         questions: [],
         currentIndex: 0,
+        stepIndex: 0,
         selectedOption: null,
         selectedLines: [],
         blankAnswers: {},
@@ -50,23 +59,12 @@
     const questionTypes = app.dataset.questionTypes.split(",").map(function (item) {
         return item.trim();
     });
-
-    const completionConfigs = {
-        mission: {
-            activityKey: "nivel-5-mision",
-            bonusXp: COMPLETION_BONUS
-        },
-        order: {
-            activityKey: "nivel-5-orden",
-            bonusXp: COMPLETION_BONUS
-        },
-        template: {
-            activityKey: "nivel-5-plantilla",
-            bonusXp: COMPLETION_BONUS,
-            nextLevel: 6,
-            unlockCharacter: "CapyExplorer"
-        }
-    };
+    const searchParams = new URLSearchParams(window.location.search);
+    const themeKey = searchParams.get("tema") || "algoritmos";
+    const totalRouteLevels = Math.max(1, ((window.CAPYCODE_APP_DATA && window.CAPYCODE_APP_DATA.levels) || []).length);
+    const levelId = normalizeLevelId(searchParams.get("level"), totalRouteLevels);
+    const levelKey = "nivel_" + levelId;
+    const levelMeta = getLevelMeta(levelId);
 
     elements.primaryAction.addEventListener("click", onPrimaryAction);
 
@@ -74,12 +72,24 @@
 
     async function start() {
         const dataset = await loadQuestions();
-        state.questions = flattenQuestions(dataset).filter(function (question) {
-            return questionTypes.includes(question.tipo);
-        });
+        state.levelQuestions = getQuestionsForLevel(dataset);
 
-        if (!state.questions.length) {
+        if (!state.levelQuestions.length) {
             renderEmptyState("No hay preguntas configuradas para esta pantalla.");
+            return;
+        }
+
+        state.stepIndex = normalizeStepIndex(searchParams.get("step"), state.levelQuestions.length);
+        state.questions = [state.levelQuestions[state.stepIndex]];
+        state.currentIndex = 0;
+
+        if (!state.questions[0]) {
+            renderEmptyState("No se pudo encontrar la pregunta solicitada.");
+            return;
+        }
+
+        if (!questionTypes.includes(state.questions[0].tipo)) {
+            window.location.replace(buildQuestionPageUrl(state.questions[0].tipo, state.stepIndex));
             return;
         }
 
@@ -89,34 +99,90 @@
     }
 
     async function loadQuestions() {
-        try {
-            const response = await fetch("questions.json", { cache: "no-store" });
-            if (!response.ok) {
-                throw new Error("No se pudo cargar questions.json");
+        const sources = [
+            "levels_algoritmos_complementado.json",
+            "questions.json"
+        ];
+
+        for (let index = 0; index < sources.length; index += 1) {
+            try {
+                const response = await fetch(sources[index], { cache: "no-store" });
+                if (!response.ok) {
+                    continue;
+                }
+                return await response.json();
+            } catch (error) {
+                continue;
             }
-            return await response.json();
-        } catch (error) {
-            return window.CAPYCODE_QUESTIONS;
         }
+
+        return window.CAPYCODE_QUESTIONS || { temas: {} };
     }
 
-    function flattenQuestions(dataset) {
-        const results = [];
-        const temas = dataset.temas || {};
+    function getQuestionsForLevel(dataset) {
+        const temas = dataset && dataset.temas ? dataset.temas : {};
+        const theme = temas[themeKey] || {};
+        const normalizedLevels = normalizeThemeLevels(theme);
+        const selectedQuestions = normalizedLevels[levelKey] || [];
 
-        Object.keys(temas).forEach(function (tema) {
-            Object.keys(temas[tema]).forEach(function (nivel) {
-                (temas[tema][nivel] || []).forEach(function (question, index) {
-                    results.push(Object.assign({}, question, {
-                        tema: tema,
-                        nivel: nivel,
-                        uid: [tema, nivel, index, question.tipo].join("-")
-                    }));
-                });
+        return selectedQuestions.map(function (question, index) {
+            return Object.assign({}, question, {
+                tema: themeKey,
+                nivel: levelKey,
+                uid: [themeKey, levelKey, index, question.tipo].join("-")
             });
         });
+    }
 
-        return results;
+    function normalizeThemeLevels(theme) {
+        const keys = Object.keys(theme || {});
+        const hasDirectLevels = keys.some(function (key) {
+            return /^nivel_\d+$/.test(key);
+        });
+
+        if (hasDirectLevels) {
+            return theme;
+        }
+
+        const groupedLevels = {};
+        let nextLevel = 1;
+
+        ["facil", "medio", "dificil", "integrador"].forEach(function (bucket) {
+            const questions = Array.isArray(theme[bucket]) ? theme[bucket] : [];
+
+            for (let index = 0; index < questions.length; index += 5) {
+                groupedLevels["nivel_" + nextLevel] = questions.slice(index, index + 5);
+                nextLevel += 1;
+            }
+        });
+
+        return groupedLevels;
+    }
+
+    function normalizeLevelId(rawLevel, maxLevel) {
+        const parsed = Number(rawLevel);
+
+        if (!Number.isFinite(parsed)) {
+            return 1;
+        }
+
+        return Math.max(1, Math.min(Math.trunc(parsed), maxLevel));
+    }
+
+    function normalizeStepIndex(rawStep, totalQuestions) {
+        const parsed = Number(rawStep);
+
+        if (!Number.isFinite(parsed)) {
+            return 0;
+        }
+
+        return Math.max(0, Math.min(Math.trunc(parsed) - 1, Math.max(0, totalQuestions - 1)));
+    }
+
+    function getLevelMeta(id) {
+        return ((window.CAPYCODE_APP_DATA && window.CAPYCODE_APP_DATA.levels) || []).find(function (level) {
+            return Number(level.id) === Number(id);
+        }) || null;
     }
 
     function renderQuestion() {
@@ -168,6 +234,8 @@
     }
 
     function renderMultipleChoice(question) {
+        const wrapper = document.createElement("div");
+        wrapper.className = Array.isArray(question.code) && question.code.length ? "numeric-layout" : "answer-stack";
         const grid = document.createElement("div");
         grid.className = "answer-stack";
 
@@ -189,7 +257,12 @@
             grid.appendChild(button);
         });
 
-        elements.questionContent.appendChild(grid);
+        if (Array.isArray(question.code) && question.code.length) {
+            wrapper.appendChild(createCodeStage(question.code));
+        }
+
+        wrapper.appendChild(grid);
+        elements.questionContent.appendChild(wrapper);
     }
 
     function renderOrderLines(question) {
@@ -360,7 +433,7 @@
         showFeedback(result.correct ? "Correcto. " + result.message : "Aun no. " + result.message, result.correct ? "success" : "error");
 
         state.awaitingNext = true;
-        elements.primaryAction.textContent = state.currentIndex === state.questions.length - 1 ? "Siguiente nivel" : "Siguiente";
+        elements.primaryAction.textContent = getAdvanceButtonLabel();
         renderProgress();
     }
 
@@ -458,15 +531,10 @@
 
     function updateProfile(correct) {
         const profile = window.CapyCore.getProfile();
-        const progressKey = app.dataset.progressKey;
-        const progress = profile.missionProgress[progressKey];
 
         if (correct) {
             profile.xp += XP_REWARD;
             profile.streak += 1;
-            if (progress && progress.current < progress.total) {
-                progress.current += 1;
-            }
         } else {
             profile.streak = Math.max(0, profile.streak - 1);
         }
@@ -476,28 +544,37 @@
     }
 
     function nextQuestion() {
-        if (state.currentIndex >= state.questions.length - 1) {
-            renderCompletion();
-            return;
-        }
-
-        state.currentIndex += 1;
-        renderQuestion();
-        renderProgress();
+        renderCompletion();
     }
 
     function renderCompletion() {
-        const outcome = window.CapyCore.completeActivity(app.dataset.progressKey, completionConfigs[app.dataset.progressKey]);
-        const profile = outcome.profile;
+        const isFinalStage = isFinalFlowStep();
+        const nextPage = buildNextPageUrl();
+
+        if (!isFinalStage) {
+            window.location.href = nextPage;
+            return;
+        }
+
+        const outcome = isFinalStage ? window.CapyCore.completeLevel(levelId, {
+            bonusXp: COMPLETION_BONUS
+        }) : null;
+        const profile = outcome ? outcome.profile : window.CapyCore.getProfile();
         const equipped = (window.CAPYCODE_APP_DATA.shopItems || []).find(function (item) {
             return item.id === profile.equippedCharacter;
         });
-        const nextPage = app.dataset.nextPage || "mapa.html";
-        const headline = outcome.firstCompletion ? "Nivel completado" : "Mision dominada";
-        const rewardCopy = outcome.firstCompletion
-            ? "Has ganado +" + COMPLETION_BONUS + " XP extra por completar esta estacion."
-            : "Esta estacion ya estaba completada. Puedes repetirla para seguir practicando.";
+        const headline = isFinalStage
+            ? (outcome && outcome.firstCompletion ? "Nivel completado" : "Nivel dominado")
+            : "Reto completado";
+        const rewardCopy = isFinalStage
+            ? (outcome && outcome.firstCompletion
+                ? "Has ganado +" + COMPLETION_BONUS + " XP extra y el siguiente nivel ya quedo desbloqueado en el mapa."
+                : "Este nivel ya estaba completado. Puedes repetirlo para seguir practicando.")
+            : "Has superado esta prueba. Continua con el siguiente tipo de ejercicio para avanzar por el nivel.";
         const celebrationImage = getCelebrationCharacterImage(equipped);
+        const completionKicker = isFinalStage
+            ? (outcome && outcome.firstCompletion ? "Nivel superado" : "Practica completada")
+            : "Reto superado";
 
         app.classList.add("is-complete");
         document.body.classList.add("quiz-complete");
@@ -510,7 +587,7 @@
             "</div>",
             "<section class=\"completion-screen glass-surface\">",
             "<div class=\"completion-screen-copy\">",
-            "<p class=\"panel-kicker\">", outcome.firstCompletion ? "Misi\u00f3n superada" : "Pr\u00e1ctica completada", "</p>",
+            "<p class=\"panel-kicker\">", completionKicker, "</p>",
             "<h2>", headline, "</h2>",
             "<p class=\"completion-lead\">", rewardCopy, "</p>",
             celebrationImage ? "<div class=\"completion-screen-art\"><img src=\"" + celebrationImage + "\" alt=\"" + escapeHtml(equipped ? equipped.name : "Personaje") + "\"></div>" : "",
@@ -532,15 +609,12 @@
     }
 
     function renderProgress() {
-        const profile = window.CapyCore.getProfile();
-        const progress = profile.missionProgress[app.dataset.progressKey];
-        if (!progress) {
-            return;
-        }
+        const step = state.stepIndex + 1;
+        const totalSteps = Math.max(1, state.levelQuestions.length);
+        const percentage = (step / totalSteps) * 100;
 
-        const percentage = (progress.current / progress.total) * 100;
-        elements.missionLabel.textContent = app.dataset.heroTag || "Ruta del nivel";
-        elements.progressRatio.textContent = progress.current + "/" + progress.total;
+        elements.missionLabel.textContent = buildMissionLabel();
+        elements.progressRatio.textContent = step + "/" + totalSteps;
         animateProgressMeter(percentage);
     }
 
@@ -572,11 +646,67 @@
     function restartPage() {
         clearCompletionOverlay();
         state.currentIndex = 0;
+        state.questions = [state.levelQuestions[state.stepIndex]];
         renderQuestion();
         renderProgress();
         elements.feedback.textContent = "";
         elements.primaryAction.style.display = "";
         elements.primaryAction.disabled = false;
+    }
+
+    function buildMissionLabel() {
+        if (!levelMeta) {
+            return "Ruta de algoritmos";
+        }
+
+        const parts = [levelMeta.title];
+
+        if (levelMeta.topic) {
+            parts.push(levelMeta.topic);
+        }
+
+        return parts.join(" - ");
+    }
+
+    function buildNextPageUrl() {
+        const nextQuestion = state.levelQuestions[state.stepIndex + 1];
+
+        if (!nextQuestion) {
+            return "mapa.html";
+        }
+
+        return buildQuestionPageUrl(nextQuestion.tipo, state.stepIndex + 1);
+    }
+
+    function buildQuestionPageUrl(questionType, stepIndex) {
+        const screen = getScreenForType(questionType);
+        const page = screen ? screen.page : "mapa.html";
+
+        if (page === "mapa.html") {
+            return page;
+        }
+
+        return page + buildLevelQuery(stepIndex);
+    }
+
+    function buildLevelQuery(stepIndex) {
+        return "?tema=" + encodeURIComponent(themeKey) +
+            "&level=" + encodeURIComponent(levelId) +
+            "&step=" + encodeURIComponent(stepIndex + 1);
+    }
+
+    function getScreenForType(questionType) {
+        return QUESTION_SCREENS.find(function (screen) {
+            return screen.type === questionType;
+        }) || null;
+    }
+
+    function isFinalFlowStep() {
+        return state.stepIndex >= state.levelQuestions.length - 1;
+    }
+
+    function getAdvanceButtonLabel() {
+        return isFinalFlowStep() ? "Completar nivel" : "Siguiente reto";
     }
 
     function renderEmptyState(message) {
