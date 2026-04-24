@@ -41,8 +41,10 @@
         activeBlankKey: "",
         orderItems: [],
         numericAnswer: "",
-        awaitingNext: false
+        awaitingNext: false,
+        isResolving: false
     };
+    let answerPopupTimer = 0;
 
     const elements = {
         stage: document.querySelector(".game-stage"),
@@ -67,6 +69,7 @@
     const levelMeta = getLevelMeta(levelId);
 
     elements.primaryAction.addEventListener("click", onPrimaryAction);
+    registerGameHotkeys();
 
     start();
 
@@ -194,11 +197,13 @@
         state.orderItems = [];
         state.numericAnswer = "";
         state.awaitingNext = false;
+        state.isResolving = false;
 
         elements.questionTitle.textContent = question.prompt;
         elements.questionContent.innerHTML = "";
         elements.questionContent.classList.remove("has-internal-scroll");
         clearCompletionOverlay();
+        clearAnswerPopup();
         elements.feedback.textContent = "";
         elements.feedback.className = "feedback-banner";
         elements.primaryAction.textContent = "Comprobar";
@@ -292,11 +297,22 @@
             article.dataset.index = String(index);
             article.innerHTML = [
                 "<div class=\"drag-pill\"><img src=\"assets/menu-icon.svg\" alt=\"Mover linea\"></div>",
-                buildCodeLineMarkup(item.text, index + 1, state.orderItems.length)
+                "<div class=\"sortable-row-code\">",
+                buildCodeLineMarkup(item.text, index + 1, state.orderItems.length),
+                "</div>",
+                "<div class=\"sortable-row-controls\">",
+                "<button class=\"order-move-button\" type=\"button\" data-order-move=\"up\" aria-label=\"Subir linea ", index + 1, "\"", index === 0 ? " disabled" : "", ">&uarr;</button>",
+                "<button class=\"order-move-button\" type=\"button\" data-order-move=\"down\" aria-label=\"Bajar linea ", index + 1, "\"", index === state.orderItems.length - 1 ? " disabled" : "", ">&darr;</button>",
+                "</div>"
             ].join("");
             article.addEventListener("dragstart", handleDragStart);
             article.addEventListener("dragover", handleDragOver);
             article.addEventListener("drop", handleDrop);
+            article.querySelectorAll("[data-order-move]").forEach(function (button) {
+                button.addEventListener("click", function () {
+                    moveOrderItem(index, button.dataset.orderMove);
+                });
+            });
             list.appendChild(article);
         });
     }
@@ -415,25 +431,40 @@
     }
 
     function onPrimaryAction() {
+        if (state.isResolving) {
+            return;
+        }
+
         if (state.awaitingNext) {
             nextQuestion();
             return;
         }
 
+        state.isResolving = true;
         const question = state.questions[state.currentIndex];
         const result = validate(question);
 
         if (!result.valid) {
-            showFeedback(result.message, "error");
+            clearFeedback();
+            showAnswerPopup("Falta completar", result.message, "error");
+            releaseActionLock();
             return;
         }
 
-        applyAnswerState(question, result.correct);
         updateProfile(result.correct);
-        showFeedback(result.correct ? "Correcto. " + result.message : "Aun no. " + result.message, result.correct ? "success" : "error");
+        clearFeedback();
+        resetVisibleSelections(question);
+        showAnswerPopup(result.correct ? "Respuesta correcta" : "Respuesta incorrecta", result.correct ? "Puedes avanzar al siguiente reto." : "Ajusta tu respuesta e intentalo otra vez.", result.correct ? "success" : "error");
 
-        state.awaitingNext = true;
-        elements.primaryAction.textContent = getAdvanceButtonLabel();
+        if (result.correct) {
+            state.awaitingNext = true;
+            state.isResolving = false;
+            elements.primaryAction.textContent = getAdvanceButtonLabel();
+        } else {
+            elements.primaryAction.textContent = "Comprobar";
+            releaseActionLock();
+        }
+
         renderProgress();
     }
 
@@ -446,7 +477,7 @@
             return {
                 valid: true,
                 correct: question.correct_ids.includes(state.selectedOption),
-                message: "La respuesta correcta es " + question.correct_ids.join(", ") + "."
+                message: ""
             };
         case "ordenar_lineas":
             return {
@@ -454,7 +485,7 @@
                 correct: state.orderItems.map(function (item) {
                     return item.id;
                 }).join("|") === question.orden_correcto.join("|"),
-                message: "El orden correcto es " + question.orden_correcto.join(" -> ") + "."
+                message: ""
             };
         case "drag_and_drop":
             if (Object.keys(question.rellenos).some(function (key) {
@@ -467,7 +498,7 @@
                 correct: Object.keys(question.rellenos).every(function (key) {
                     return question.rellenos[key] === state.blankAnswers[key];
                 }),
-                message: "La plantilla correcta usa " + Object.values(question.rellenos).join(", ") + "."
+                message: ""
             };
         case "seleccionar_lineas":
             if (!state.selectedLines.length) {
@@ -476,7 +507,7 @@
             return {
                 valid: true,
                 correct: sameItems(state.selectedLines, question.correct_ids),
-                message: "La linea correcta es " + question.correct_ids.join(", ") + "."
+                message: ""
             };
         case "respuesta_numerica":
             if (state.numericAnswer === "") {
@@ -485,47 +516,10 @@
             return {
                 valid: true,
                 correct: Number(state.numericAnswer) === Number(question.valor),
-                message: "El resultado correcto es " + question.valor + "."
+                message: ""
             };
         default:
             return { valid: false, message: "Tipo de pregunta no soportado." };
-        }
-    }
-
-    function applyAnswerState(question, correct) {
-        if (question.tipo === "opcion_multiple") {
-            elements.questionContent.querySelectorAll(".answer-card").forEach(function (card) {
-                if (question.correct_ids.includes(card.dataset.optionId)) {
-                    card.classList.add("is-correct");
-                } else if (card.dataset.optionId === state.selectedOption && !correct) {
-                    card.classList.add("is-incorrect");
-                }
-            });
-        }
-
-        if (question.tipo === "seleccionar_lineas") {
-            elements.questionContent.querySelectorAll(".answer-card").forEach(function (card) {
-                if (question.correct_ids.includes(card.dataset.lineId)) {
-                    card.classList.add("is-correct");
-                } else if (state.selectedLines.includes(card.dataset.lineId) && !correct) {
-                    card.classList.add("is-incorrect");
-                }
-            });
-        }
-
-        if (question.tipo === "drag_and_drop") {
-            Object.keys(question.rellenos).forEach(function (key) {
-                const button = elements.questionContent.querySelector("[data-blank-key=\"" + key + "\"]");
-                if (!button) {
-                    return;
-                }
-
-                if (question.rellenos[key] === state.blankAnswers[key]) {
-                    button.classList.add("is-filled");
-                } else if (!correct) {
-                    button.classList.add("is-active");
-                }
-            });
         }
     }
 
@@ -550,6 +544,7 @@
     function renderCompletion() {
         const isFinalStage = isFinalFlowStep();
         const nextPage = buildNextPageUrl();
+        const nextLevelPage = buildNextLevelPageUrl();
 
         if (!isFinalStage) {
             window.location.href = nextPage;
@@ -582,6 +577,9 @@
         document.body.insertAdjacentHTML("beforeend", [
             "<div class=\"completion-overlay\" data-completion-overlay>",
             "<div class=\"completion-spotlight\" aria-hidden=\"true\"></div>",
+            "<div class=\"completion-radiance\" aria-hidden=\"true\">",
+            buildCelebrationBurstMarkup(),
+            "</div>",
             "<div class=\"completion-confetti\" aria-hidden=\"true\">",
             buildConfettiMarkup(),
             "</div>",
@@ -590,15 +588,20 @@
             "<p class=\"panel-kicker\">", completionKicker, "</p>",
             "<h2>", headline, "</h2>",
             "<p class=\"completion-lead\">", rewardCopy, "</p>",
-            celebrationImage ? "<div class=\"completion-screen-art\"><img src=\"" + celebrationImage + "\" alt=\"" + escapeHtml(equipped ? equipped.name : "Personaje") + "\"></div>" : "",
+            celebrationImage ? "<div class=\"completion-screen-art\"><img src=\"" + celebrationImage + "\" alt=\"" + escapeHtml(equipped ? getItemName(equipped) : "Personaje") + "\"></div>" : "",
             "<div class=\"completion-actions\">",
-            "<a class=\"magic-cta\" href=\"", nextPage, "\">", buildNextCtaLabel(nextPage), "</a>",
-            "<a class=\"scene-button ghost\" href=\"mapa.html\">Salir al mapa</a>",
+            "<a class=\"magic-cta\" href=\"", nextLevelPage, "\">Siguiente nivel</a>",
+            "<a class=\"scene-button ghost\" href=\"mapa.html\">Volver al mapa</a>",
             "</div>",
             "</div>",
             "</section>",
             "</div>"
         ].join(""));
+
+        const overlayAction = document.querySelector("[data-completion-overlay] .magic-cta");
+        if (overlayAction) {
+            overlayAction.focus();
+        }
     }
 
     function buildNextCtaLabel(nextPage) {
@@ -645,13 +648,49 @@
 
     function restartPage() {
         clearCompletionOverlay();
+        clearAnswerPopup();
         state.currentIndex = 0;
         state.questions = [state.levelQuestions[state.stepIndex]];
+        state.isResolving = false;
         renderQuestion();
         renderProgress();
         elements.feedback.textContent = "";
         elements.primaryAction.style.display = "";
         elements.primaryAction.disabled = false;
+    }
+
+    function releaseActionLock() {
+        elements.primaryAction.disabled = true;
+
+        window.setTimeout(function () {
+            state.isResolving = false;
+            if (!state.awaitingNext) {
+                elements.primaryAction.disabled = false;
+            }
+        }, 420);
+    }
+
+    function showAnswerPopup(title, message, type) {
+        clearAnswerPopup();
+
+        elements.feedback.insertAdjacentHTML("beforebegin", [
+            "<div class=\"answer-popup ", type === "success" ? "is-success" : "is-error", "\" data-answer-popup role=\"status\" aria-live=\"polite\">",
+            "<span class=\"answer-popup-icon\" aria-hidden=\"true\">", type === "success" ? "OK" : "!", "</span>",
+            "<div>",
+            "<strong>", escapeHtml(title), "</strong>",
+            "<span>", escapeHtml(message), "</span>",
+            "</div>",
+            "</div>"
+        ].join(""));
+
+        answerPopupTimer = window.setTimeout(clearAnswerPopup, type === "success" ? 2600 : 3400);
+    }
+
+    function clearAnswerPopup() {
+        window.clearTimeout(answerPopupTimer);
+        document.querySelectorAll("[data-answer-popup]").forEach(function (popup) {
+            popup.remove();
+        });
     }
 
     function buildMissionLabel() {
@@ -668,6 +707,68 @@
         return parts.join(" - ");
     }
 
+    function moveOrderItem(index, direction) {
+        const offset = direction === "up" ? -1 : 1;
+        const targetIndex = index + offset;
+
+        if (targetIndex < 0 || targetIndex >= state.orderItems.length) {
+            return;
+        }
+
+        const moved = state.orderItems.splice(index, 1)[0];
+        state.orderItems.splice(targetIndex, 0, moved);
+        paintSortable();
+
+        window.requestAnimationFrame(function () {
+            const row = document.querySelector("[data-index=\"" + targetIndex + "\"]");
+            const focusTarget = row && row.querySelector("[data-order-move=\"" + direction + "\"]:not([disabled])");
+            if (focusTarget) {
+                focusTarget.focus();
+            }
+        });
+    }
+
+    function registerGameHotkeys() {
+        if (!window.CapyHotkeys) {
+            return;
+        }
+
+        window.CapyHotkeys.register([
+            {
+                id: "quiz-primary",
+                key: "Enter",
+                ctrlKey: true,
+                label: "Comprobar",
+                description: "Comprueba la respuesta o avanza cuando ya fue correcta.",
+                group: "Nivel",
+                order: 20,
+                allowInInput: true,
+                action: function () {
+                    elements.primaryAction.click();
+                },
+                enabled: function () {
+                    return !elements.primaryAction.disabled;
+                }
+            },
+            {
+                id: "quiz-reset",
+                key: "r",
+                label: "Reiniciar reto",
+                description: "Reinicia la pregunta actual.",
+                group: "Nivel",
+                order: 21,
+                action: function () {
+                    if (elements.secondaryAction) {
+                        elements.secondaryAction.click();
+                    }
+                },
+                enabled: function () {
+                    return Boolean(elements.secondaryAction);
+                }
+            }
+        ]);
+    }
+
     function buildNextPageUrl() {
         const nextQuestion = state.levelQuestions[state.stepIndex + 1];
 
@@ -676,6 +777,15 @@
         }
 
         return buildQuestionPageUrl(nextQuestion.tipo, state.stepIndex + 1);
+    }
+
+    function buildNextLevelPageUrl() {
+        const levels = (window.CAPYCODE_APP_DATA && window.CAPYCODE_APP_DATA.levels) || [];
+        const nextLevel = levels.find(function (level) {
+            return Number(level.id) === Number(levelId) + 1;
+        });
+
+        return nextLevel && nextLevel.href ? nextLevel.href : "mapa.html";
     }
 
     function buildQuestionPageUrl(questionType, stepIndex) {
@@ -715,10 +825,25 @@
         elements.primaryAction.disabled = true;
     }
 
-    function showFeedback(message, type) {
-        elements.feedback.textContent = message;
+    function clearFeedback() {
+        elements.feedback.textContent = "";
         elements.feedback.className = "feedback-banner";
-        elements.feedback.classList.add(type === "success" ? "is-success" : "is-error");
+    }
+
+    function resetVisibleSelections(question) {
+        elements.questionContent.querySelectorAll(".is-selected, .is-correct, .is-incorrect").forEach(function (element) {
+            element.classList.remove("is-selected");
+            element.classList.remove("is-correct");
+            element.classList.remove("is-incorrect");
+        });
+
+        if (question.tipo === "opcion_multiple") {
+            state.selectedOption = null;
+        }
+
+        if (question.tipo === "seleccionar_lineas") {
+            state.selectedLines = [];
+        }
     }
 
     function toggleSelectedLine(lineId) {
@@ -788,9 +913,41 @@
     }
 
     function buildConfettiMarkup() {
-        return new Array(18).fill(null).map(function (_, index) {
-            return "<span class=\"confetti-piece confetti-piece-" + ((index % 6) + 1) + "\" style=\"--piece-index:" + index + ";\"></span>";
+        return new Array(84).fill(null).map(function (_, index) {
+            const lane = (index * 37) % 100;
+            const sway = ((index % 9) - 4) * 10;
+            const duration = 4.2 + ((index % 11) * 0.18);
+            const delay = index * -0.075;
+            const size = 8 + (index % 5) * 3;
+
+            return [
+                "<span class=\"confetti-piece confetti-piece-", ((index % 8) + 1),
+                index % 5 === 0 ? " is-star" : (index % 4 === 0 ? " is-dot" : (index % 3 === 0 ? " is-ribbon" : "")),
+                "\" style=\"--piece-index:", index,
+                "; --lane:", lane,
+                "; --sway:", sway,
+                "px; --duration:", duration,
+                "s; --delay:", delay,
+                "s; --piece-size:", size,
+                "px;\"></span>"
+            ].join("");
         }).join("");
+    }
+
+    function buildCelebrationBurstMarkup() {
+        const rings = new Array(4).fill(null).map(function (_, index) {
+            return "<span class=\"celebration-ring celebration-ring-" + (index + 1) + "\"></span>";
+        }).join("");
+        const rays = new Array(18).fill(null).map(function (_, index) {
+            return "<span class=\"celebration-ray\" style=\"--ray-index:" + index + ";\"></span>";
+        }).join("");
+        const sparks = new Array(28).fill(null).map(function (_, index) {
+            const distance = 110 + (index % 7) * 34;
+            const duration = 1.7 + (index % 5) * 0.22;
+            return "<span class=\"celebration-spark\" style=\"--spark-index:" + index + "; --spark-distance:" + distance + "px; --spark-duration:" + duration + "s;\"></span>";
+        }).join("");
+
+        return rings + rays + sparks;
     }
 
     function clearCompletionOverlay() {
@@ -819,6 +976,14 @@
         }
 
         return equipped ? equipped.image : "";
+    }
+
+    function getItemName(item) {
+        if (window.CapyCore && window.CapyCore.getItemName) {
+            return window.CapyCore.getItemName(item);
+        }
+
+        return item && (item.nombre || item.name) ? (item.nombre || item.name) : "";
     }
 
     function createCodeStage(lines) {

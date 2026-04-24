@@ -44,7 +44,7 @@
             "<div><span>Racha</span><strong data-player-streak></strong></div>",
             "<div><span>XP</span><strong data-player-xp></strong></div>",
             "</div>",
-            "<p class=\"profile-note\">Tu vestuario activo es ", equipped.name, ". Revisa tu armario, cambia de vestuario cuando quieras y sigue sumando poder para la siguiente expedici&oacute;n.</p>",
+            "<p class=\"profile-note\">Tu vestuario activo es ", getItemName(equipped), ". Revisa tu armario, cambia de vestuario cuando quieras.</p>",
             "<div class=\"profile-hero-actions\">",
             "<button class=\"scene-button danger\" type=\"button\" data-action=\"logout\">Cerrar sesi&oacute;n</button>",
             "</div>",
@@ -52,7 +52,7 @@
             "<div class=\"profile-hero-stage\">",
             "<div class=\"profile-hero-art-shell\">",
             "<span class=\"profile-hero-art-glow\" aria-hidden=\"true\"></span>",
-            "<img src=\"", getTransparentImage(equipped), "\" alt=\"", equipped.name, "\">",
+            "<img src=\"", getTransparentImage(equipped), "\" alt=\"", getItemName(equipped), "\">",
             "</div>",
             "</div>",
             "</article>"
@@ -80,19 +80,19 @@
             "<article class=\"collection-focus-card", equippedNow ? " is-equipped" : "", "\" data-interactive-tilt=\"shop-card\">",
             "<span class=\"collection-focus-glow\" aria-hidden=\"true\"></span>",
             "<div class=\"collection-focus-art\">",
-            "<img src=\"", getTransparentImage(currentItem), "\" alt=\"", currentItem.name, "\">",
+            "<img src=\"", getTransparentImage(currentItem), "\" alt=\"", getItemName(currentItem), "\">",
             "</div>",
             "<div class=\"collection-focus-copy\">",
             "<div class=\"collection-focus-summary\">",
             "<span class=\"collection-status\">", equippedNow ? "Equipado" : "Desbloqueado", "</span>",
-            "<h3>", currentItem.name, "</h3>",
-            "<p class=\"collection-focus-perk\">", currentItem.perk, "</p>",
+            "<h3>", getItemName(currentItem), "</h3>",
+            "<p class=\"collection-focus-perk\">", getItemSlogan(currentItem), "</p>",
             "<p class=\"collection-focus-description\">", getItemDescription(currentItem), "</p>",
             "</div>",
             "<div class=\"collection-focus-actions\">",
             "<div class=\"collection-focus-price-block\">",
-            "<span class=\"collection-focus-price-label\">", currentItem.price === 0 ? "Estado" : "Costo", "</span>",
-            "<strong>", currentItem.price === 0 ? "Vestuario base" : ("XP " + window.CapyCore.formatNumber(currentItem.price)), "</strong>",
+            "<span class=\"collection-focus-price-label\">", getItemCost(currentItem) === 0 ? "Estado" : "Costo", "</span>",
+            "<strong>", getItemCost(currentItem) === 0 ? "Vestuario base" : ("XP " + window.CapyCore.formatNumber(getItemCost(currentItem))), "</strong>",
             "</div>",
             "<button class=\"shop-action", equippedNow ? " is-equipped" : "", "\" type=\"button\" data-collection-equip=\"", currentItem.id, "\"", equippedNow ? " disabled" : "", ">",
             equippedNow ? "Equipado" : "Equipar",
@@ -106,7 +106,7 @@
             "<div class=\"collection-carousel-dots\">",
             unlockedItems.map(function (item) {
                 return [
-                    "<button class=\"collection-dot", item.id === currentItem.id ? " is-active" : "", "\" type=\"button\" data-collection-select=\"", item.id, "\" aria-label=\"Ver ", item.name, "\"></button>"
+                    "<button class=\"collection-dot", item.id === currentItem.id ? " is-active" : "", "\" type=\"button\" data-collection-select=\"", item.id, "\" aria-label=\"Ver ", getItemName(item), "\"></button>"
                 ].join("");
             }).join(""),
             "</div>"
@@ -117,13 +117,13 @@
 
     function buildSideCard(item, variant) {
         return [
-            "<button class=\"collection-side-card is-", variant, "\" type=\"button\" data-collection-select=\"", item.id, "\" aria-label=\"Ver ", item.name, "\">",
+            "<button class=\"collection-side-card is-", variant, "\" type=\"button\" data-collection-select=\"", item.id, "\" aria-label=\"Ver ", getItemName(item), "\">",
             "<div class=\"collection-side-art\">",
-            "<img src=\"", getTransparentImage(item), "\" alt=\"", item.name, "\">",
+            "<img src=\"", getTransparentImage(item), "\" alt=\"", getItemName(item), "\">",
             "</div>",
             "<div class=\"collection-side-copy\">",
-            "<h4>", item.name, "</h4>",
-            "<p>", item.perk, "</p>",
+            "<h4>", getItemName(item), "</h4>",
+            "<p>", getItemSlogan(item), "</p>",
             "</div>",
             "</button>"
         ].join("");
@@ -210,10 +210,10 @@
             element.innerHTML = [
                 "<a class=\"sidebar-skin-link\" data-interactive-tilt=\"sidebar-card\" href=\"perfil.html#profile-collection-section\">",
                 "<p class=\"panel-kicker\">Vestuario activo</p>",
-                "<div class=\"sidebar-skin-art\"><img src=\"", item.image, "\" alt=\"", item.name, "\"></div>",
+                "<div class=\"sidebar-skin-art\"><img src=\"", item.image, "\" alt=\"", getItemName(item), "\"></div>",
                 "<div class=\"sidebar-skin-copy\">",
-                "<strong>", item.name, "</strong>",
-                "<span>", item.perk, "</span>",
+                "<strong>", getItemName(item), "</strong>",
+                "<span>", getItemSlogan(item), "</span>",
                 "</div>",
                 "</a>"
             ].join("");
@@ -223,18 +223,18 @@
     }
 
     function getItemDescription(item) {
-        const descriptions = {
-            CapyBlack: "Su capa oscura abre el camino para los aventureros que apenas empiezan a dominar la magia del c&oacute;digo.",
-            CapyAqua: "Una guardiana serena que canaliza corrientes antiguas para resolver retos con fluidez y calma.",
-            CapyKing: "Representa liderazgo, presencia y seguridad para quienes avanzan con disciplina real.",
-            CapyExplorer: "Ideal para exploradores de mecanismos, acertijos y senderos ocultos entre engranes m&iacute;sticos.",
-            CapyCandy: "Una chispa dulce y veloz para recorridos ligeros llenos de energ&iacute;a y creatividad.",
-            CapyRuna: "Conserva las marcas del bosque y protege la memoria de quienes estudian con paciencia.",
-            CapySun: "Brilla como una gu&iacute;a luminosa para decisiones firmes en cada estaci&oacute;n del mapa.",
-            CapyEarth: "Resistencia y estabilidad para aventureros que construyen paso a paso sin perder el rumbo.",
-            CapyConstelation: "Trae visi&oacute;n estelar y una lectura m&aacute;s clara del camino entre portales y desaf&iacute;os."
-        };
+        return item.descripcion || item.description || "Un vestuario decorativo para personalizar tu aventura en CapyCode.";
+    }
 
-        return descriptions[item.id] || ("Un vestuario con la afinidad especial de " + item.perk + ".");
+    function getItemName(item) {
+        return window.CapyCore.getItemName ? window.CapyCore.getItemName(item) : (item.nombre || item.name);
+    }
+
+    function getItemSlogan(item) {
+        return window.CapyCore.getItemSlogan ? window.CapyCore.getItemSlogan(item) : (item.slogan || item.perk || item.frase);
+    }
+
+    function getItemCost(item) {
+        return window.CapyCore.getItemCost ? window.CapyCore.getItemCost(item) : Number(item.costo || item.price || 0);
     }
 }());

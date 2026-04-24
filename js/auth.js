@@ -18,14 +18,15 @@
         const formData = new FormData(form);
         const username = String(formData.get("username") || "").trim();
         const password = String(formData.get("password") || "").trim();
+        const minimumPasswordLength = document.body.dataset.authMode === "register" ? 8 : 3;
 
         if (!username || !password) {
             showMessage("Completa usuario y contrasena para entrar.", "error");
             return;
         }
 
-        if (password.length < 3) {
-            showMessage("Usa al menos 3 caracteres para seguir probando.", "error");
+        if (password.length < minimumPasswordLength) {
+            showMessage("Usa al menos " + minimumPasswordLength + " caracteres.", "error");
             return;
         }
 
@@ -37,7 +38,7 @@
             })
         );
 
-        showMessage("Listo. Te llevamos al mapa de la academia...", "success");
+        showMessage("Listo. Entrando a CapyCode...", "success");
         window.setTimeout(function () {
             window.location.href = "mapa.html";
         }, 450);

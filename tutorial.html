@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CapyCode | Historia</title>
+    <title>CapyCode | Tutorial</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Metamorphous&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -28,6 +28,7 @@
                     <img src="assets/menu-icon.svg" alt="">
                     <span>Men&uacute;</span>
                 </button>
+                <div class="topbar-page-title" aria-label="Tutorial">Tutorial</div>
                 <div class="topbar-right">
                     <div class="hud-stat">
                         <span>Racha</span>
@@ -43,10 +44,27 @@
                 </div>
             </header>
 
-            <main class="about-layout">
-                <section class="glass-surface about-story" id="about-story"></section>
-                <section class="glass-surface about-map" id="about-map"></section>
-                <section class="glass-surface about-extras" id="about-extras"></section>
+            <main class="tutorial-layout">
+                <section class="glass-surface tutorial-video-section">
+                    <div class="tutorial-video-frame">
+                        <iframe
+                            src="https://www.youtube.com/embed/VIDEO_ID_PENDIENTE"
+                            title="Tutorial de CapyCode"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                            allowfullscreen
+                        ></iframe>
+                    </div>
+                </section>
+
+                <section class="glass-surface tutorial-hotkeys-section">
+                    <div class="panel-header">
+                        <div>
+                            <p class="panel-kicker">Hotkeys</p>
+                            <h2>Controles de teclado</h2>
+                        </div>
+                    </div>
+                    <div class="hotkey-list" data-hotkey-list></div>
+                </section>
             </main>
         </div>
     </div>
@@ -54,6 +72,5 @@
     <script src="js/app-data.js"></script>
     <script src="js/hotkeys.js"></script>
     <script src="js/common.js"></script>
-    <script src="js/about.js"></script>
 </body>
 </html>

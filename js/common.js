@@ -14,6 +14,7 @@
         renderSidebarSkins();
         bindLogout();
         bindSidebarToggle();
+        registerDefaultHotkeys();
         refreshInteractiveTilts();
     });
 
@@ -211,10 +212,10 @@
             element.innerHTML = [
                 "<a class=\"sidebar-skin-link\" data-interactive-tilt=\"sidebar-card\" href=\"perfil.html#profile-collection-section\">",
                 "<p class=\"panel-kicker\">Vestuario activo</p>",
-                "<div class=\"sidebar-skin-art\"><img src=\"", equipped.image, "\" alt=\"", equipped.name, "\"></div>",
+                "<div class=\"sidebar-skin-art\"><img src=\"", equipped.image, "\" alt=\"", getItemName(equipped), "\"></div>",
                 "<div class=\"sidebar-skin-copy\">",
-                "<strong>", equipped.name, "</strong>",
-                "<span>", equipped.perk, "</span>",
+                "<strong>", getItemName(equipped), "</strong>",
+                "<span>", getItemSlogan(equipped), "</span>",
                 "</div>",
                 "</a>"
             ].join("");
@@ -228,7 +229,8 @@
         const items = [
             { href: "mapa.html", label: "Mapa", icon: "assets/nav-map.svg" },
             { href: "tienda.html", label: "Tienda", icon: "assets/nav-store.svg" },
-            { href: "about.html", label: "Historia", icon: "assets/nav-story.svg" }
+            { href: "about.html", label: "Historia", icon: "assets/nav-story.svg" },
+            { href: "tutorial.html", label: "Tutorial", icon: "assets/magic-wand.svg" }
         ];
 
         document.querySelectorAll("[data-sidebar-nav]").forEach(function (nav) {
@@ -267,6 +269,133 @@
                 }, 420);
             });
         });
+    }
+
+    function registerDefaultHotkeys() {
+        if (!window.CapyHotkeys) {
+            return;
+        }
+
+        window.CapyHotkeys.register([
+            {
+                id: "focus-next",
+                key: "Tab",
+                label: "Siguiente control",
+                description: "Avanza por botones, enlaces, campos y tarjetas interactivas.",
+                group: "Navegacion",
+                order: 1,
+                displayOnly: true
+            },
+            {
+                id: "focus-previous",
+                key: "Tab",
+                shiftKey: true,
+                label: "Control anterior",
+                description: "Regresa al control interactivo previo.",
+                group: "Navegacion",
+                order: 2,
+                displayOnly: true
+            },
+            {
+                id: "activate-focused",
+                key: "Enter",
+                label: "Activar",
+                description: "Activa el boton o enlace enfocado.",
+                group: "Navegacion",
+                order: 3,
+                displayOnly: true
+            },
+            {
+                id: "nav-map",
+                key: "m",
+                label: "Mapa",
+                description: "Abre el mapa de niveles.",
+                group: "Atajos globales",
+                order: 10,
+                action: function () {
+                    window.CapyHotkeys.navigateTo("mapa.html");
+                }
+            },
+            {
+                id: "nav-store",
+                key: "t",
+                label: "Tienda",
+                description: "Abre la tienda de vestuarios.",
+                group: "Atajos globales",
+                order: 11,
+                action: function () {
+                    window.CapyHotkeys.navigateTo("tienda.html");
+                }
+            },
+            {
+                id: "nav-story",
+                key: "h",
+                label: "Historia",
+                description: "Abre la historia de CapyCode.",
+                group: "Atajos globales",
+                order: 12,
+                action: function () {
+                    window.CapyHotkeys.navigateTo("about.html");
+                }
+            },
+            {
+                id: "nav-tutorial",
+                key: "u",
+                label: "Tutorial",
+                description: "Abre la pagina de tutorial y hotkeys.",
+                group: "Atajos globales",
+                order: 13,
+                action: function () {
+                    window.CapyHotkeys.navigateTo("tutorial.html");
+                }
+            },
+            {
+                id: "nav-profile",
+                key: "p",
+                label: "Perfil",
+                description: "Abre el perfil del jugador.",
+                group: "Atajos globales",
+                order: 14,
+                action: function () {
+                    window.CapyHotkeys.navigateTo("perfil.html");
+                }
+            },
+            {
+                id: "toggle-sidebar",
+                key: "s",
+                label: "Menu lateral",
+                description: "Contrae o expande la barra lateral.",
+                group: "Atajos globales",
+                order: 15,
+                action: function () {
+                    window.CapyHotkeys.clickSelector("[data-action=\"toggle-sidebar\"]");
+                },
+                enabled: function () {
+                    return Boolean(document.querySelector("[data-action=\"toggle-sidebar\"]"));
+                }
+            },
+            {
+                id: "quiz-primary",
+                key: "Enter",
+                ctrlKey: true,
+                label: "Comprobar",
+                description: "Comprueba la respuesta en una pantalla de nivel.",
+                group: "Nivel",
+                order: 20,
+                displayOnly: true
+            },
+            {
+                id: "quiz-reset",
+                key: "r",
+                label: "Reiniciar reto",
+                description: "Reinicia la pregunta actual en una pantalla de nivel.",
+                group: "Nivel",
+                order: 21,
+                displayOnly: true
+            }
+        ]);
+
+        window.CapyHotkeys.renderLists();
     }
 
     function refreshInteractiveTilts() {
@@ -323,6 +452,22 @@
         return (data.shopItems || []).find(function (item) {
             return item.id === id;
         }) || null;
+    }
+
+    function getItemName(item) {
+        return item && (item.nombre || item.name) ? (item.nombre || item.name) : "";
+    }
+
+    function getItemSlogan(item) {
+        return item && (item.slogan || item.perk || item.frase) ? (item.slogan || item.perk || item.frase) : "";
+    }
+
+    function getItemCost(item) {
+        if (!item) {
+            return 0;
+        }
+
+        return readNumber(item.costo !== undefined ? item.costo : item.price, 0);
     }
 
     function isUnlocked(itemId, profile) {
@@ -450,6 +595,9 @@
         getProfile: getProfile,
         saveProfile: saveProfile,
         getShopItem: getShopItem,
+        getItemName: getItemName,
+        getItemSlogan: getItemSlogan,
+        getItemCost: getItemCost,
         isUnlocked: isUnlocked,
         formatNumber: formatNumber,
         updateHud: updateHud,

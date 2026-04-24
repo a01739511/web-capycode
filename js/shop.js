@@ -17,31 +17,33 @@
 
         gridRoot.innerHTML = data.shopItems.map(function (item) {
             const state = getItemState(item, profile);
+            const itemName = getItemName(item);
+            const itemSlogan = getItemSlogan(item);
 
             return [
                 "<article class=\"shop-item-card shop-item-tile",
                 state.owned ? " is-owned" : "",
                 state.equippedNow ? " is-equipped" : "",
                 state.statusTone === "is-locked" ? " is-locked" : "",
-                "\" data-tilt-card=\"true\" aria-label=\"Vestuario ", item.name, "\">",
+                "\" data-tilt-card=\"true\" aria-label=\"Vestuario ", itemName, "\">",
                 "<span class=\"shop-card-glow\" aria-hidden=\"true\"></span>",
                 "<div class=\"shop-card-top\">",
                 "<span class=\"shop-card-status ", state.statusTone, "\">", state.statusLabel, "</span>",
-                "<span class=\"shop-card-price\">", getPriceLabel(item.price), "</span>",
+                "<span class=\"shop-card-price\">", getPriceLabel(getItemCost(item)), "</span>",
                 "</div>",
                 "<div class=\"shop-art-frame shop-art-frame-magic\">",
-                "<img src=\"", item.image, "\" alt=\"", item.name, "\">",
+                "<img src=\"", item.image, "\" alt=\"", itemName, "\">",
                 "</div>",
                 "<div class=\"shop-item-copy\">",
-                "<span class=\"shop-item-name\">", item.name, "</span>",
-                "<p class=\"shop-item-perk\">", item.perk, "</p>",
+                "<span class=\"shop-item-name\">", itemName, "</span>",
+                "<p class=\"shop-item-perk\">", itemSlogan, "</p>",
                 "</div>",
                 "<p class=\"shop-meta-note\">", state.metaNote, "</p>",
                 "<div class=\"shop-item-actions\">",
                 "<button class=\"shop-action", state.actionClass ? (" " + state.actionClass) : "", "\" type=\"button\" data-item-action-inline=\"", item.id, "\"", state.actionDisabled ? " disabled" : "", ">",
                 state.actionLabel,
                 "</button>",
-                "<button class=\"shop-secondary-action\" type=\"button\" data-item-open=\"", item.id, "\" aria-haspopup=\"dialog\" aria-label=\"Ver detalle de ", item.name, "\">Detalle</button>",
+                "<button class=\"shop-secondary-action\" type=\"button\" data-item-open=\"", item.id, "\" aria-haspopup=\"dialog\" aria-label=\"Ver detalle de ", itemName, "\">Detalle</button>",
                 "</div>",
                 "</article>"
             ].join("");
@@ -99,6 +101,14 @@
         modalRoot.classList.remove("is-hidden");
         modalRoot.setAttribute("aria-hidden", "false");
         document.body.classList.add("is-modal-open");
+        if (window.CapyCore && window.CapyCore.refreshInteractiveTilts) {
+            window.CapyCore.refreshInteractiveTilts();
+        }
+
+        const closeButton = modalRoot.querySelector(".shop-modal-close");
+        if (closeButton) {
+            closeButton.focus();
+        }
     }
 
     function closeModal() {
@@ -119,21 +129,23 @@
         }
 
         const state = getItemState(item, profile);
+        const itemName = getItemName(item);
+        const itemSlogan = getItemSlogan(item);
 
         modalContentRoot.innerHTML = [
             "<div class=\"shop-modal-media\">",
             "<div class=\"shop-art-frame shop-art-frame-magic shop-art-frame-modal\">",
-            "<img src=\"", item.image, "\" alt=\"", item.name, "\">",
+            "<img src=\"", item.image, "\" alt=\"", itemName, "\">",
             "</div>",
             "</div>",
             "<div class=\"shop-modal-copy\">",
             "<p class=\"panel-kicker\">Detalle del vestuario</p>",
-            "<h2 id=\"shop-modal-title\">", item.name, "</h2>",
+            "<h2 id=\"shop-modal-title\">", itemName, "</h2>",
             "<p class=\"shop-modal-description\">", getItemDescription(item), "</p>",
             "<div class=\"shop-modal-tags\">",
             "<span class=\"shop-modal-tag\">", state.statusLabel, "</span>",
-            "<span class=\"shop-modal-tag\">Costo: ", getPriceLabel(item.price), "</span>",
-            "<span class=\"shop-modal-tag\">Afinidad: ", item.perk, "</span>",
+            "<span class=\"shop-modal-tag\">Costo: ", getPriceLabel(getItemCost(item)), "</span>",
+            "<span class=\"shop-modal-tag\">Frase: ", itemSlogan, "</span>",
             "</div>",
             "<p class=\"shop-modal-note\">", getSupportCopy(state), "</p>",
             "<div class=\"shop-modal-actions\">",
@@ -180,11 +192,13 @@
         const owned = window.CapyCore.isUnlocked(itemId, profile);
 
         if (!owned) {
-            if (profile.xp < item.price) {
+            const itemCost = getItemCost(item);
+
+            if (profile.xp < itemCost) {
                 return;
             }
 
-            profile.xp -= item.price;
+            profile.xp -= itemCost;
             profile.unlockedCharacters.push(itemId);
         }
 
@@ -197,8 +211,9 @@
     function getItemState(item, profile) {
         const owned = window.CapyCore.isUnlocked(item.id, profile);
         const equippedNow = profile.equippedCharacter === item.id;
-        const affordable = profile.xp >= item.price;
-        const lockedPoints = Math.max(item.price - profile.xp, 0);
+        const itemCost = getItemCost(item);
+        const affordable = profile.xp >= itemCost;
+        const lockedPoints = Math.max(itemCost - profile.xp, 0);
 
         if (equippedNow) {
             return {
@@ -262,16 +277,18 @@
     function renderSidebarSkin(item) {
         document.querySelectorAll("[data-sidebar-skin]").forEach(function (element) {
             element.innerHTML = [
-                "<a class=\"sidebar-skin-link\" href=\"perfil.html#profile-collection-section\">",
+                "<a class=\"sidebar-skin-link\" data-interactive-tilt=\"sidebar-card\" href=\"perfil.html#profile-collection-section\">",
                 "<p class=\"panel-kicker\">Vestuario activo</p>",
-                "<div class=\"sidebar-skin-art\"><img src=\"", item.image, "\" alt=\"", item.name, "\"></div>",
+                "<div class=\"sidebar-skin-art\"><img src=\"", item.image, "\" alt=\"", getItemName(item), "\"></div>",
                 "<div class=\"sidebar-skin-copy\">",
-                "<strong>", item.name, "</strong>",
-                "<span>", item.perk, "</span>",
+                "<strong>", getItemName(item), "</strong>",
+                "<span>", getItemSlogan(item), "</span>",
                 "</div>",
                 "</a>"
             ].join("");
         });
+
+        window.CapyCore.refreshInteractiveTilts();
     }
 
     function getPriceLabel(price) {
@@ -291,22 +308,22 @@
             return "Tienes puntos suficientes para desbloquearlo ahora mismo y sumarlo a tu equipo.";
         }
 
-        return "Te faltan XP " + window.CapyCore.formatNumber(state.lockedPoints) + " para romper el sello de este vestuario.";
+        return "Te faltan XP " + window.CapyCore.formatNumber(state.lockedPoints) + " para comprar este vestuario.";
     }
 
     function getItemDescription(item) {
-        const descriptions = {
-            CapyBlack: "La capibara de las sombras elegantes. Camina entre runas violetas y abre el camino para los primeros aprendices del bosque.",
-            CapyAqua: "Guardi&aacute;n de corrientes tranquilas que transforma cada reto en una ola de enfoque y fluidez.",
-            CapyKing: "Un soberano arcano con capa real, cetro brillante y la serenidad de quien domina los salones encantados.",
-            CapyExplorer: "Inventor del vapor m&iacute;stico, experto en engranajes antiguos y rutas secretas ocultas entre portales.",
-            CapyCandy: "Hechicera de dulces destellos que convierte la energ&iacute;a del estudio en chispas de color y confianza.",
-            CapyRuna: "Custodio de grimorios ancestrales que protege los secretos del bosque con runas antiguas y sabidur&iacute;a paciente.",
-            CapySun: "Mensajera del amanecer m&aacute;gico, ideal para quienes avanzan con decisi&oacute;n y una luz serena en cada nivel.",
-            CapyEarth: "Defensor del coraz&oacute;n del bosque, resistente y firme cuando las misiones exigen constancia total.",
-            CapyConstelation: "Viajero estelar que lee mapas del cielo y encuentra respuestas donde otros solo ven oscuridad."
-        };
+        return item.descripcion || item.description || "Un vestuario decorativo para personalizar tu aventura en CapyCode.";
+    }
 
-        return descriptions[item.id] || ("Un vestuario de la academia con la afinidad especial de " + item.perk + ".");
+    function getItemName(item) {
+        return window.CapyCore.getItemName ? window.CapyCore.getItemName(item) : (item.nombre || item.name);
+    }
+
+    function getItemSlogan(item) {
+        return window.CapyCore.getItemSlogan ? window.CapyCore.getItemSlogan(item) : (item.slogan || item.perk || item.frase);
+    }
+
+    function getItemCost(item) {
+        return window.CapyCore.getItemCost ? window.CapyCore.getItemCost(item) : Number(item.costo || item.price || 0);
     }
 }());

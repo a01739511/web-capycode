@@ -21,10 +21,10 @@
 
     <div class="login-wrapper">
         <main class="login-card glass-surface">
-            <p class="eyebrow">Acceso temporal</p>
-            <h1 class="login-title">Entrada rapida</h1>
+            <p class="eyebrow">Registro</p>
+            <h1 class="login-title">Crear cuenta</h1>
             <p class="auth-description">
-                Mientras definen el sistema real de usuarios, cualquier dato sirve para entrar y seguir probando la app.
+                Crea tu acceso a CapyCode. Por ahora, cualquier usuario y contrase&ntilde;a v&aacute;lidos te dejan entrar.
             </p>
 
             <form class="login-form" id="auth-form" novalidate>
@@ -46,25 +46,26 @@
                         type="password"
                         id="password"
                         name="password"
-                        placeholder="Usa al menos 3 caracteres"
+                        placeholder="Usa al menos 8 caracteres"
                         autocomplete="new-password"
                         required
-                        minlength="3"
+                        minlength="8"
                     >
                 </div>
 
                 <p class="form-message" id="form-message" aria-live="polite"></p>
 
-                <button type="submit" class="btn-primary">Entrar al proyecto</button>
+                <button type="submit" class="btn-primary">Registrarme</button>
             </form>
 
             <p class="register-link">
-                &iquest;Prefieres la vista de inicio?
+                &iquest;Ya tienes cuenta?
                 <a href="iniciar_sesion.html">Iniciar sesi&oacute;n</a>
             </p>
         </main>
     </div>
 
+    <script src="js/hotkeys.js"></script>
     <script src="js/auth.js"></script>
 </body>
 </html>
