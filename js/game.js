@@ -205,7 +205,13 @@
         const wrapper = document.createElement("div");
         wrapper.className = (exercise.contentData.code || []).length ? "numeric-layout" : "answer-stack";
         const grid = document.createElement("div");
-        grid.className = "answer-stack";
+        grid.className = "answer-stack answer-choice-grid";
+        if (options.length === 4) {
+            grid.classList.add("answer-choice-grid--quad");
+        }
+        if (hasLongOptions(options)) {
+            grid.classList.add("has-long-options");
+        }
 
         if ((exercise.contentData.code || []).length) {
             wrapper.appendChild(createCodeStage(exercise.contentData.code));
@@ -236,6 +242,24 @@
 
         wrapper.appendChild(grid);
         elements.questionContent.appendChild(wrapper);
+        window.requestAnimationFrame(function () {
+            tuneAnswerGridDensity(grid);
+        });
+    }
+
+    function hasLongOptions(options) {
+        return options.some(function (option) {
+            return String(option.text || "").length > 78;
+        });
+    }
+
+    function tuneAnswerGridDensity(grid) {
+        if (!grid || !elements.questionContent) {
+            return;
+        }
+
+        const hasOverflow = elements.questionContent.scrollHeight > elements.questionContent.clientHeight + 8;
+        grid.classList.toggle("is-space-tight", hasOverflow);
     }
 
     function renderNumeric(exercise) {
