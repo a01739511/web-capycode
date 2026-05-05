@@ -27,9 +27,9 @@
     };
 
     const DIFFICULTY_LABELS = {
-        easy: "Facil",
+        easy: "Fácil",
         medium: "Medio",
-        hard: "Dificil",
+        hard: "Difícil",
         integrative: "Integrador"
     };
 
@@ -60,7 +60,7 @@
             key: "algoritmos",
             name: "Algoritmos",
             backgroundImage: "assets/fondo1.png",
-            content: "Secuencia, seleccion, repeticion y razonamiento algoritmico."
+            content: "Secuencia, selección, repetición y razonamiento algorítmico."
         },
         {
             id: 2,
@@ -74,7 +74,7 @@
             key: "expresiones",
             name: "Expresiones",
             backgroundImage: "assets/fondo1.png",
-            content: "Operadores aritmeticos, relacionales y logicos."
+            content: "Operadores aritméticos, relacionales y lógicos."
         },
         {
             id: 4,
@@ -88,14 +88,14 @@
             key: "ciclos",
             name: "Ciclos",
             backgroundImage: "assets/fondo1.png",
-            content: "Repeticion controlada con for, while, break y continue."
+            content: "Repetición controlada con for, while, break y continue."
         },
         {
             id: 6,
             key: "funciones",
             name: "Funciones",
             backgroundImage: "assets/fondo1.png",
-            content: "Funciones, parametros, retorno y reutilizacion."
+            content: "Funciones, parámetros, retorno y reutilización."
         },
         {
             id: 7,
@@ -148,7 +148,7 @@
         {
             id: "CapyAqua",
             name: "CapyAqua",
-            description: "Tonos acuaticos para avanzar con calma.",
+            description: "Tonos acuáticos para avanzar con calma.",
             tagline: "Marea tranquila",
             image: "assets/characters/CapyAqua.png"
         },
@@ -162,7 +162,7 @@
         {
             id: "CapyExplorer",
             name: "CapyExplorer",
-            description: "Equipo de exploracion para recorrer rutas.",
+            description: "Equipo de exploración para recorrer rutas.",
             tagline: "Ruta curiosa",
             image: "assets/characters/CapyExplorer.png"
         },
@@ -176,7 +176,7 @@
         {
             id: "CapyCandy",
             name: "CapyCandy",
-            description: "Colores dulces para una coleccion alegre.",
+            description: "Colores dulces para una colección alegre.",
             tagline: "Chispa dulce",
             image: "assets/characters/CapyCandy.png"
         },
@@ -191,13 +191,13 @@
             id: "CapyEarth",
             name: "CapyEarth",
             description: "Tonos de tierra para una presencia constante.",
-            tagline: "Raiz constante",
+            tagline: "Raíz constante",
             image: "assets/characters/CapyEarth.png"
         },
         {
             id: "CapyConstelation",
             name: "CapyConstelation",
-            description: "Detalles estelares para destacar en la coleccion.",
+            description: "Detalles estelares para destacar en la colección.",
             tagline: "Cielo estelar",
             image: "assets/characters/CapyConstelation.png"
         }
@@ -488,7 +488,7 @@
         const key = normalizeUsernameKey(cleanUsername);
 
         if (!cleanUsername || !password) {
-            throw new Error("Completa usuario y contrasena.");
+            throw new Error("Completa usuario y contraseña.");
         }
 
         if (users[key]) {
@@ -516,7 +516,7 @@
         let user = users[key];
 
         if (!cleanUsername || !password) {
-            throw new Error("Completa usuario y contrasena.");
+            throw new Error("Completa usuario y contraseña.");
         }
 
         if (!user) {
@@ -565,7 +565,7 @@
         const record = getUserRecordBySession();
 
         if (!record) {
-            throw new Error("Inicia sesion para cambiar usuario.");
+            throw new Error("Inicia sesión para cambiar usuario.");
         }
 
         if (!cleanUsername) {
@@ -599,11 +599,11 @@
 
         const record = getUserRecordBySession();
         if (!record) {
-            throw new Error("Inicia sesion para cambiar contrasena.");
+            throw new Error("Inicia sesión para cambiar contraseña.");
         }
 
         if (record.user.passwordMock && record.user.passwordMock !== currentPassword) {
-            throw new Error("La contrasena actual no coincide.");
+            throw new Error("La contraseña actual no coincide.");
         }
 
         if (!newPassword || String(newPassword).length < 8) {
@@ -655,7 +655,7 @@
         const answerList = Array.isArray(answers) ? answers : [];
 
         if (!record) {
-            throw new Error("Inicia sesion para completar niveles.");
+            throw new Error("Inicia sesión para completar niveles.");
         }
 
         if (!level) {
@@ -726,7 +726,7 @@
         const outfit = getOutfitByIdSync(outfitId);
 
         if (!record) {
-            throw new Error("Inicia sesion para comprar vestuarios.");
+            throw new Error("Inicia sesión para comprar vestuarios.");
         }
 
         if (!outfit) {
@@ -760,7 +760,7 @@
         const outfit = getOutfitByIdSync(outfitId);
 
         if (!record) {
-            throw new Error("Inicia sesion para equipar vestuarios.");
+            throw new Error("Inicia sesión para equipar vestuarios.");
         }
 
         if (!outfit || !record.user.unlockedOutfitIds.includes(outfit.id)) {
@@ -867,7 +867,7 @@
                 id: outfitId,
                 name: item.name || item.nombre || outfitId,
                 description: item.description || item.descripcion || "Vestuario decorativo de CapyCode.",
-                tagline: item.tagline || item.frase || item.slogan || item.perk || "",
+                tagline: item.tagline || item.slogan || item.perk || item.frase || "",
                 cost: OUTFIT_COSTS[outfitId],
                 image: item.image || ("assets/characters/" + outfitId + ".png")
             };

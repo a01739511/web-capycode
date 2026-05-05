@@ -270,7 +270,7 @@
         }
 
         if (state.owned) {
-            return "Ya forma parte de tu coleccion. Equipalo para cambiar el estilo.";
+            return "Ya forma parte de tu colección. Equípalo para cambiar el estilo.";
         }
 
         if (state.affordable) {

@@ -22,7 +22,7 @@
         const minimumPasswordLength = isRegister ? 8 : 3;
 
         if (!username || !password) {
-            showMessage("Completa usuario y contrasena para entrar.", "error");
+            showMessage("Completa usuario y contraseña para entrar.", "error");
             return;
         }
 
@@ -45,7 +45,7 @@
                 window.location.href = "mapa.html";
             }, 450);
         } catch (error) {
-            showMessage(error.message || "No se pudo iniciar sesion.", "error");
+            showMessage(error.message || "No se pudo iniciar sesión.", "error");
         } finally {
             setFormBusy(false);
         }

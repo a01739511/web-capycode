@@ -49,7 +49,9 @@
         remainingSeconds: timerSeconds,
         timerId: 0,
         locked: false,
-        isCompleting: false
+        isCompleting: false,
+        draggedLineId: "",
+        pointerDragLineId: ""
     };
 
     const audio = createAudioSystem();
@@ -141,7 +143,7 @@
             route ? route.name : "Ruta",
             " - ",
             level.name,
-            isPractice ? " (Practica)" : ""
+            isPractice ? " (Práctica)" : ""
         ].join("");
     }
 
@@ -248,7 +250,7 @@
         input.className = "magic-input";
         input.type = "number";
         input.inputMode = "decimal";
-        input.placeholder = "Respuesta numerica";
+        input.placeholder = "Respuesta numérica";
         input.addEventListener("input", function () {
             state.numericValue = input.value;
         });
@@ -306,22 +308,150 @@
             article.className = "sortable-row";
             article.dataset.index = String(index);
             article.innerHTML = [
-                "<div class=\"drag-pill\"><img src=\"assets/menu-icon.svg\" alt=\"Mover linea\"></div>",
+                "<button class=\"drag-pill\" type=\"button\" draggable=\"true\" aria-label=\"Arrastrar línea ", index + 1, "\"><img src=\"assets/menu-icon.svg\" alt=\"\"></button>",
                 "<div class=\"sortable-row-code\">",
                 buildCodeLineMarkup(item.text, index + 1, state.orderItems.length),
-                "</div>",
-                "<div class=\"sortable-row-controls\">",
-                "<button class=\"order-move-button\" type=\"button\" data-order-move=\"up\" aria-label=\"Subir linea ", index + 1, "\"", index === 0 ? " disabled" : "", ">&uarr;</button>",
-                "<button class=\"order-move-button\" type=\"button\" data-order-move=\"down\" aria-label=\"Bajar linea ", index + 1, "\"", index === state.orderItems.length - 1 ? " disabled" : "", ">&darr;</button>",
                 "</div>"
             ].join("");
-            article.querySelectorAll("[data-order-move]").forEach(function (button) {
-                button.addEventListener("click", function () {
-                    moveOrderItem(index, button.dataset.orderMove);
-                });
-            });
+            article.dataset.lineId = item.id;
+            bindDragHandle(article);
             list.appendChild(article);
         });
+    }
+
+    function bindDragHandle(article) {
+        const handle = article.querySelector(".drag-pill");
+        if (!handle) {
+            return;
+        }
+
+        handle.addEventListener("dragstart", function (event) {
+            state.draggedLineId = article.dataset.lineId;
+            article.classList.add("is-dragging");
+            event.dataTransfer.effectAllowed = "move";
+            event.dataTransfer.setData("text/plain", state.draggedLineId);
+            event.dataTransfer.setDragImage(article, 24, 24);
+        });
+
+        handle.addEventListener("dragend", function () {
+            article.classList.remove("is-dragging");
+            updateOrderItemsFromDom();
+            state.draggedLineId = "";
+        });
+
+        article.addEventListener("dragover", function (event) {
+            const draggedRow = getDraggedRow();
+            if (!draggedRow || draggedRow === article) {
+                return;
+            }
+
+            event.preventDefault();
+            const list = article.parentElement;
+            const rect = article.getBoundingClientRect();
+            const shouldPlaceAfter = event.clientY > rect.top + rect.height / 2;
+
+            if (shouldPlaceAfter) {
+                list.insertBefore(draggedRow, article.nextSibling);
+            } else {
+                list.insertBefore(draggedRow, article);
+            }
+        });
+
+        article.addEventListener("drop", function (event) {
+            event.preventDefault();
+            updateOrderItemsFromDom();
+        });
+
+        handle.addEventListener("pointerdown", function (event) {
+            beginPointerDrag(event, article);
+        });
+    }
+
+    function beginPointerDrag(event, article) {
+        if (event.button !== undefined && event.button !== 0) {
+            return;
+        }
+
+        event.preventDefault();
+        state.pointerDragLineId = article.dataset.lineId;
+        article.classList.add("is-dragging");
+        document.addEventListener("pointermove", handlePointerDragMove);
+        document.addEventListener("pointerup", endPointerDrag);
+        document.addEventListener("pointercancel", endPointerDrag);
+    }
+
+    function handlePointerDragMove(event) {
+        const draggedRow = getPointerDraggedRow();
+        if (!draggedRow) {
+            return;
+        }
+
+        event.preventDefault();
+        const target = document.elementFromPoint(event.clientX, event.clientY);
+        const targetRow = target ? target.closest(".sortable-row") : null;
+
+        if (!targetRow || targetRow === draggedRow) {
+            return;
+        }
+
+        const list = targetRow.parentElement;
+        const rect = targetRow.getBoundingClientRect();
+        const shouldPlaceAfter = event.clientY > rect.top + rect.height / 2;
+
+        if (shouldPlaceAfter) {
+            list.insertBefore(draggedRow, targetRow.nextSibling);
+        } else {
+            list.insertBefore(draggedRow, targetRow);
+        }
+
+        updateOrderItemsFromDom();
+    }
+
+    function endPointerDrag() {
+        const draggedRow = getPointerDraggedRow();
+        if (draggedRow) {
+            draggedRow.classList.remove("is-dragging");
+        }
+
+        updateOrderItemsFromDom();
+        state.pointerDragLineId = "";
+        document.removeEventListener("pointermove", handlePointerDragMove);
+        document.removeEventListener("pointerup", endPointerDrag);
+        document.removeEventListener("pointercancel", endPointerDrag);
+    }
+
+    function getPointerDraggedRow() {
+        if (!state.pointerDragLineId) {
+            return null;
+        }
+
+        return Array.from(document.querySelectorAll("[data-line-id]")).find(function (row) {
+            return row.dataset.lineId === state.pointerDragLineId;
+        }) || null;
+    }
+
+    function getDraggedRow() {
+        if (!state.draggedLineId) {
+            return null;
+        }
+
+        return Array.from(document.querySelectorAll("[data-line-id]")).find(function (row) {
+            return row.dataset.lineId === state.draggedLineId;
+        }) || null;
+    }
+
+    function updateOrderItemsFromDom() {
+        const list = document.getElementById("sortable-list");
+        if (!list) {
+            return;
+        }
+
+        const itemsById = new Map(state.orderItems.map(function (item) {
+            return [String(item.id), item];
+        }));
+        state.orderItems = Array.from(list.querySelectorAll("[data-line-id]")).map(function (row) {
+            return itemsById.get(String(row.dataset.lineId));
+        }).filter(Boolean);
     }
 
     function renderFillBlanks(exercise) {
@@ -538,7 +668,7 @@
     function renderLockedState() {
         stopTimer();
         elements.missionLabel.textContent = "Nivel bloqueado";
-        elements.questionTitle.textContent = "Este nivel aun no esta disponible";
+        elements.questionTitle.textContent = "Este nivel aún no está disponible";
         elements.questionContent.innerHTML = [
             "<div class=\"completion-card\">",
             "<p>Completa primero el nivel actual para desbloquearlo.</p>",
@@ -574,10 +704,10 @@
         const reward = outcome && outcome.reward ? Number(outcome.reward) : 0;
         const title = outcome && outcome.gameCompleted
             ? "Juego completado"
-            : (outcome && outcome.routeCompleted ? "Ruta completada" : (practice ? "Practica completada" : "Nivel completado"));
+            : (outcome && outcome.routeCompleted ? "Ruta completada" : (practice ? "Práctica completada" : "Nivel completado"));
         const copy = outcome && outcome.gameCompleted
-            ? "Terminaste todos los niveles disponibles. Desde ahora puedes repetirlos como practica."
-            : (outcome && outcome.routeCompleted ? "Se desbloqueo la siguiente ruta. Puedes continuar desde el mapa." : (practice ? "Este intento fue de practica, por eso no modifica XP ni racha." : "Ganaste XP y avanzaste al siguiente nivel."));
+            ? "Terminaste todos los niveles disponibles. Desde ahora puedes repetirlos como práctica."
+            : (outcome && outcome.routeCompleted ? "Se desbloqueó la siguiente ruta. Puedes continuar desde el mapa." : (practice ? "Este intento fue de práctica, por eso no modifica XP ni racha." : "Ganaste XP y avanzaste al siguiente nivel."));
 
         const overlay = document.createElement("div");
         overlay.className = "completion-overlay";
@@ -590,7 +720,7 @@
             "<img src=\"assets/characters/Capythilda.png\" alt=\"Capythilda\">",
             "</div>",
             "<div class=\"completion-screen-copy\">",
-            "<p class=\"panel-kicker\">", practice ? "Practica" : "Progreso guardado", "</p>",
+            "<p class=\"panel-kicker\">", practice ? "Práctica" : "Progreso guardado", "</p>",
             "<h2>", escapeHtml(title), "</h2>",
             "<p class=\"completion-lead\">", escapeHtml(copy), "</p>",
             reward ? "<p class=\"level-reward-pill\">+" + window.CapyCore.formatNumber(reward) + " XP</p>" : "",
@@ -627,7 +757,7 @@
             "<div class=\"completion-screen-copy\">",
             "<p class=\"panel-kicker\">Tiempo agotado</p>",
             "<h2>Game Over</h2>",
-            "<p class=\"completion-lead\">El intento termino porque se agoto el tiempo del ejercicio. Puedes reiniciar el nivel o volver al mapa.</p>",
+            "<p class=\"completion-lead\">El intento terminó porque se agotó el tiempo del ejercicio. Puedes reiniciar el nivel o volver al mapa.</p>",
             "<div class=\"completion-actions\">",
             "<a class=\"scene-button ghost\" href=\"mapa.html\">Salir al mapa</a>",
             "<button class=\"scene-button primary\" type=\"button\" data-retry-level>Reiniciar nivel</button>",
@@ -720,21 +850,6 @@
         });
     }
 
-    function moveOrderItem(index, direction) {
-        const nextIndex = direction === "up" ? index - 1 : index + 1;
-
-        if (nextIndex < 0 || nextIndex >= state.orderItems.length) {
-            return;
-        }
-
-        const nextItems = state.orderItems.slice();
-        const current = nextItems[index];
-        nextItems[index] = nextItems[nextIndex];
-        nextItems[nextIndex] = current;
-        state.orderItems = nextItems;
-        paintSortable();
-    }
-
     function fillActiveBlank(exercise, word) {
         if (!state.activeBlankKey) {
             state.activeBlankKey = getFirstBlankKey(exercise);
@@ -755,7 +870,13 @@
     }
 
     function buildTemplateLineMarkup(line) {
-        return escapeHtml(line).replace(/\{([^}]+)\}/g, function (_, key) {
+        return String(line).split(/(\{[^}]+\})/g).map(function (part) {
+            const match = part.match(/^\{([^}]+)\}$/);
+            if (!match) {
+                return highlightPython(part);
+            }
+
+            const key = match[1];
             const value = state.blankAnswers[key] || "";
             const isActive = state.activeBlankKey === key;
 
@@ -767,7 +888,7 @@
                 value ? escapeHtml(value) : escapeHtml(key),
                 "</button>"
             ].join("");
-        });
+        }).join("");
     }
 
     function createCodeStage(lines) {

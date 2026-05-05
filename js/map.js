@@ -278,7 +278,7 @@
 
     function getStatusLabel(status) {
         if (status === "completed") {
-            return "Practica";
+            return "Práctica";
         }
         if (status === "current") {
             return "Actual";

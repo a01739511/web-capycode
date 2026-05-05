@@ -250,7 +250,7 @@
                 id: "nav-tutorial",
                 key: "u",
                 label: "Tutorial",
-                description: "Abre la pagina de tutorial.",
+                description: "Abre la página de tutorial.",
                 group: "Atajos globales",
                 order: 13,
                 action: function () {
@@ -271,7 +271,7 @@
             {
                 id: "toggle-sidebar",
                 key: "s",
-                label: "Menu lateral",
+                label: "Menú lateral",
                 description: "Contrae o expande la barra lateral.",
                 group: "Atajos globales",
                 order: 15,

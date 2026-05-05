@@ -1297,14 +1297,14 @@ body.sidebar-collapsed .scene-shell {
 
 .sortable-row {
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-columns: auto minmax(0, 1fr);
     align-items: center;
     gap: 0.65rem;
     padding: 0.68rem 0.75rem;
     border-radius: 16px;
     border: 1px solid rgba(206, 171, 255, 0.18);
     background: rgba(24, 14, 45, 0.78);
-    cursor: grab;
+    cursor: default;
 }
 
 .sortable-row-code {
@@ -1316,36 +1316,15 @@ body.sidebar-collapsed .scene-shell {
     gap: 0.75rem;
 }
 
-.sortable-row-controls {
-    display: grid;
-    grid-template-columns: repeat(2, 2rem);
-    gap: 0.35rem;
-}
-
-.order-move-button {
-    width: 2rem;
-    height: 2rem;
-    border-radius: 11px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    background: rgba(255, 255, 255, 0.08);
-    color: var(--text-main);
-    cursor: pointer;
-}
-
-.order-move-button:hover:not([disabled]),
-.order-move-button:focus-visible {
-    background: rgba(143, 238, 255, 0.14);
-    border-color: rgba(143, 238, 255, 0.32);
-}
-
-.order-move-button[disabled] {
-    opacity: 0.38;
-    cursor: not-allowed;
-}
-
 .sortable-row.is-drop-target {
     border-color: rgba(143, 238, 255, 0.8);
     box-shadow: inset 0 0 0 1px rgba(143, 238, 255, 0.2);
+}
+
+.sortable-row.is-dragging {
+    opacity: 0.48;
+    border-color: rgba(143, 238, 255, 0.72);
+    box-shadow: inset 0 0 0 1px rgba(143, 238, 255, 0.24);
 }
 
 .drag-pill {
@@ -1357,6 +1336,18 @@ body.sidebar-collapsed .scene-shell {
     border-radius: 12px;
     border: 1px solid rgba(255, 255, 255, 0.08);
     background: rgba(255, 255, 255, 0.06);
+    color: var(--text-main);
+    cursor: grab;
+    touch-action: none;
+}
+
+.drag-pill:active {
+    cursor: grabbing;
+}
+
+.drag-pill:focus-visible {
+    outline: 2px solid rgba(143, 238, 255, 0.8);
+    outline-offset: 2px;
 }
 
 .drag-pill img {

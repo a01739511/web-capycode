@@ -40,7 +40,7 @@
         mapRoot.innerHTML = [
             "<p class=\"panel-kicker\">Mapa narrativo</p>",
             "<h2>El sendero de la academia</h2>",
-            "<p class=\"page-subtitle\">Cada estacion del bosque representa una parte del aprendizaje. El mapa vive aparte para que puedas apreciarlo completo.</p>",
+            "<p class=\"page-subtitle\">Cada estación del bosque representa una parte del aprendizaje. El mapa vive aparte para que puedas apreciarlo completo.</p>",
             "<img class=\"world-map-image world-map-image-large\" src=\"", data.map.image, "\" alt=\"Mapa de la Academia CapyCode\">",
             "<p class=\"about-map-caption\">", data.map.caption, "</p>"
         ].join("");
@@ -59,7 +59,7 @@
             "<div class=\"panel-header\">",
             "<div>",
             "<p class=\"panel-kicker\">Sendero encantado</p>",
-            "<h2>Explora cada estacion</h2>",
+            "<h2>Explora cada estación</h2>",
             "</div>",
             "</div>",
             "<div class=\"story-station-shell\">",
@@ -94,7 +94,7 @@
             "<section class=\"info-grid-section about-closing\">",
             "<p class=\"panel-kicker\">Destino final</p>",
             "<h2>Pruebas de Magia Mayor</h2>",
-            "<p>Capythilda vuelve a aparecer como jueza del claro encantado. En esta ultima parte, el aprendiz combina condicionales, ciclos, funciones, listas y archivos para resolver retos integradores y obtener el diploma capibarico.</p>",
+            "<p>Capythilda vuelve a aparecer como jueza del claro encantado. En esta última parte, el aprendiz combina condicionales, ciclos, funciones, listas y archivos para resolver retos integradores y obtener el diploma capibárico.</p>",
             "<div class=\"about-closing-actions\">",
             "<a class=\"scene-button primary\" href=\"mapa.html\">Volver al mapa</a>",
             "<a class=\"scene-button ghost\" href=\"tienda.html\">Ver vestuarios</a>",

@@ -75,7 +75,7 @@
         const unlockedItems = getUnlockedItems(profile);
 
         if (!unlockedItems.length) {
-            collectionRoot.innerHTML = "<p class=\"profile-note\">Aun no hay vestuarios desbloqueados.</p>";
+            collectionRoot.innerHTML = "<p class=\"profile-note\">Aún no hay vestuarios desbloqueados.</p>";
             return;
         }
 
@@ -306,7 +306,7 @@
             setFormBusy(form, true);
             await api.updatePassword(currentPassword, newPassword);
             closeProfileDialog();
-            showProfileToast("Contrasena actualizada.");
+            showProfileToast("Contraseña actualizada.");
         } catch (error) {
             showProfileMessage(overlay, error.message || "No se pudo actualizar.", "error");
         } finally {
