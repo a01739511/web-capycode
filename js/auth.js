@@ -1,27 +1,28 @@
 (function () {
-    const SESSION_KEY = "capycodeSession";
     const form = document.getElementById("auth-form");
     const message = document.getElementById("form-message");
+    const api = window.CapyApi;
 
-    if (!form || !message) {
+    if (!form || !message || !api) {
         return;
     }
 
-    if (readSession()) {
+    if (api.getCurrentUserSync()) {
         window.location.href = "mapa.html";
         return;
     }
 
-    form.addEventListener("submit", function (event) {
+    form.addEventListener("submit", async function (event) {
         event.preventDefault();
 
         const formData = new FormData(form);
         const username = String(formData.get("username") || "").trim();
         const password = String(formData.get("password") || "").trim();
-        const minimumPasswordLength = document.body.dataset.authMode === "register" ? 8 : 3;
+        const isRegister = document.body.dataset.authMode === "register";
+        const minimumPasswordLength = isRegister ? 8 : 3;
 
         if (!username || !password) {
-            showMessage("Completa usuario y contraseña para entrar.", "error");
+            showMessage("Completa usuario y contrasena para entrar.", "error");
             return;
         }
 
@@ -30,27 +31,30 @@
             return;
         }
 
-        localStorage.setItem(
-            SESSION_KEY,
-            JSON.stringify({
-                username: username,
-                loggedInAt: new Date().toISOString()
-            })
-        );
+        setFormBusy(true);
 
-        showMessage("Listo. Entrando a CapyCode...", "success");
-        window.setTimeout(function () {
-            window.location.href = "mapa.html";
-        }, 450);
+        try {
+            if (isRegister) {
+                await api.registerUser(username, password);
+            } else {
+                await api.loginUser(username, password);
+            }
+
+            showMessage("Listo. Entrando a CapyCode...", "success");
+            window.setTimeout(function () {
+                window.location.href = "mapa.html";
+            }, 450);
+        } catch (error) {
+            showMessage(error.message || "No se pudo iniciar sesion.", "error");
+        } finally {
+            setFormBusy(false);
+        }
     });
 
-    function readSession() {
-        try {
-            const rawSession = localStorage.getItem(SESSION_KEY);
-            return rawSession ? JSON.parse(rawSession) : null;
-        } catch (error) {
-            return null;
-        }
+    function setFormBusy(isBusy) {
+        form.querySelectorAll("button, input").forEach(function (control) {
+            control.disabled = isBusy;
+        });
     }
 
     function showMessage(text, type) {

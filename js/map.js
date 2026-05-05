@@ -7,19 +7,20 @@
     const routeTitle = document.getElementById("route-title");
     const tooltip = document.getElementById("map-tooltip");
     const stage = root ? root.closest(".map-stage") : null;
-    const data = window.CAPYCODE_APP_DATA;
+    const api = window.CapyApi;
     const LOCK_ICON_PATH = "assets/lock-icon.svg";
     const LEVEL_ORB_PATH = "assets/esfera_nivel.png";
-    const ACTIVE_ROUTE_KEY = "capycodeActiveRouteId";
+    const ACTIVE_ROUTE_KEY = "capycodeActiveRouteIdV3";
 
-    if (!root || !routeList || !routeTrigger || !routePopover || !routeOrder || !routeTitle || !tooltip || !stage || !data || !window.CapyCore) {
+    if (!root || !routeList || !routeTrigger || !routePopover || !routeOrder || !routeTitle || !tooltip || !stage || !api || !window.CapyCore) {
         return;
     }
 
     const profile = window.CapyCore.getProfile();
-    const currentLevel = Number(profile.level || 1);
-    const completedLevels = new Set(Array.isArray(profile.completedLevels) ? profile.completedLevels.map(Number) : []);
-    const routes = getRoutes();
+    const currentLevelId = Number(profile.currentLevelId || 1);
+    const totalLevels = api.getTotalLevelCountSync();
+    const gameCompleted = currentLevelId === totalLevels + 1;
+    const routes = api.getRoutesSync();
     let activeRoute = resolveActiveRoute();
     let activeNode = null;
     let activeLevel = null;
@@ -37,13 +38,13 @@
 
         root.innerHTML = buildAmbientOrbMarkup(routeLevels) + routeLevels.map(function (level) {
             const status = resolveStatus(level.id);
-            const href = status === "locked" ? "#" : level.href;
-            const lockMarkup = status === "locked"
+            const isLocked = status === "locked";
+            const lockMarkup = isLocked
                 ? "<span class=\"level-lock-badge\" aria-hidden=\"true\"><img src=\"" + LOCK_ICON_PATH + "\" alt=\"\"></span>"
                 : "";
 
             return [
-                "<a class=\"level-node is-", status, "\" href=\"", href, "\" data-level-id=\"", level.id, "\" aria-disabled=\"", status === "locked" ? "true" : "false", "\" style=\"left:", level.x, "; top:", level.y, ";\">",
+                "<a class=\"level-node is-", status, "\" href=\"", isLocked ? "#" : level.href, "\" data-level-id=\"", level.id, "\" aria-disabled=\"", isLocked ? "true" : "false", "\" style=\"left:", level.x, "; top:", level.y, ";\">",
                 "<span class=\"level-orb-shell\">",
                 "<span class=\"level-orb\">",
                 "<img class=\"level-orb-image\" src=\"", LEVEL_ORB_PATH, "\" alt=\"\" aria-hidden=\"true\">",
@@ -51,14 +52,14 @@
                 "</span>",
                 lockMarkup,
                 "</span>",
-                "<span class=\"level-label\">", level.title, "</span>",
-                "<span class=\"level-topic\">", level.topic, "</span>",
+                "<span class=\"level-label\">", escapeHtml(level.name), "</span>",
+                "<span class=\"level-topic\">", escapeHtml(level.difficultyLabel), "</span>",
                 "</a>"
             ].join("");
         }).join("");
 
         root.querySelectorAll("[data-level-id]").forEach(function (node) {
-            const level = getLevelById(Number(node.dataset.levelId));
+            const level = api.getLevelByIdSync(Number(node.dataset.levelId));
 
             node.addEventListener("mouseenter", function () {
                 showTooltip(level, node);
@@ -83,10 +84,8 @@
             return getPositionKey(level);
         }));
 
-        return getRouteLayoutAnchors(activeRoute.id).map(function (anchor, index) {
-            return Object.assign({
-                number: index + 1
-            }, anchor);
+        return getRouteLayoutAnchors().map(function (anchor, index) {
+            return Object.assign({ number: index + 1 }, anchor);
         }).filter(function (anchor) {
             return !occupiedAnchors.has(getPositionKey(anchor));
         }).map(function (anchor, index) {
@@ -103,9 +102,9 @@
     }
 
     function renderRouteCopy() {
-        routeOrder.textContent = activeRoute.order || "Ruta";
-        routeTitle.textContent = activeRoute.title || "Ruta";
-        stage.style.setProperty("--map-background-image", "url(\"" + (activeRoute.background || data.map.background || "assets/fondo1.png") + "\")");
+        routeOrder.textContent = "Ruta " + activeRoute.orderIndex;
+        routeTitle.textContent = activeRoute.name;
+        stage.style.setProperty("--map-background-image", "url(\"" + (activeRoute.backgroundImage || "assets/fondo1.png") + "\")");
     }
 
     function renderRouteSwitcher() {
@@ -114,14 +113,13 @@
 
             return [
                 "<button class=\"map-route-chip",
-                routeItem.id === activeRoute.id ? " is-active" : "",
+                String(routeItem.id) === String(activeRoute.id) ? " is-active" : "",
                 state.isLocked ? " is-locked" : "",
-                state.isComingSoon ? " is-coming-soon" : "",
                 "\" type=\"button\" data-route-id=\"", routeItem.id, "\"",
                 state.isSelectable ? "" : " disabled",
                 ">",
-                "<span class=\"map-route-chip-order\">", routeItem.order || "Ruta", "</span>",
-                "<strong class=\"map-route-chip-title\">", routeItem.title || "Ruta", "</strong>",
+                "<span class=\"map-route-chip-order\">Ruta ", routeItem.orderIndex, "</span>",
+                "<strong class=\"map-route-chip-title\">", escapeHtml(routeItem.name), "</strong>",
                 "<span class=\"map-route-chip-status\">", state.label, "</span>",
                 "</button>"
             ].join("");
@@ -145,20 +143,15 @@
             }
 
             const nextRoute = routes.find(function (routeItem) {
-                return routeItem.id === trigger.dataset.routeId;
+                return String(routeItem.id) === String(trigger.dataset.routeId);
             });
 
-            if (!nextRoute) {
-                return;
-            }
-
-            const state = getRouteState(nextRoute);
-            if (!state.isSelectable || nextRoute.id === activeRoute.id) {
+            if (!nextRoute || !getRouteState(nextRoute).isSelectable || String(nextRoute.id) === String(activeRoute.id)) {
                 return;
             }
 
             activeRoute = nextRoute;
-            localStorage.setItem(ACTIVE_ROUTE_KEY, activeRoute.id);
+            localStorage.setItem(ACTIVE_ROUTE_KEY, String(activeRoute.id));
             hideTooltip();
             closeRouteMenu();
             renderRouteCopy();
@@ -203,16 +196,14 @@
         }
 
         const status = resolveStatus(level.id);
-        const statusCopy = getStatusLabel(status);
         tooltip.innerHTML = [
             "<div class=\"map-tooltip-head\">",
-            "<p class=\"map-tooltip-order\">", level.title, "</p>",
-            "<span class=\"map-state-pill is-", status, "\">", statusCopy, "</span>",
+            "<p class=\"map-tooltip-order\">", escapeHtml(level.name), "</p>",
+            "<span class=\"map-state-pill is-", status, "\">", getStatusLabel(status), "</span>",
             "</div>",
-            "<h3>", level.topic, "</h3>",
-            "<p class=\"map-tooltip-description\">", level.description, "</p>",
+            "<h3>", escapeHtml(activeRoute.name), "</h3>",
             "<div class=\"map-tooltip-meta\">",
-            level.difficulty ? buildTooltipCard("Dificultad", level.difficulty, "") : "",
+            buildTooltipCard("Dificultad", level.difficultyLabel, ""),
             buildTooltipCard("Contenido", level.content, "is-content is-wide"),
             "</div>"
         ].join("");
@@ -237,22 +228,10 @@
         const baseX = rect.left - stageRect.left + rect.width / 2;
         const baseY = rect.top - stageRect.top + rect.height / 2;
         const positions = [
-            {
-                left: rect.right - stageRect.left + gap,
-                top: baseY - height / 2
-            },
-            {
-                left: rect.left - stageRect.left - width - gap,
-                top: baseY - height / 2
-            },
-            {
-                left: baseX - width / 2,
-                top: rect.top - stageRect.top - height - gap
-            },
-            {
-                left: baseX - width / 2,
-                top: rect.bottom - stageRect.top + gap
-            }
+            { left: rect.right - stageRect.left + gap, top: baseY - height / 2 },
+            { left: rect.left - stageRect.left - width - gap, top: baseY - height / 2 },
+            { left: baseX - width / 2, top: rect.top - stageRect.top - height - gap },
+            { left: baseX - width / 2, top: rect.bottom - stageRect.top + gap }
         ];
         const bestPosition = positions.find(function (position) {
             return position.left >= safeMargin &&
@@ -282,52 +261,36 @@
     }
 
     function resolveStatus(levelId) {
-        if (completedLevels.has(levelId)) {
+        if (gameCompleted) {
             return "completed";
         }
-        if (levelId === currentLevel) {
+
+        if (levelId < currentLevelId) {
+            return "completed";
+        }
+
+        if (levelId === currentLevelId) {
             return "current";
         }
-        if (levelId < currentLevel) {
-            return "unlocked";
-        }
+
         return "locked";
     }
 
     function getStatusLabel(status) {
         if (status === "completed") {
-            return "Completado";
+            return "Practica";
         }
         if (status === "current") {
-            return "En curso";
-        }
-        if (status === "unlocked") {
-            return "Desbloqueado";
+            return "Actual";
         }
         return "Bloqueado";
     }
 
-    function getLevelById(id) {
-        return getRouteLevels().find(function (level) {
-            return level.id === id;
-        }) || null;
-    }
-
-    function getRouteLevels() {
-        return getRouteLevelsByRoute(activeRoute.id);
-    }
-
-    function getRouteLevelsByRoute(routeId) {
-        return (data.levels || []).filter(function (level) {
-            return !level.routeId || level.routeId === routeId;
-        });
-    }
-
     function getPositionedRouteLevels() {
-        const routeAnchors = getRouteLayoutAnchors(activeRoute.id);
+        const routeAnchors = getRouteLayoutAnchors();
 
-        return getRouteLevels().slice().sort(function (left, right) {
-            return left.id - right.id;
+        return api.getLevelsByRouteSync(activeRoute.id).slice().sort(function (left, right) {
+            return left.routeOrder - right.routeOrder;
         }).map(function (level, index) {
             const anchor = routeAnchors[index];
 
@@ -338,142 +301,77 @@
         });
     }
 
-    function getRouteLayoutAnchors(routeId) {
-        const routeItem = routes.find(function (item) {
-            return item.id === routeId;
+    function getRouteLayoutAnchors() {
+        const levels = api.getLevelsByRouteSync(activeRoute.id);
+        const anchors = levels.map(function (level) {
+            return { x: level.x, y: level.y };
+        }).filter(function (anchor) {
+            return anchor.x && anchor.y;
         });
 
-        if (routeItem && Array.isArray(routeItem.levelAnchors) && routeItem.levelAnchors.length) {
-            return routeItem.levelAnchors;
-        }
-
-        if (data.map && Array.isArray(data.map.levelAnchors) && data.map.levelAnchors.length) {
-            return data.map.levelAnchors;
-        }
-
-        return getFallbackLevelAnchors();
+        return anchors.length ? anchors : [
+            { x: "16.2%", y: "52%" },
+            { x: "34.3%", y: "42.2%" },
+            { x: "33.2%", y: "74.9%" },
+            { x: "49.8%", y: "59.9%" },
+            { x: "66.5%", y: "37.2%" },
+            { x: "88.4%", y: "49.8%" },
+            { x: "77.2%", y: "73.7%" }
+        ];
     }
 
-    function getFallbackLevelAnchors() {
-        const seenPositions = new Set();
-
-        return (data.levels || []).filter(function (level) {
-            const key = getPositionKey(level);
-            if (seenPositions.has(key)) {
-                return false;
-            }
-
-            seenPositions.add(key);
-            return true;
-        }).map(function (level) {
-            return {
-                x: level.x,
-                y: level.y
-            };
+    function resolveActiveRoute() {
+        const storedRouteId = localStorage.getItem(ACTIVE_ROUTE_KEY);
+        const storedRoute = routes.find(function (routeItem) {
+            return String(routeItem.id) === String(storedRouteId);
         });
+
+        if (storedRoute && getRouteState(storedRoute).isSelectable) {
+            return storedRoute;
+        }
+
+        if (gameCompleted) {
+            return routes[routes.length - 1];
+        }
+
+        const currentLevel = api.getLevelByIdSync(currentLevelId);
+        const currentRoute = currentLevel && routes.find(function (routeItem) {
+            return String(routeItem.id) === String(currentLevel.routeId);
+        });
+
+        return currentRoute || routes[0];
+    }
+
+    function getRouteState(routeItem, activeRouteId) {
+        const firstLevel = api.getLevelsByRouteSync(routeItem.id)[0];
+        const isLocked = !gameCompleted && firstLevel && firstLevel.id > currentLevelId;
+        const selectedRouteId = activeRouteId || "";
+
+        if (String(routeItem.id) === String(selectedRouteId) && !isLocked) {
+            return { label: "Actual", isLocked: false, isSelectable: true };
+        }
+
+        if (isLocked) {
+            return { label: "Bloqueada", isLocked: true, isSelectable: false };
+        }
+
+        return { label: "Disponible", isLocked: false, isSelectable: true };
+    }
+
+    function buildTooltipCard(label, value, className) {
+        return [
+            "<article class=\"map-tooltip-card ", className, "\">",
+            "<span class=\"map-tooltip-label\">", escapeHtml(label), "</span>",
+            "<strong class=\"map-tooltip-value\">", escapeHtml(value), "</strong>",
+            "</article>"
+        ].join("");
     }
 
     function getPositionKey(point) {
         return [point && point.x ? point.x : "", point && point.y ? point.y : ""].join("|");
     }
 
-    function getRoutes() {
-        const placeholderCount = 3;
-        const sourceRoutes = data.map && Array.isArray(data.map.routes) && data.map.routes.length
-            ? data.map.routes.slice()
-            : [Object.assign({
-                id: "ruta-principal",
-                order: "Ruta 1",
-                title: data.map && data.map.title ? data.map.title : "Ruta",
-                background: data.map && data.map.background ? data.map.background : "",
-                unlockLevel: 1
-            }, data.map || {})];
-        const routesWithPlaceholders = sourceRoutes.slice();
-
-        while (routesWithPlaceholders.length < placeholderCount) {
-            routesWithPlaceholders.push({
-                id: "ruta-proximamente-" + (routesWithPlaceholders.length + 1),
-                order: "Ruta " + (routesWithPlaceholders.length + 1),
-                title: "Próximamente",
-                background: data.map && data.map.background ? data.map.background : "",
-                unlockLevel: 999,
-                isComingSoon: true
-            });
-        }
-
-        return routesWithPlaceholders;
-    }
-
-    function resolveActiveRoute() {
-        const storedRouteId = localStorage.getItem(ACTIVE_ROUTE_KEY);
-        const storedRoute = routes.find(function (routeItem) {
-            return routeItem.id === storedRouteId;
-        });
-        const unlockedRoutes = routes.filter(function (routeItem) {
-            const state = getRouteState(routeItem, "");
-            return state.isSelectable;
-        });
-
-        if (storedRoute && getRouteState(storedRoute, "").isSelectable) {
-            return storedRoute;
-        }
-
-        if (unlockedRoutes.length) {
-            return unlockedRoutes[unlockedRoutes.length - 1];
-        }
-
-        return routes[0];
-    }
-
-    function getRouteState(routeItem, activeRouteId) {
-        const unlockLevel = Number(routeItem.unlockLevel || 1);
-        const hasLevels = getRouteLevelsByRoute(routeItem.id).length > 0;
-        const isComingSoon = Boolean(routeItem.isComingSoon || !hasLevels);
-        const isLocked = !isComingSoon && currentLevel < unlockLevel;
-        const isSelectable = !isComingSoon && !isLocked;
-        const selectedRouteId = activeRouteId || "";
-
-        if (routeItem.id === selectedRouteId && isSelectable) {
-            return {
-                label: "Actual",
-                isLocked: false,
-                isComingSoon: false,
-                isSelectable: true
-            };
-        }
-
-        if (isComingSoon) {
-            return {
-                label: "Próximamente",
-                isLocked: false,
-                isComingSoon: true,
-                isSelectable: false
-            };
-        }
-
-        if (isLocked) {
-            return {
-                label: "Bloqueada",
-                isLocked: true,
-                isComingSoon: false,
-                isSelectable: false
-            };
-        }
-
-        return {
-            label: "Disponible",
-            isLocked: false,
-            isComingSoon: false,
-            isSelectable: true
-        };
-    }
-
-    function buildTooltipCard(label, value, className) {
-        return [
-            "<article class=\"map-tooltip-card ", className, "\">",
-            "<span class=\"map-tooltip-label\">", label, "</span>",
-            "<strong class=\"map-tooltip-value\">", value, "</strong>",
-            "</article>"
-        ].join("");
+    function escapeHtml(value) {
+        return window.CapyCore.escapeHtml(value);
     }
 }());

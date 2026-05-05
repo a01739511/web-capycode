@@ -1,7 +1,10 @@
 (function () {
-    const SESSION_KEY = "capycodeSession";
-    const PROFILE_PREFIX = "capycodeProfile::";
     const data = window.CAPYCODE_APP_DATA || {};
+    const api = window.CapyApi;
+
+    if (!api) {
+        return;
+    }
 
     document.addEventListener("DOMContentLoaded", function () {
         if (document.body.dataset.requiresAuth === "true") {
@@ -25,165 +28,68 @@
     }
 
     function getSession() {
-        try {
-            const rawSession = localStorage.getItem(SESSION_KEY);
-            return rawSession ? JSON.parse(rawSession) : null;
-        } catch (error) {
-            return null;
-        }
+        return api.getCurrentUserSync();
     }
 
     function saveSession(username) {
-        localStorage.setItem(
-            SESSION_KEY,
-            JSON.stringify({
-                username: username,
-                loggedInAt: new Date().toISOString()
-            })
-        );
+        api.saveCurrentUserSync({
+            username: username
+        });
     }
 
     function logout() {
-        localStorage.removeItem(SESSION_KEY);
-        window.location.href = "iniciar_sesion.html";
+        api.logoutUser().finally(function () {
+            window.location.href = "iniciar_sesion.html";
+        });
     }
 
     function getProfile() {
-        const session = getSession();
-        const username = session && session.username ? session.username : "Aprendiz";
-        const key = PROFILE_PREFIX + username;
-
-        try {
-            const saved = localStorage.getItem(key);
-            if (saved) {
-                return normalizeProfile(JSON.parse(saved), username);
-            }
-        } catch (error) {
-            return buildDefaultProfile(username);
-        }
-
-        return buildDefaultProfile(username);
+        return api.getCurrentUserSync() || buildGuestProfile();
     }
 
     function saveProfile(profile) {
-        const normalized = normalizeProfile(profile, profile.username);
-        localStorage.setItem(PROFILE_PREFIX + normalized.username, JSON.stringify(normalized));
+        return api.saveCurrentUserSync(profile);
     }
 
-    function buildDefaultProfile(username) {
-        return normalizeProfile({
-            username: username,
-            userCode: buildUserCode(username),
-            title: "Novato del Grimorio",
+    function buildGuestProfile() {
+        return {
+            id: 0,
+            username: "Aprendiz",
+            currentLevelId: 1,
             level: 1,
             xp: 0,
             streak: 0,
+            visibleStreak: 0,
+            lastCompletionAt: null,
+            currentOutfitId: "CapyBlack",
             equippedCharacter: "CapyBlack",
-            unlockedCharacters: ["CapyBlack"],
-            completedLevels: [],
-            completedActivities: [],
-            missionProgress: {
-                mission: { current: 0, total: 5 },
-                order: { current: 0, total: 5 },
-                template: { current: 0, total: 5 }
-            }
-        }, username);
-    }
-
-    function normalizeProfile(profile, fallbackUsername) {
-        const username = profile && profile.username ? profile.username : fallbackUsername || "Aprendiz";
-        const normalized = {
-            username: username,
-            userCode: profile && profile.userCode ? profile.userCode : buildUserCode(username),
-            title: profile && profile.title ? profile.title : buildTitle(profile && profile.level),
-            level: readNumber(profile && profile.level, 1),
-            xp: readNumber(profile && profile.xp, 0),
-            streak: readNumber(profile && profile.streak, 0),
-            equippedCharacter: profile && profile.equippedCharacter ? profile.equippedCharacter : "CapyBlack",
-            unlockedCharacters: Array.isArray(profile && profile.unlockedCharacters) ? profile.unlockedCharacters.slice() : ["CapyBlack"],
-            completedLevels: Array.isArray(profile && profile.completedLevels) ? profile.completedLevels.slice() : [],
-            completedActivities: Array.isArray(profile && profile.completedActivities) ? profile.completedActivities.slice() : [],
-            missionProgress: {
-                mission: normalizeProgress(profile && profile.missionProgress && profile.missionProgress.mission, 0, 5),
-                order: normalizeProgress(profile && profile.missionProgress && profile.missionProgress.order, 0, 5),
-                template: normalizeProgress(profile && profile.missionProgress && profile.missionProgress.template, 0, 5)
-            }
+            unlockedOutfitIds: ["CapyBlack"],
+            unlockedCharacters: ["CapyBlack"]
         };
-        const totalLevels = getTotalPlayableLevels();
-
-        normalized.title = buildTitle(normalized.level);
-        normalized.unlockedCharacters = uniqueList(normalized.unlockedCharacters);
-        normalized.completedLevels = uniqueNumberList(normalized.completedLevels).filter(function (levelId) {
-            return levelId >= 1 && levelId <= totalLevels;
-        });
-        normalized.completedActivities = uniqueList(normalized.completedActivities);
-
-        if (normalized.completedLevels.length) {
-            const highestCompleted = Math.max.apply(null, normalized.completedLevels);
-            if (normalized.level <= highestCompleted) {
-                normalized.level = Math.min(highestCompleted + 1, totalLevels + 1);
-            }
-        }
-
-        normalized.level = Math.max(1, Math.min(normalized.level, totalLevels + 1));
-        normalized.title = buildTitle(normalized.level);
-
-        if (!normalized.unlockedCharacters.includes("CapyBlack")) {
-            normalized.unlockedCharacters.unshift("CapyBlack");
-        }
-
-        return normalized;
-    }
-
-    function normalizeProgress(progress, defaultCurrent, defaultTotal) {
-        return {
-            current: readNumber(progress && progress.current, defaultCurrent),
-            total: readNumber(progress && progress.total, defaultTotal)
-        };
-    }
-
-    function buildUserCode(username) {
-        const base = username
-            .split("")
-            .reduce(function (sum, char) {
-                return sum + char.charCodeAt(0);
-            }, 0);
-        return "A" + String(10000000 + (base % 90000000));
-    }
-
-    function buildTitle(level) {
-        if (level >= 7) {
-            return "Archimago del Bosque";
-        }
-        if (level >= 6) {
-            return "Guardian del Portal";
-        }
-        if (level >= 5) {
-            return "Aprendiz de Capythilda";
-        }
-        if (level >= 3) {
-            return "Explorador Arcano";
-        }
-        return "Novato del Grimorio";
     }
 
     function updateHud() {
         const profile = getProfile();
+        const totalLevels = api.getTotalLevelCountSync();
+        const route = api.getCurrentRouteForUserSync(profile);
+        const completedGame = profile.currentLevelId === totalLevels + 1;
+        const routeTitle = completedGame ? "Juego completado" : (route ? route.name : "Ruta actual");
+        const levelCopy = completedGame ? "Completado" : "Nivel " + profile.currentLevelId;
 
         document.querySelectorAll("[data-player-name]").forEach(function (element) {
             element.textContent = profile.username;
         });
 
         document.querySelectorAll("[data-player-code]").forEach(function (element) {
-            element.textContent = profile.userCode;
+            element.textContent = "U" + String(profile.id || 0).padStart(4, "0");
         });
 
         document.querySelectorAll("[data-player-title]").forEach(function (element) {
-            element.textContent = profile.title;
+            element.textContent = routeTitle;
         });
 
         document.querySelectorAll("[data-player-level]").forEach(function (element) {
-            element.textContent = "Level " + profile.level;
+            element.textContent = levelCopy;
         });
 
         document.querySelectorAll("[data-player-xp]").forEach(function (element) {
@@ -191,8 +97,9 @@
         });
 
         document.querySelectorAll("[data-player-streak]").forEach(function (element) {
-            element.textContent = String(profile.streak);
+            element.textContent = String(profile.visibleStreak || 0);
         });
+
     }
 
     function bindLogout() {
@@ -203,7 +110,7 @@
 
     function renderSidebarSkins() {
         const profile = getProfile();
-        const equipped = getShopItem(profile.equippedCharacter);
+        const equipped = api.getOutfitByIdSync(profile.currentOutfitId || profile.equippedCharacter);
         if (!equipped) {
             return;
         }
@@ -212,10 +119,10 @@
             element.innerHTML = [
                 "<a class=\"sidebar-skin-link\" data-interactive-tilt=\"sidebar-card\" href=\"perfil.html#profile-collection-section\">",
                 "<p class=\"panel-kicker\">Vestuario activo</p>",
-                "<div class=\"sidebar-skin-art\"><img src=\"", equipped.image, "\" alt=\"", getItemName(equipped), "\"></div>",
+                "<div class=\"sidebar-skin-art\"><img src=\"", escapeAttribute(equipped.image), "\" alt=\"", escapeAttribute(equipped.name), "\"></div>",
                 "<div class=\"sidebar-skin-copy\">",
-                "<strong>", getItemName(equipped), "</strong>",
-                "<span>", getItemSlogan(equipped), "</span>",
+                "<strong>", escapeHtml(equipped.name), "</strong>",
+                "<span>", escapeHtml(equipped.tagline), "</span>",
                 "</div>",
                 "</a>"
             ].join("");
@@ -283,7 +190,7 @@
                 key: "Tab",
                 label: "Siguiente control",
                 description: "Avanza por botones, enlaces, campos y tarjetas interactivas.",
-                group: "Navegación",
+                group: "Navegacion",
                 order: 1,
                 displayOnly: true
             },
@@ -293,7 +200,7 @@
                 shiftKey: true,
                 label: "Control anterior",
                 description: "Regresa al control interactivo previo.",
-                group: "Navegación",
+                group: "Navegacion",
                 order: 2,
                 displayOnly: true
             },
@@ -301,8 +208,8 @@
                 id: "activate-focused",
                 key: "Enter",
                 label: "Activar",
-                description: "Activa el botón o enlace enfocado.",
-                group: "Navegación",
+                description: "Activa el boton o enlace enfocado.",
+                group: "Navegacion",
                 order: 3,
                 displayOnly: true
             },
@@ -343,7 +250,7 @@
                 id: "nav-tutorial",
                 key: "u",
                 label: "Tutorial",
-                description: "Abre la página de tutorial y hotkeys.",
+                description: "Abre la pagina de tutorial.",
                 group: "Atajos globales",
                 order: 13,
                 action: function () {
@@ -364,7 +271,7 @@
             {
                 id: "toggle-sidebar",
                 key: "s",
-                label: "Menú lateral",
+                label: "Menu lateral",
                 description: "Contrae o expande la barra lateral.",
                 group: "Atajos globales",
                 order: 15,
@@ -389,7 +296,7 @@
                 id: "quiz-reset",
                 key: "r",
                 label: "Reiniciar reto",
-                description: "Reinicia la pregunta actual en una pantalla de nivel.",
+                description: "Reinicia el intento del nivel.",
                 group: "Nivel",
                 order: 21,
                 displayOnly: true
@@ -450,143 +357,73 @@
     }
 
     function getShopItem(id) {
-        return (data.shopItems || []).find(function (item) {
-            return item.id === id;
-        }) || null;
+        return api.getOutfitByIdSync(id);
     }
 
     function getItemName(item) {
-        return item && (item.nombre || item.name) ? (item.nombre || item.name) : "";
+        return item && item.name ? item.name : "";
     }
 
     function getItemSlogan(item) {
-        return item && (item.slogan || item.perk || item.frase) ? (item.slogan || item.perk || item.frase) : "";
+        return item && item.tagline ? item.tagline : "";
     }
 
     function getItemCost(item) {
-        if (!item) {
-            return 0;
-        }
-
-        return readNumber(item.costo !== undefined ? item.costo : item.price, 0);
+        return item && Number.isFinite(Number(item.cost)) ? Number(item.cost) : 0;
     }
 
     function isUnlocked(itemId, profile) {
-        return profile.unlockedCharacters.includes(itemId);
+        const currentProfile = profile || getProfile();
+        const unlocked = currentProfile.unlockedOutfitIds || currentProfile.unlockedCharacters || [];
+        return unlocked.includes(itemId);
     }
 
-    function completeActivity(progressKey, config) {
-        const profile = getProfile();
-        const progress = profile.missionProgress[progressKey];
-        const activityKey = config && config.activityKey ? config.activityKey : progressKey;
-        const bonusXp = config && config.bonusXp ? Number(config.bonusXp) : 0;
-        const nextLevel = config && config.nextLevel ? Number(config.nextLevel) : null;
-        const unlockCharacter = config && config.unlockCharacter ? config.unlockCharacter : "";
-        let firstCompletion = false;
-
-        if (progress) {
-            progress.current = progress.total;
-        }
-
-        if (!profile.completedActivities.includes(activityKey)) {
-            profile.completedActivities.push(activityKey);
-            profile.xp += bonusXp;
-            firstCompletion = true;
-        }
-
-        if (nextLevel && nextLevel > profile.level) {
-            profile.level = nextLevel;
-        }
-
-        if (nextLevel && !profile.completedLevels.includes(nextLevel - 1)) {
-            profile.completedLevels.push(nextLevel - 1);
-        }
-
-        if (unlockCharacter && !profile.unlockedCharacters.includes(unlockCharacter)) {
-            profile.unlockedCharacters.push(unlockCharacter);
-        }
-
-        profile.title = buildTitle(profile.level);
-        saveProfile(profile);
-        updateHud();
+    function completeActivity() {
         return {
-            firstCompletion: firstCompletion,
-            profile: profile
+            firstCompletion: false,
+            profile: getProfile()
         };
     }
 
     function completeLevel(levelId, config) {
         const profile = getProfile();
-        const numericLevelId = readNumber(levelId, 0);
-        const totalLevels = getTotalPlayableLevels();
-        const bonusXp = config && config.bonusXp ? Number(config.bonusXp) : 0;
-        const unlockCharacter = config && config.unlockCharacter ? config.unlockCharacter : "";
-        const nextLevel = Math.min(numericLevelId + 1, totalLevels + 1);
-        let firstCompletion = false;
-
-        if (numericLevelId < 1 || numericLevelId > totalLevels) {
-            return {
-                firstCompletion: false,
-                profile: profile
-            };
-        }
-
-        if (!profile.completedLevels.includes(numericLevelId)) {
-            profile.completedLevels.push(numericLevelId);
-            profile.xp += bonusXp;
-            firstCompletion = true;
-        }
-
-        if (nextLevel > profile.level) {
-            profile.level = nextLevel;
-        }
-
-        if (unlockCharacter && !profile.unlockedCharacters.includes(unlockCharacter)) {
-            profile.unlockedCharacters.push(unlockCharacter);
-        }
-
-        profile.title = buildTitle(profile.level);
+        const reward = config && config.bonusXp ? Number(config.bonusXp) : 0;
+        profile.currentLevelId = Math.max(profile.currentLevelId || 1, Number(levelId) + 1);
+        profile.level = profile.currentLevelId;
+        profile.xp += Number.isFinite(reward) ? reward : 0;
         saveProfile(profile);
         updateHud();
         return {
-            firstCompletion: firstCompletion,
+            firstCompletion: true,
             profile: profile
         };
     }
 
     function getTotalPlayableLevels() {
-        return Math.max(1, Array.isArray(data.levels) ? data.levels.length : 1);
+        return api.getTotalLevelCountSync();
     }
 
     function formatNumber(value) {
-        return Number(value).toLocaleString("es-MX");
-    }
-
-    function uniqueList(items) {
-        return items.filter(function (item, index) {
-            return items.indexOf(item) === index;
-        });
-    }
-
-    function uniqueNumberList(items) {
-        return items
-            .map(function (item) {
-                return Number(item);
-            })
-            .filter(function (item, index, list) {
-                return Number.isFinite(item) && list.indexOf(item) === index;
-            });
-    }
-
-    function readNumber(value, fallback) {
-        const parsed = Number(value);
-        return Number.isFinite(parsed) ? parsed : fallback;
+        return Number(value || 0).toLocaleString("es-MX");
     }
 
     function applySidebarState() {
         if (localStorage.getItem("capycodeSidebarCollapsed") === "true") {
             document.body.classList.add("sidebar-collapsed");
         }
+    }
+
+    function escapeHtml(value) {
+        return String(value === undefined || value === null ? "" : value)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    function escapeAttribute(value) {
+        return escapeHtml(value);
     }
 
     window.CapyCore = {
@@ -604,6 +441,10 @@
         updateHud: updateHud,
         completeActivity: completeActivity,
         completeLevel: completeLevel,
-        refreshInteractiveTilts: refreshInteractiveTilts
+        refreshInteractiveTilts: refreshInteractiveTilts,
+        renderSidebarSkins: renderSidebarSkins,
+        escapeHtml: escapeHtml,
+        escapeAttribute: escapeAttribute,
+        getTotalPlayableLevels: getTotalPlayableLevels
     };
 }());

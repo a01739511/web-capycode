@@ -1,14 +1,6 @@
 (function () {
-    const XP_REWARD = 50;
-    const COMPLETION_BONUS = 50;
-    const app = document.querySelector("[data-question-types]");
-    const QUESTION_SCREENS = [
-        { type: "opcion_multiple", page: "p_opcionMultiple.html" },
-        { type: "respuesta_numerica", page: "p_respuestaNumerica.html" },
-        { type: "seleccionar_lineas", page: "p_seleccionarLineas.html" },
-        { type: "ordenar_lineas", page: "p_ordenarLineas.html" },
-        { type: "drag_and_drop", page: "p_completarPlantilla.html" }
-    ];
+    const app = document.querySelector("[data-level-runner=\"true\"]");
+    const api = window.CapyApi;
     const PYTHON_KEYWORDS = new Set([
         "and", "as", "assert", "break", "class", "continue", "def", "del", "elif",
         "else", "except", "False", "finally", "for", "from", "global", "if", "import",
@@ -20,33 +12,17 @@
         "str", "bool", "sum", "min", "max"
     ]);
 
-    if (!app || !window.CapyCore) {
+    if (!app || !api || !window.CapyCore) {
         return;
     }
 
-    const session = window.CapyCore.getSession();
-    if (!session) {
-        window.location.href = "iniciar_sesion.html";
-        return;
-    }
-
-    const state = {
-        levelQuestions: [],
-        questions: [],
-        currentIndex: 0,
-        stepIndex: 0,
-        selectedOption: null,
-        selectedLines: [],
-        blankAnswers: {},
-        activeBlankKey: "",
-        orderItems: [],
-        numericAnswer: "",
-        awaitingNext: false,
-        isResolving: false
-    };
-    let answerPopupTimer = 0;
+    const searchParams = new URLSearchParams(window.location.search);
+    const levelId = normalizeLevelId(searchParams.get("levelId") || searchParams.get("level"));
+    const level = api.getLevelByIdSync(levelId);
+    const timerSeconds = level ? api.getDifficultySeconds(level.difficulty) : 30;
 
     const elements = {
+        shell: app,
         stage: document.querySelector(".game-stage"),
         missionLabel: document.getElementById("mission-label"),
         progressRatio: document.getElementById("progress-ratio"),
@@ -55,226 +31,261 @@
         questionContent: document.getElementById("question-content"),
         feedback: document.getElementById("feedback-message"),
         primaryAction: document.getElementById("primary-action-button"),
-        secondaryAction: document.getElementById("secondary-action-button")
+        secondaryAction: document.getElementById("secondary-action-button"),
+        timer: document.getElementById("exercise-timer")
     };
 
-    const questionTypes = app.dataset.questionTypes.split(",").map(function (item) {
-        return item.trim();
-    });
-    const searchParams = new URLSearchParams(window.location.search);
-    const themeKey = searchParams.get("tema") || "algoritmos";
-    const totalRouteLevels = Math.max(1, ((window.CAPYCODE_APP_DATA && window.CAPYCODE_APP_DATA.levels) || []).length);
-    const levelId = normalizeLevelId(searchParams.get("level"), totalRouteLevels);
-    const levelKey = "nivel_" + levelId;
-    const levelMeta = getLevelMeta(levelId);
+    const state = {
+        sourceExercises: [],
+        exercises: [],
+        currentIndex: 0,
+        answers: [],
+        selectedOptionIds: [],
+        selectedLineIds: [],
+        blankAnswers: {},
+        activeBlankKey: "",
+        orderItems: [],
+        numericValue: "",
+        remainingSeconds: timerSeconds,
+        timerId: 0,
+        locked: false,
+        isCompleting: false
+    };
+
+    const audio = createAudioSystem();
+    let answerPopupTimer = 0;
+
+    if (!level) {
+        renderEmptyState("Nivel no encontrado.");
+        return;
+    }
 
     elements.primaryAction.addEventListener("click", onPrimaryAction);
-    registerGameHotkeys();
+    document.addEventListener("pointerdown", audio.startMusic, { once: true });
+    document.addEventListener("keydown", function (event) {
+        audio.startMusic();
+
+        if (event.key === "Enter" && event.ctrlKey) {
+            onPrimaryAction();
+        }
+    });
 
     start();
 
     async function start() {
-        const dataset = await loadQuestions();
-        state.levelQuestions = getQuestionsForLevel(dataset);
+        const profile = window.CapyCore.getProfile();
 
-        if (!state.levelQuestions.length) {
-            renderEmptyState("No hay preguntas configuradas para esta pantalla.");
+        if (level.id > profile.currentLevelId && profile.currentLevelId !== api.getTotalLevelCountSync() + 1) {
+            renderLockedState();
             return;
         }
 
-        state.stepIndex = normalizeStepIndex(searchParams.get("step"), state.levelQuestions.length);
-        state.questions = [state.levelQuestions[state.stepIndex]];
-        state.currentIndex = 0;
+        renderLevelHeader();
 
-        if (!state.questions[0]) {
-            renderEmptyState("No se pudo encontrar la pregunta solicitada.");
+        try {
+            const response = await api.getExercisesByLevel(level.id);
+            state.sourceExercises = response.exercises || [];
+        } catch (error) {
+            renderEmptyState(error.message || "No se pudieron cargar los ejercicios.");
             return;
         }
 
-        if (!questionTypes.includes(state.questions[0].tipo)) {
-            window.location.replace(buildQuestionPageUrl(state.questions[0].tipo, state.stepIndex));
+        if (!state.sourceExercises.length) {
+            renderEmptyState("No hay ejercicios configurados para este nivel.");
             return;
         }
 
-        renderQuestion();
-        renderProgress();
+        startAttempt("initial");
         window.CapyCore.updateHud();
     }
 
-    async function loadQuestions() {
-        const sources = [
-            "levels_algoritmos_complementado.json",
-            "questions.json"
-        ];
+    function startAttempt(reason) {
+        stopTimer();
+        clearAnswerPopup();
+        clearCompletionOverlay();
+        state.exercises = shuffleArray(state.sourceExercises).slice(0, 5).map(prepareExerciseForAttempt);
+        state.currentIndex = 0;
+        state.answers = [];
+        state.locked = false;
+        state.isCompleting = false;
 
-        for (let index = 0; index < sources.length; index += 1) {
-            try {
-                const response = await fetch(sources[index], { cache: "no-store" });
-                if (!response.ok) {
-                    continue;
-                }
-                return await response.json();
-            } catch (error) {
-                continue;
-            }
-        }
-
-        return window.CAPYCODE_QUESTIONS || { temas: {} };
+        renderQuestion();
     }
 
-    function getQuestionsForLevel(dataset) {
-        const temas = dataset && dataset.temas ? dataset.temas : {};
-        const theme = temas[themeKey] || {};
-        const normalizedLevels = normalizeThemeLevels(theme);
-        const selectedQuestions = normalizedLevels[levelKey] || [];
+    function prepareExerciseForAttempt(exercise) {
+        const cloned = JSON.parse(JSON.stringify(exercise));
 
-        return selectedQuestions.map(function (question, index) {
-            return Object.assign({}, question, {
-                tema: themeKey,
-                nivel: levelKey,
-                uid: [themeKey, levelKey, index, question.tipo].join("-")
-            });
+        if (cloned.type === "MultipleChoiceExercise") {
+            cloned.contentData.options = shuffleArray(cloned.contentData.options || []);
+        }
+
+        if (cloned.type === "LineOrderingExercise") {
+            cloned.contentData.lines = shuffleArray(cloned.contentData.lines || []);
+        }
+
+        if (cloned.type === "FillBlanksExercise") {
+            cloned.contentData.wordBank = shuffleArray(cloned.contentData.wordBank || []);
+        }
+
+        return cloned;
+    }
+
+    function renderLevelHeader() {
+        const route = api.getRoutesSync().find(function (item) {
+            return String(item.id) === String(level.routeId);
         });
-    }
+        const profile = window.CapyCore.getProfile();
+        const isPractice = profile.currentLevelId === api.getTotalLevelCountSync() + 1 || level.id < profile.currentLevelId;
 
-    function normalizeThemeLevels(theme) {
-        const keys = Object.keys(theme || {});
-        const hasDirectLevels = keys.some(function (key) {
-            return /^nivel_\d+$/.test(key);
-        });
-
-        if (hasDirectLevels) {
-            return theme;
-        }
-
-        const groupedLevels = {};
-        let nextLevel = 1;
-
-        ["facil", "medio", "dificil", "integrador"].forEach(function (bucket) {
-            const questions = Array.isArray(theme[bucket]) ? theme[bucket] : [];
-
-            for (let index = 0; index < questions.length; index += 5) {
-                groupedLevels["nivel_" + nextLevel] = questions.slice(index, index + 5);
-                nextLevel += 1;
-            }
-        });
-
-        return groupedLevels;
-    }
-
-    function normalizeLevelId(rawLevel, maxLevel) {
-        const parsed = Number(rawLevel);
-
-        if (!Number.isFinite(parsed)) {
-            return 1;
-        }
-
-        return Math.max(1, Math.min(Math.trunc(parsed), maxLevel));
-    }
-
-    function normalizeStepIndex(rawStep, totalQuestions) {
-        const parsed = Number(rawStep);
-
-        if (!Number.isFinite(parsed)) {
-            return 0;
-        }
-
-        return Math.max(0, Math.min(Math.trunc(parsed) - 1, Math.max(0, totalQuestions - 1)));
-    }
-
-    function getLevelMeta(id) {
-        return ((window.CAPYCODE_APP_DATA && window.CAPYCODE_APP_DATA.levels) || []).find(function (level) {
-            return Number(level.id) === Number(id);
-        }) || null;
+        elements.missionLabel.textContent = [
+            route ? route.name : "Ruta",
+            " - ",
+            level.name,
+            isPractice ? " (Practica)" : ""
+        ].join("");
     }
 
     function renderQuestion() {
-        const question = state.questions[state.currentIndex];
-        state.selectedOption = null;
-        state.selectedLines = [];
-        state.blankAnswers = {};
-        state.activeBlankKey = "";
-        state.orderItems = [];
-        state.numericAnswer = "";
-        state.awaitingNext = false;
-        state.isResolving = false;
+        const exercise = getCurrentExercise();
 
-        elements.questionTitle.textContent = question.prompt;
+        if (!exercise) {
+            completeAttempt();
+            return;
+        }
+
+        resetAnswerState(exercise);
+        clearAnswerPopup();
+        elements.questionTitle.textContent = exercise.prompt;
         elements.questionContent.innerHTML = "";
         elements.questionContent.classList.remove("has-internal-scroll");
-        clearCompletionOverlay();
-        clearAnswerPopup();
         elements.feedback.textContent = "";
         elements.feedback.className = "feedback-banner";
         elements.primaryAction.textContent = "Comprobar";
         elements.primaryAction.disabled = false;
-        elements.primaryAction.style.display = "";
-        app.dataset.activeQuestionType = question.tipo;
+        elements.secondaryAction.style.display = "none";
+        elements.shell.dataset.activeQuestionType = exercise.type;
 
-        if (elements.secondaryAction) {
-            elements.secondaryAction.textContent = "Reiniciar reto";
-            elements.secondaryAction.onclick = restartPage;
+        if (exercise.type === "MultipleChoiceExercise") {
+            renderMultipleChoice(exercise);
+        } else if (exercise.type === "NumericAnswerExercise") {
+            renderNumeric(exercise);
+        } else if (exercise.type === "LineSelectionExercise") {
+            renderSelectLines(exercise);
+        } else if (exercise.type === "LineOrderingExercise") {
+            renderOrderLines(exercise);
+        } else {
+            renderFillBlanks(exercise);
         }
 
-        switch (question.tipo) {
-        case "opcion_multiple":
-            renderMultipleChoice(question);
-            break;
-        case "ordenar_lineas":
-            renderOrderLines(question);
-            break;
-        case "drag_and_drop":
-            renderTemplate(question);
-            break;
-        case "seleccionar_lineas":
-            renderSelectLines(question);
-            break;
-        case "respuesta_numerica":
-            renderNumeric(question);
-            break;
-        default:
-            renderEmptyState("Este reto aún no está soportado.");
-            break;
+        renderProgress();
+        startTimer();
+    }
+
+    function resetAnswerState(exercise) {
+        state.selectedOptionIds = [];
+        state.selectedLineIds = [];
+        state.blankAnswers = {};
+        state.activeBlankKey = "";
+        state.orderItems = [];
+        state.numericValue = "";
+        state.remainingSeconds = timerSeconds;
+
+        if (exercise.type === "LineOrderingExercise") {
+            state.orderItems = (exercise.contentData.lines || []).map(function (line) {
+                return { id: line.id, text: line.text };
+            });
         }
     }
 
-    function renderMultipleChoice(question) {
+    function renderMultipleChoice(exercise) {
+        const options = exercise.contentData.options || [];
+        const correctCount = (exercise.answerData.correctOptionIds || []).length;
         const wrapper = document.createElement("div");
-        wrapper.className = Array.isArray(question.code) && question.code.length ? "numeric-layout" : "answer-stack";
+        wrapper.className = (exercise.contentData.code || []).length ? "numeric-layout" : "answer-stack";
         const grid = document.createElement("div");
         grid.className = "answer-stack";
 
-        question.opciones.forEach(function (option) {
+        if ((exercise.contentData.code || []).length) {
+            wrapper.appendChild(createCodeStage(exercise.contentData.code));
+        }
+
+        options.forEach(function (option) {
             const button = document.createElement("button");
             button.type = "button";
             button.className = "answer-card";
             button.dataset.optionId = option.id;
             button.innerHTML = [
-                "<span class=\"answer-marker\">", option.id, "</span>",
+                "<span class=\"answer-marker\">", escapeHtml(option.id), "</span>",
                 "<span class=\"answer-card-text\">", escapeHtml(option.text), "</span>"
             ].join("");
             button.addEventListener("click", function () {
-                state.selectedOption = option.id;
+                if (correctCount > 1) {
+                    toggleListValue(state.selectedOptionIds, option.id);
+                } else {
+                    state.selectedOptionIds = [option.id];
+                }
+
                 grid.querySelectorAll(".answer-card").forEach(function (item) {
-                    item.classList.toggle("is-selected", item.dataset.optionId === option.id);
+                    item.classList.toggle("is-selected", state.selectedOptionIds.includes(item.dataset.optionId));
                 });
             });
             grid.appendChild(button);
         });
 
-        if (Array.isArray(question.code) && question.code.length) {
-            wrapper.appendChild(createCodeStage(question.code));
-        }
-
         wrapper.appendChild(grid);
         elements.questionContent.appendChild(wrapper);
     }
 
-    function renderOrderLines(question) {
-        state.orderItems = question.lineas.map(function (line) {
-            return { id: line.id, text: line.text };
+    function renderNumeric(exercise) {
+        const wrapper = document.createElement("div");
+        wrapper.className = "numeric-layout";
+
+        if ((exercise.contentData.code || []).length) {
+            wrapper.appendChild(createCodeStage(exercise.contentData.code));
+        }
+
+        const input = document.createElement("input");
+        input.className = "magic-input";
+        input.type = "number";
+        input.inputMode = "decimal";
+        input.placeholder = "Respuesta numerica";
+        input.addEventListener("input", function () {
+            state.numericValue = input.value;
         });
 
+        wrapper.appendChild(input);
+        elements.questionContent.appendChild(wrapper);
+        input.focus();
+    }
+
+    function renderSelectLines(exercise) {
+        const stack = document.createElement("div");
+        stack.className = "answer-stack";
+
+        (exercise.contentData.lines || []).forEach(function (line, index) {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "answer-card selection-card";
+            button.dataset.lineId = line.id;
+            button.innerHTML = [
+                "<span class=\"answer-marker\">", escapeHtml(line.id), "</span>",
+                "<div class=\"answer-card-copy\">",
+                buildCodeLineMarkup(line.text, index + 1, exercise.contentData.lines.length),
+                "</div>"
+            ].join("");
+            button.addEventListener("click", function () {
+                state.selectedLineIds = [line.id];
+                stack.querySelectorAll(".answer-card").forEach(function (item) {
+                    item.classList.toggle("is-selected", state.selectedLineIds.includes(item.dataset.lineId));
+                });
+            });
+            stack.appendChild(button);
+        });
+
+        elements.questionContent.appendChild(stack);
+    }
+
+    function renderOrderLines() {
         const list = document.createElement("div");
         list.className = "sortable-list";
         list.id = "sortable-list";
@@ -293,21 +304,17 @@
         state.orderItems.forEach(function (item, index) {
             const article = document.createElement("article");
             article.className = "sortable-row";
-            article.draggable = true;
             article.dataset.index = String(index);
             article.innerHTML = [
-                "<div class=\"drag-pill\"><img src=\"assets/menu-icon.svg\" alt=\"Mover línea\"></div>",
+                "<div class=\"drag-pill\"><img src=\"assets/menu-icon.svg\" alt=\"Mover linea\"></div>",
                 "<div class=\"sortable-row-code\">",
                 buildCodeLineMarkup(item.text, index + 1, state.orderItems.length),
                 "</div>",
                 "<div class=\"sortable-row-controls\">",
-                "<button class=\"order-move-button\" type=\"button\" data-order-move=\"up\" aria-label=\"Subir línea ", index + 1, "\"", index === 0 ? " disabled" : "", ">&uarr;</button>",
-                "<button class=\"order-move-button\" type=\"button\" data-order-move=\"down\" aria-label=\"Bajar línea ", index + 1, "\"", index === state.orderItems.length - 1 ? " disabled" : "", ">&darr;</button>",
+                "<button class=\"order-move-button\" type=\"button\" data-order-move=\"up\" aria-label=\"Subir linea ", index + 1, "\"", index === 0 ? " disabled" : "", ">&uarr;</button>",
+                "<button class=\"order-move-button\" type=\"button\" data-order-move=\"down\" aria-label=\"Bajar linea ", index + 1, "\"", index === state.orderItems.length - 1 ? " disabled" : "", ">&darr;</button>",
                 "</div>"
             ].join("");
-            article.addEventListener("dragstart", handleDragStart);
-            article.addEventListener("dragover", handleDragOver);
-            article.addEventListener("drop", handleDrop);
             article.querySelectorAll("[data-order-move]").forEach(function (button) {
                 button.addEventListener("click", function () {
                     moveOrderItem(index, button.dataset.orderMove);
@@ -317,11 +324,11 @@
         });
     }
 
-    function renderTemplate(question) {
+    function renderFillBlanks(exercise) {
         elements.questionContent.classList.add("has-internal-scroll");
 
         if (!state.activeBlankKey) {
-            state.activeBlankKey = getFirstBlankKey(question);
+            state.activeBlankKey = getFirstBlankKey(exercise);
         }
 
         const builder = document.createElement("div");
@@ -329,10 +336,10 @@
 
         const stage = document.createElement("div");
         stage.className = "code-stage";
-        stage.innerHTML = question.plantilla.map(function (line, index) {
+        stage.innerHTML = (exercise.contentData.template || []).map(function (line, index) {
             return [
                 "<div class=\"template-row\">",
-                "<span class=\"code-line-number\">", formatLineNumber(index + 1, question.plantilla.length), "</span>",
+                "<span class=\"code-line-number\">", formatLineNumber(index + 1, exercise.contentData.template.length), "</span>",
                 "<div class=\"template-row-body code-line-content\">", buildTemplateLineMarkup(line), "</div>",
                 "</div>"
             ].join("");
@@ -344,12 +351,12 @@
             "<div class=\"template-bank-head\">",
             "<div>",
             "<p class=\"panel-kicker\">Banco de palabras</p>",
-            "<p>Toca un hueco del c&oacute;digo y luego una palabra para colocarla.</p>",
+            "<p>Toca un hueco y luego una palabra.</p>",
             "</div>",
             "<button class=\"template-clear-button\" type=\"button\">Vaciar hueco</button>",
             "</div>",
             "<div class=\"template-word-bank\">",
-            question.banco_palabras.map(function (word) {
+            (exercise.contentData.wordBank || []).map(function (word) {
                 const isUsed = Object.keys(state.blankAnswers).some(function (key) {
                     return state.blankAnswers[key] === word;
                 });
@@ -371,803 +378,624 @@
         stage.querySelectorAll("[data-blank-key]").forEach(function (button) {
             button.addEventListener("click", function () {
                 state.activeBlankKey = button.dataset.blankKey;
-                renderTemplate(question);
+                renderFillBlanks(exercise);
             });
         });
 
         bankPanel.querySelectorAll("[data-word]").forEach(function (button) {
             button.addEventListener("click", function () {
-                fillActiveBlank(question, button.dataset.word);
+                fillActiveBlank(exercise, button.dataset.word);
             });
         });
 
         bankPanel.querySelector(".template-clear-button").addEventListener("click", function () {
-            clearActiveBlank(question);
+            if (state.activeBlankKey) {
+                delete state.blankAnswers[state.activeBlankKey];
+            }
+            renderFillBlanks(exercise);
         });
-    }
-
-    function renderSelectLines(question) {
-        const stack = document.createElement("div");
-        stack.className = "answer-stack";
-
-        question.lineas.forEach(function (line, index) {
-            const button = document.createElement("button");
-            button.type = "button";
-            button.className = "answer-card selection-card";
-            button.dataset.lineId = line.id;
-            button.innerHTML = [
-                "<span class=\"answer-marker\">", line.id, "</span>",
-                "<div class=\"answer-card-copy\">",
-                buildCodeLineMarkup(line.text, index + 1, question.lineas.length),
-                "</div>"
-            ].join("");
-            button.addEventListener("click", function () {
-                toggleSelectedLine(line.id);
-                stack.querySelectorAll(".answer-card").forEach(function (item) {
-                    item.classList.toggle("is-selected", state.selectedLines.includes(item.dataset.lineId));
-                });
-            });
-            stack.appendChild(button);
-        });
-
-        elements.questionContent.appendChild(stack);
-    }
-
-    function renderNumeric(question) {
-        const wrapper = document.createElement("div");
-        wrapper.className = "numeric-layout";
-        wrapper.appendChild(createCodeStage(question.code));
-
-        const input = document.createElement("input");
-        input.type = "number";
-        input.className = "magic-input";
-        input.placeholder = "Escribe tu respuesta";
-        input.addEventListener("input", function () {
-            state.numericAnswer = input.value;
-        });
-
-        wrapper.appendChild(input);
-        elements.questionContent.appendChild(wrapper);
     }
 
     function onPrimaryAction() {
-        if (state.isResolving) {
+        if (state.locked || state.isCompleting) {
             return;
         }
 
-        if (state.awaitingNext) {
-            nextQuestion();
+        const exercise = getCurrentExercise();
+        const answer = getCurrentAnswer(exercise);
+
+        if (!answer) {
+            showFloatingResult("error", "Respuesta incompleta", "Completa el ejercicio para comprobar.");
+            audio.playIncorrect();
             return;
         }
 
-        state.isResolving = true;
-        const question = state.questions[state.currentIndex];
-        const result = validate(question);
-
-        if (!result.valid) {
-            clearFeedback();
-            showAnswerPopup("Falta completar", result.message, "error");
-            releaseActionLock();
+        if (!api.validateExerciseAnswer(exercise, answer)) {
+            showFloatingResult("error", "Respuesta incorrecta", "Corrige este ejercicio para poder avanzar.");
+            audio.playIncorrect();
             return;
         }
 
-        updateProfile(result.correct);
-        clearFeedback();
-        resetVisibleSelections(question);
-        showAnswerPopup(result.correct ? "Respuesta correcta" : "Respuesta incorrecta", result.correct ? "Puedes avanzar al siguiente reto." : "Ajusta tu respuesta e inténtalo otra vez.", result.correct ? "success" : "error");
-
-        if (result.correct) {
-            state.awaitingNext = true;
-            state.isResolving = false;
-            elements.primaryAction.textContent = getAdvanceButtonLabel();
-        } else {
-            elements.primaryAction.textContent = "Comprobar";
-            releaseActionLock();
-        }
-
-        renderProgress();
-    }
-
-    function validate(question) {
-        switch (question.tipo) {
-        case "opcion_multiple":
-            if (!state.selectedOption) {
-                return { valid: false, message: "Selecciona una opción antes de comprobar." };
-            }
-            return {
-                valid: true,
-                correct: question.correct_ids.includes(state.selectedOption),
-                message: ""
-            };
-        case "ordenar_lineas":
-            return {
-                valid: true,
-                correct: state.orderItems.map(function (item) {
-                    return item.id;
-                }).join("|") === question.orden_correcto.join("|"),
-                message: ""
-            };
-        case "drag_and_drop":
-            if (Object.keys(question.rellenos).some(function (key) {
-                return !state.blankAnswers[key];
-            })) {
-                return { valid: false, message: "Completa todos los espacios antes de comprobar." };
-            }
-            return {
-                valid: true,
-                correct: Object.keys(question.rellenos).every(function (key) {
-                    return question.rellenos[key] === state.blankAnswers[key];
-                }),
-                message: ""
-            };
-        case "seleccionar_lineas":
-            if (!state.selectedLines.length) {
-                return { valid: false, message: "Selecciona al menos una línea." };
-            }
-            return {
-                valid: true,
-                correct: sameItems(state.selectedLines, question.correct_ids),
-                message: ""
-            };
-        case "respuesta_numerica":
-            if (state.numericAnswer === "") {
-                return { valid: false, message: "Escribe un número antes de comprobar." };
-            }
-            return {
-                valid: true,
-                correct: Number(state.numericAnswer) === Number(question.valor),
-                message: ""
-            };
-        default:
-            return { valid: false, message: "Tipo de pregunta no soportado." };
-        }
-    }
-
-    function updateProfile(correct) {
-        const profile = window.CapyCore.getProfile();
-
-        if (correct) {
-            profile.xp += XP_REWARD;
-            profile.streak += 1;
-        } else {
-            profile.streak = Math.max(0, profile.streak - 1);
-        }
-
-        window.CapyCore.saveProfile(profile);
-        window.CapyCore.updateHud();
-    }
-
-    function nextQuestion() {
-        renderCompletion();
-    }
-
-    function renderCompletion() {
-        const isFinalStage = isFinalFlowStep();
-        const nextPage = buildNextPageUrl();
-        const nextLevelPage = buildNextLevelPageUrl();
-
-        if (!isFinalStage) {
-            window.location.href = nextPage;
-            return;
-        }
-
-        const outcome = isFinalStage ? window.CapyCore.completeLevel(levelId, {
-            bonusXp: COMPLETION_BONUS
-        }) : null;
-        const profile = outcome ? outcome.profile : window.CapyCore.getProfile();
-        const equipped = (window.CAPYCODE_APP_DATA.shopItems || []).find(function (item) {
-            return item.id === profile.equippedCharacter;
+        stopTimer();
+        state.answers.push({
+            exerciseId: exercise.id,
+            answer: answer
         });
-        const headline = isFinalStage
-            ? (outcome && outcome.firstCompletion ? "Nivel completado" : "Nivel dominado")
-            : "Reto completado";
-        const rewardCopy = isFinalStage
-            ? (outcome && outcome.firstCompletion
-                ? "Has ganado +" + COMPLETION_BONUS + " XP extra y el siguiente nivel ya quedó desbloqueado en el mapa."
-                : "Este nivel ya estaba completado. Puedes repetirlo para seguir practicando.")
-            : "Has superado esta prueba. Continúa con el siguiente tipo de ejercicio para avanzar por el nivel.";
-        const celebrationImage = getCelebrationCharacterImage(equipped);
-        const completionKicker = isFinalStage
-            ? (outcome && outcome.firstCompletion ? "Nivel superado" : "Práctica completada")
-            : "Reto superado";
+        showFloatingResult("success", "Respuesta correcta", "Avanzando al siguiente ejercicio.");
+        audio.playCorrect();
 
-        app.classList.add("is-complete");
-        document.body.classList.add("quiz-complete");
+        if (state.currentIndex >= state.exercises.length - 1) {
+            window.setTimeout(completeAttempt, 720);
+            return;
+        }
 
-        document.body.insertAdjacentHTML("beforeend", [
-            "<div class=\"completion-overlay\" data-completion-overlay>",
-            "<div class=\"completion-spotlight\" aria-hidden=\"true\"></div>",
-            "<div class=\"completion-radiance\" aria-hidden=\"true\">",
-            buildCelebrationBurstMarkup(),
-            "</div>",
-            "<div class=\"completion-confetti\" aria-hidden=\"true\">",
-            buildConfettiMarkup(),
-            "</div>",
-            "<section class=\"completion-screen glass-surface\">",
-            "<div class=\"completion-screen-copy\">",
-            "<p class=\"panel-kicker\">", completionKicker, "</p>",
-            "<h2>", headline, "</h2>",
-            "<p class=\"completion-lead\">", rewardCopy, "</p>",
-            celebrationImage ? "<div class=\"completion-screen-art\"><img src=\"" + celebrationImage + "\" alt=\"" + escapeHtml(equipped ? getItemName(equipped) : "Personaje") + "\"></div>" : "",
-            "<div class=\"completion-actions\">",
-            "<a class=\"magic-cta\" href=\"", nextLevelPage, "\">Siguiente nivel</a>",
-            "<a class=\"scene-button ghost\" href=\"mapa.html\">Volver al mapa</a>",
-            "</div>",
-            "</div>",
-            "</section>",
-            "</div>"
-        ].join(""));
+        state.currentIndex += 1;
+        window.setTimeout(renderQuestion, 720);
+    }
 
-        const overlayAction = document.querySelector("[data-completion-overlay] .magic-cta");
-        if (overlayAction) {
-            overlayAction.focus();
+    async function completeAttempt() {
+        state.isCompleting = true;
+        stopTimer();
+        elements.primaryAction.disabled = true;
+
+        try {
+            const outcome = await api.completeLevel(level.id, state.answers);
+            audio.playComplete();
+            window.CapyCore.updateHud();
+            window.CapyCore.renderSidebarSkins();
+            showCompletionOverlay(outcome);
+        } catch (error) {
+            state.isCompleting = false;
+            elements.primaryAction.disabled = false;
+            showFloatingResult("error", "No se pudo guardar", error.message || "Intenta de nuevo.");
         }
     }
 
-    function buildNextCtaLabel(nextPage) {
-        if (nextPage === "mapa.html") {
-            return "Volver al mapa";
+    function getCurrentAnswer(exercise) {
+        if (!exercise) {
+            return null;
         }
-        return "Ir al siguiente reto";
+
+        if (exercise.type === "MultipleChoiceExercise") {
+            return state.selectedOptionIds.length ? { optionIds: state.selectedOptionIds.slice() } : null;
+        }
+
+        if (exercise.type === "NumericAnswerExercise") {
+            return state.numericValue !== "" ? { value: state.numericValue } : null;
+        }
+
+        if (exercise.type === "LineSelectionExercise") {
+            return state.selectedLineIds.length ? { lineIds: state.selectedLineIds.slice() } : null;
+        }
+
+        if (exercise.type === "LineOrderingExercise") {
+            return { lineIds: state.orderItems.map(function (item) { return item.id; }) };
+        }
+
+        if (exercise.type === "FillBlanksExercise") {
+            const requiredKeys = Object.keys(exercise.answerData.correctBlanks || {});
+            const hasAll = requiredKeys.every(function (key) {
+                return state.blankAnswers[key] !== undefined && state.blankAnswers[key] !== "";
+            });
+
+            return hasAll ? { blanks: Object.assign({}, state.blankAnswers) } : null;
+        }
+
+        return null;
+    }
+
+    function getCurrentExercise() {
+        return state.exercises[state.currentIndex] || null;
     }
 
     function renderProgress() {
-        const step = state.stepIndex + 1;
-        const totalSteps = Math.max(1, state.levelQuestions.length);
-        const percentage = (step / totalSteps) * 100;
+        const current = Math.min(state.currentIndex + 1, state.exercises.length);
+        const total = state.exercises.length || 5;
+        const percent = total ? (current - 1) / total * 100 : 0;
 
-        elements.missionLabel.textContent = buildMissionLabel();
-        elements.progressRatio.textContent = step + "/" + totalSteps;
-        animateProgressMeter(percentage);
+        elements.progressRatio.textContent = current + "/" + total;
+        elements.progressFill.style.width = Math.max(0, Math.min(100, percent)) + "%";
+        renderTimer();
     }
 
-    function animateProgressMeter(percentage) {
-        const nextValue = Math.max(0, Math.min(100, percentage));
-        const previousValue = Number(elements.progressFill.dataset.progressValue || 0);
+    function startTimer() {
+        stopTimer();
+        state.remainingSeconds = timerSeconds;
+        renderTimer();
+        state.timerId = window.setInterval(function () {
+            state.remainingSeconds -= 1;
+            renderTimer();
 
-        elements.progressFill.dataset.progressValue = String(nextValue);
-
-        if (!elements.progressFill.dataset.progressReady) {
-            elements.progressFill.style.width = previousValue + "%";
-            elements.progressFill.dataset.progressReady = "true";
-            window.requestAnimationFrame(function () {
-                elements.progressFill.style.width = nextValue + "%";
-            });
-            return;
-        }
-
-        if (Math.abs(previousValue - nextValue) < 0.01) {
-            elements.progressFill.style.width = nextValue + "%";
-            return;
-        }
-
-        window.requestAnimationFrame(function () {
-            elements.progressFill.style.width = nextValue + "%";
-        });
-    }
-
-    function restartPage() {
-        clearCompletionOverlay();
-        clearAnswerPopup();
-        state.currentIndex = 0;
-        state.questions = [state.levelQuestions[state.stepIndex]];
-        state.isResolving = false;
-        renderQuestion();
-        renderProgress();
-        elements.feedback.textContent = "";
-        elements.primaryAction.style.display = "";
-        elements.primaryAction.disabled = false;
-    }
-
-    function releaseActionLock() {
-        elements.primaryAction.disabled = true;
-
-        window.setTimeout(function () {
-            state.isResolving = false;
-            if (!state.awaitingNext) {
-                elements.primaryAction.disabled = false;
+            if (state.remainingSeconds <= 0) {
+                stopTimer();
+                state.locked = true;
+                audio.playIncorrect();
+                showGameOverOverlay();
             }
-        }, 420);
+        }, 1000);
     }
 
-    function showAnswerPopup(title, message, type) {
-        clearAnswerPopup();
+    function stopTimer() {
+        if (state.timerId) {
+            window.clearInterval(state.timerId);
+            state.timerId = 0;
+        }
+    }
 
-        elements.feedback.insertAdjacentHTML("beforebegin", [
-            "<div class=\"answer-popup ", type === "success" ? "is-success" : "is-error", "\" data-answer-popup role=\"status\" aria-live=\"polite\">",
-            "<span class=\"answer-popup-icon\" aria-hidden=\"true\">", type === "success" ? "OK" : "!", "</span>",
-            "<div>",
-            "<strong>", escapeHtml(title), "</strong>",
-            "<span>", escapeHtml(message), "</span>",
-            "</div>",
+    function renderTimer() {
+        if (!elements.timer) {
+            return;
+        }
+
+        const danger = state.remainingSeconds <= Math.max(5, Math.ceil(timerSeconds * 0.25));
+        elements.timer.innerHTML = [
+            "<span>Tiempo</span>",
+            "<strong>", Math.max(0, state.remainingSeconds), "s</strong>"
+        ].join("");
+        elements.timer.classList.toggle("is-danger", danger);
+    }
+
+    function renderLockedState() {
+        stopTimer();
+        elements.missionLabel.textContent = "Nivel bloqueado";
+        elements.questionTitle.textContent = "Este nivel aun no esta disponible";
+        elements.questionContent.innerHTML = [
+            "<div class=\"completion-card\">",
+            "<p>Completa primero el nivel actual para desbloquearlo.</p>",
+            "<a class=\"scene-button primary\" href=\"mapa.html\">Volver al mapa</a>",
             "</div>"
-        ].join(""));
-
-        answerPopupTimer = window.setTimeout(clearAnswerPopup, type === "success" ? 2600 : 3400);
-    }
-
-    function clearAnswerPopup() {
-        window.clearTimeout(answerPopupTimer);
-        document.querySelectorAll("[data-answer-popup]").forEach(function (popup) {
-            popup.remove();
-        });
-    }
-
-    function buildMissionLabel() {
-        if (!levelMeta) {
-            return "Ruta de algoritmos";
-        }
-
-        const route = getRouteMeta(levelMeta.routeId);
-        const parts = [];
-
-        if (route && route.order) {
-            parts.push(route.order);
-        }
-
-        if (levelMeta.title) {
-            parts.push(levelMeta.title);
-        }
-
-        if (levelMeta.topic) {
-            parts.push(levelMeta.topic);
-        }
-
-        return parts.join(" - ");
-    }
-
-    function getRouteMeta(routeId) {
-        const routes = window.CAPYCODE_APP_DATA && window.CAPYCODE_APP_DATA.map && Array.isArray(window.CAPYCODE_APP_DATA.map.routes)
-            ? window.CAPYCODE_APP_DATA.map.routes
-            : [];
-
-        return routes.find(function (route) {
-            return route.id === routeId;
-        }) || null;
-    }
-
-    function moveOrderItem(index, direction) {
-        const offset = direction === "up" ? -1 : 1;
-        const targetIndex = index + offset;
-
-        if (targetIndex < 0 || targetIndex >= state.orderItems.length) {
-            return;
-        }
-
-        const moved = state.orderItems.splice(index, 1)[0];
-        state.orderItems.splice(targetIndex, 0, moved);
-        paintSortable();
-
-        window.requestAnimationFrame(function () {
-            const row = document.querySelector("[data-index=\"" + targetIndex + "\"]");
-            const focusTarget = row && row.querySelector("[data-order-move=\"" + direction + "\"]:not([disabled])");
-            if (focusTarget) {
-                focusTarget.focus();
-            }
-        });
-    }
-
-    function registerGameHotkeys() {
-        if (!window.CapyHotkeys) {
-            return;
-        }
-
-        window.CapyHotkeys.register([
-            {
-                id: "quiz-primary",
-                key: "Enter",
-                ctrlKey: true,
-                label: "Comprobar",
-                description: "Comprueba la respuesta o avanza cuando ya fue correcta.",
-                group: "Nivel",
-                order: 20,
-                allowInInput: true,
-                action: function () {
-                    elements.primaryAction.click();
-                },
-                enabled: function () {
-                    return !elements.primaryAction.disabled;
-                }
-            },
-            {
-                id: "quiz-reset",
-                key: "r",
-                label: "Reiniciar reto",
-                description: "Reinicia la pregunta actual.",
-                group: "Nivel",
-                order: 21,
-                action: function () {
-                    if (elements.secondaryAction) {
-                        elements.secondaryAction.click();
-                    }
-                },
-                enabled: function () {
-                    return Boolean(elements.secondaryAction);
-                }
-            }
-        ]);
-    }
-
-    function buildNextPageUrl() {
-        const nextQuestion = state.levelQuestions[state.stepIndex + 1];
-
-        if (!nextQuestion) {
-            return "mapa.html";
-        }
-
-        return buildQuestionPageUrl(nextQuestion.tipo, state.stepIndex + 1);
-    }
-
-    function buildNextLevelPageUrl() {
-        const levels = (window.CAPYCODE_APP_DATA && window.CAPYCODE_APP_DATA.levels) || [];
-        const nextLevel = levels.find(function (level) {
-            return Number(level.id) === Number(levelId) + 1;
-        });
-
-        return nextLevel && nextLevel.href ? nextLevel.href : "mapa.html";
-    }
-
-    function buildQuestionPageUrl(questionType, stepIndex) {
-        const screen = getScreenForType(questionType);
-        const page = screen ? screen.page : "mapa.html";
-
-        if (page === "mapa.html") {
-            return page;
-        }
-
-        return page + buildLevelQuery(stepIndex);
-    }
-
-    function buildLevelQuery(stepIndex) {
-        return "?tema=" + encodeURIComponent(themeKey) +
-            "&level=" + encodeURIComponent(levelId) +
-            "&step=" + encodeURIComponent(stepIndex + 1);
-    }
-
-    function getScreenForType(questionType) {
-        return QUESTION_SCREENS.find(function (screen) {
-            return screen.type === questionType;
-        }) || null;
-    }
-
-    function isFinalFlowStep() {
-        return state.stepIndex >= state.levelQuestions.length - 1;
-    }
-
-    function getAdvanceButtonLabel() {
-        return isFinalFlowStep() ? "Completar nivel" : "Siguiente reto";
+        ].join("");
+        elements.primaryAction.style.display = "none";
+        elements.secondaryAction.style.display = "none";
+        elements.progressRatio.textContent = "0/5";
+        elements.progressFill.style.width = "0%";
     }
 
     function renderEmptyState(message) {
+        stopTimer();
+        if (elements.missionLabel) {
+            elements.missionLabel.textContent = "CapyCode";
+        }
         elements.questionTitle.textContent = message;
-        elements.questionContent.innerHTML = "";
-        elements.primaryAction.disabled = true;
+        elements.questionContent.innerHTML = [
+            "<div class=\"completion-card\">",
+            "<p>", escapeHtml(message), "</p>",
+            "<a class=\"scene-button primary\" href=\"mapa.html\">Volver al mapa</a>",
+            "</div>"
+        ].join("");
+        elements.primaryAction.style.display = "none";
+        elements.secondaryAction.style.display = "none";
     }
 
-    function clearFeedback() {
-        elements.feedback.textContent = "";
-        elements.feedback.className = "feedback-banner";
-    }
+    function showCompletionOverlay(outcome) {
+        clearCompletionOverlay();
 
-    function resetVisibleSelections(question) {
-        elements.questionContent.querySelectorAll(".is-selected, .is-correct, .is-incorrect").forEach(function (element) {
-            element.classList.remove("is-selected");
-            element.classList.remove("is-correct");
-            element.classList.remove("is-incorrect");
+        const practice = outcome && outcome.practice;
+        const reward = outcome && outcome.reward ? Number(outcome.reward) : 0;
+        const title = outcome && outcome.gameCompleted
+            ? "Juego completado"
+            : (outcome && outcome.routeCompleted ? "Ruta completada" : (practice ? "Practica completada" : "Nivel completado"));
+        const copy = outcome && outcome.gameCompleted
+            ? "Terminaste todos los niveles disponibles. Desde ahora puedes repetirlos como practica."
+            : (outcome && outcome.routeCompleted ? "Se desbloqueo la siguiente ruta. Puedes continuar desde el mapa." : (practice ? "Este intento fue de practica, por eso no modifica XP ni racha." : "Ganaste XP y avanzaste al siguiente nivel."));
+
+        const overlay = document.createElement("div");
+        overlay.className = "completion-overlay";
+        overlay.innerHTML = [
+            "<span class=\"completion-spotlight\" aria-hidden=\"true\"></span>",
+            buildCompletionRadiance(),
+            "<section class=\"completion-screen\" role=\"dialog\" aria-modal=\"true\">",
+            buildConfetti(),
+            "<div class=\"completion-screen-art\">",
+            "<img src=\"assets/characters/Capythilda.png\" alt=\"Capythilda\">",
+            "</div>",
+            "<div class=\"completion-screen-copy\">",
+            "<p class=\"panel-kicker\">", practice ? "Practica" : "Progreso guardado", "</p>",
+            "<h2>", escapeHtml(title), "</h2>",
+            "<p class=\"completion-lead\">", escapeHtml(copy), "</p>",
+            reward ? "<p class=\"level-reward-pill\">+" + window.CapyCore.formatNumber(reward) + " XP</p>" : "",
+            "<div class=\"completion-actions\">",
+            "<a class=\"scene-button primary\" href=\"mapa.html\">Volver al mapa</a>",
+            "<button class=\"scene-button ghost\" type=\"button\" data-retry-level>Repetir nivel</button>",
+            "</div>",
+            "</div>",
+            "</section>"
+        ].join("");
+
+        document.body.appendChild(overlay);
+        document.body.classList.add("quiz-complete");
+        overlay.querySelector("[data-retry-level]").addEventListener("click", function () {
+            document.body.classList.remove("quiz-complete");
+            overlay.remove();
+            startAttempt("manual");
         });
-
-        if (question.tipo === "opcion_multiple") {
-            state.selectedOption = null;
-        }
-
-        if (question.tipo === "seleccionar_lineas") {
-            state.selectedLines = [];
-        }
     }
 
-    function toggleSelectedLine(lineId) {
-        const index = state.selectedLines.indexOf(lineId);
-        if (index >= 0) {
-            state.selectedLines.splice(index, 1);
-            return;
-        }
-        state.selectedLines.push(lineId);
+    function showGameOverOverlay() {
+        clearCompletionOverlay();
+        clearAnswerPopup();
+
+        const overlay = document.createElement("div");
+        overlay.className = "completion-overlay";
+        overlay.innerHTML = [
+            "<span class=\"completion-spotlight\" aria-hidden=\"true\"></span>",
+            buildCompletionRadiance(),
+            "<section class=\"completion-screen is-game-over\" role=\"dialog\" aria-modal=\"true\">",
+            "<div class=\"completion-screen-art\">",
+            "<img src=\"assets/characters/Capythilda.png\" alt=\"Capythilda\">",
+            "</div>",
+            "<div class=\"completion-screen-copy\">",
+            "<p class=\"panel-kicker\">Tiempo agotado</p>",
+            "<h2>Game Over</h2>",
+            "<p class=\"completion-lead\">El intento termino porque se agoto el tiempo del ejercicio. Puedes reiniciar el nivel o volver al mapa.</p>",
+            "<div class=\"completion-actions\">",
+            "<a class=\"scene-button ghost\" href=\"mapa.html\">Salir al mapa</a>",
+            "<button class=\"scene-button primary\" type=\"button\" data-retry-level>Reiniciar nivel</button>",
+            "</div>",
+            "</div>",
+            "</section>"
+        ].join("");
+
+        document.body.appendChild(overlay);
+        document.body.classList.add("quiz-complete");
+        overlay.querySelector("[data-retry-level]").addEventListener("click", function () {
+            document.body.classList.remove("quiz-complete");
+            overlay.remove();
+            startAttempt("manual");
+        });
     }
 
-    function fillActiveBlank(question, word) {
-        let targetKey = state.activeBlankKey;
-
-        if (!targetKey || !Object.prototype.hasOwnProperty.call(question.rellenos, targetKey)) {
-            targetKey = getFirstEmptyBlank(question) || getFirstBlankKey(question);
-        }
-
-        if (!targetKey) {
-            return;
-        }
-
-        state.blankAnswers[targetKey] = word;
-        state.activeBlankKey = getFirstEmptyBlank(question) || targetKey;
-        renderTemplate(question);
-    }
-
-    function clearActiveBlank(question) {
-        if (!state.activeBlankKey) {
-            return;
-        }
-
-        delete state.blankAnswers[state.activeBlankKey];
-        renderTemplate(question);
-    }
-
-    function getFirstBlankKey(question) {
-        return Object.keys(question.rellenos)[0] || "";
-    }
-
-    function getFirstEmptyBlank(question) {
-        return Object.keys(question.rellenos).find(function (key) {
-            return !state.blankAnswers[key];
-        }) || "";
-    }
-
-    function buildTemplateLineMarkup(line) {
-        return line.split(/(\{[^}]+\})/g).filter(Boolean).map(function (token) {
-            if (token.startsWith("{") && token.endsWith("}")) {
-                const key = token.slice(1, -1);
-                const value = state.blankAnswers[key] || "[elige]";
-                const classes = [
-                    "code-blank",
-                    state.blankAnswers[key] ? "is-filled" : "is-empty",
-                    state.activeBlankKey === key ? "is-active" : ""
-                ].filter(Boolean).join(" ");
-
-                return [
-                    "<button class=\"", classes, "\" type=\"button\" data-blank-key=\"", escapeAttribute(key), "\">",
-                    escapeHtml(value),
-                    "</button>"
-                ].join("");
-            }
-
-            return highlightPython(token);
+    function buildCompletionRadiance() {
+        const rings = [1, 2, 3, 4].map(function (index) {
+            return "<span class=\"celebration-ring celebration-ring-" + index + "\"></span>";
         }).join("");
-    }
-
-    function buildConfettiMarkup() {
-        return new Array(84).fill(null).map(function (_, index) {
-            const lane = (index * 37) % 100;
-            const sway = ((index % 9) - 4) * 10;
-            const duration = 4.2 + ((index % 11) * 0.18);
-            const delay = index * -0.075;
-            const size = 8 + (index % 5) * 3;
-
+        const rays = Array.from({ length: 18 }).map(function (_, index) {
+            return "<span class=\"celebration-ray\" style=\"--ray-index:" + index + "\"></span>";
+        }).join("");
+        const sparks = Array.from({ length: 22 }).map(function (_, index) {
+            const distance = 90 + (index % 7) * 28;
+            const duration = 2.4 + (index % 5) * 0.22;
             return [
-                "<span class=\"confetti-piece confetti-piece-", ((index % 8) + 1),
-                index % 5 === 0 ? " is-star" : (index % 4 === 0 ? " is-dot" : (index % 3 === 0 ? " is-ribbon" : "")),
-                "\" style=\"--piece-index:", index,
-                "; --lane:", lane,
-                "; --sway:", sway,
-                "px; --duration:", duration,
-                "s; --delay:", delay,
-                "s; --piece-size:", size,
-                "px;\"></span>"
+                "<span class=\"celebration-spark\" style=\"--spark-index:", index,
+                "; --spark-distance:", distance, "px; --spark-duration:", duration, "s\"></span>"
             ].join("");
         }).join("");
-    }
 
-    function buildCelebrationBurstMarkup() {
-        const rings = new Array(4).fill(null).map(function (_, index) {
-            return "<span class=\"celebration-ring celebration-ring-" + (index + 1) + "\"></span>";
-        }).join("");
-        const rays = new Array(18).fill(null).map(function (_, index) {
-            return "<span class=\"celebration-ray\" style=\"--ray-index:" + index + ";\"></span>";
-        }).join("");
-        const sparks = new Array(28).fill(null).map(function (_, index) {
-            const distance = 110 + (index % 7) * 34;
-            const duration = 1.7 + (index % 5) * 0.22;
-            return "<span class=\"celebration-spark\" style=\"--spark-index:" + index + "; --spark-distance:" + distance + "px; --spark-duration:" + duration + "s;\"></span>";
-        }).join("");
-
-        return rings + rays + sparks;
-    }
-
-    function clearCompletionOverlay() {
-        app.classList.remove("is-complete");
-        document.body.classList.remove("quiz-complete");
-        document.querySelectorAll("[data-completion-overlay]").forEach(function (overlay) {
-            overlay.remove();
-        });
-    }
-
-    function getCelebrationCharacterImage(equipped) {
-        const imageMap = {
-            CapyBlack: "assets/characters/no_bg/Capy_Black.png",
-            CapyAqua: "assets/characters/no_bg/Capy_Aqua..png",
-            CapyCandy: "assets/characters/no_bg/Capy_Candy.png",
-            CapyConstelation: "assets/characters/no_bg/Capy_Constelation.png",
-            CapyEarth: "assets/characters/no_bg/Capy_Earth.png",
-            CapyExplorer: "assets/characters/no_bg/Capy_Explorer.png",
-            CapyKing: "assets/characters/no_bg/Capy_King.png",
-            CapyRuna: "assets/characters/no_bg/Capy_Runa.png",
-            CapySun: "assets/characters/no_bg/Capy_Sun.png"
-        };
-
-        if (equipped && imageMap[equipped.id]) {
-            return imageMap[equipped.id];
-        }
-
-        return equipped ? equipped.image : "";
-    }
-
-    function getItemName(item) {
-        if (window.CapyCore && window.CapyCore.getItemName) {
-            return window.CapyCore.getItemName(item);
-        }
-
-        return item && (item.nombre || item.name) ? (item.nombre || item.name) : "";
-    }
-
-    function createCodeStage(lines) {
-        const wrapper = document.createElement("div");
-        wrapper.className = "code-stage";
-        wrapper.innerHTML = lines.map(function (line, index) {
-            return buildCodeLineMarkup(line, index + 1, lines.length);
-        }).join("");
-        return wrapper;
-    }
-
-    function buildCodeLineMarkup(text, lineNumber, totalLines) {
         return [
-            "<div class=\"code-line\">",
-            "<span class=\"code-line-number\">", formatLineNumber(lineNumber, totalLines), "</span>",
-            "<span class=\"code-line-content\">", highlightPython(text), "</span>",
+            "<div class=\"completion-radiance\" aria-hidden=\"true\">",
+            rings,
+            rays,
+            sparks,
             "</div>"
         ].join("");
     }
 
-    function formatLineNumber(lineNumber, totalLines) {
-        const width = String(totalLines).length;
-        return String(lineNumber).padStart(width, "0");
+    function buildConfetti() {
+        return [
+            "<div class=\"completion-confetti\" aria-hidden=\"true\">",
+            Array.from({ length: 34 }).map(function (_, index) {
+                const pieceType = index % 11 === 0 ? " is-star" : (index % 5 === 0 ? " is-ribbon" : (index % 3 === 0 ? " is-dot" : ""));
+                return [
+                    "<span class=\"confetti-piece confetti-piece-", (index % 8) + 1, pieceType,
+                    "\" style=\"--piece-index:", index,
+                    "; --lane:", (index * 17) % 100,
+                    "; --piece-size:", 7 + (index % 4), "px",
+                    "; --duration:", 4.2 + (index % 6) * 0.2, "s",
+                    "; --delay:", -1 * (index % 9) * 0.22, "s\"></span>"
+                ].join("");
+            }).join(""),
+            "</div>"
+        ].join("");
     }
 
-    function highlightPython(source) {
-        let index = 0;
-        let html = "";
-
-        while (index < source.length) {
-            const remaining = source.slice(index);
-            const whitespace = remaining.match(/^\s+/);
-            const comment = remaining.match(/^#.*/);
-            const stringLiteral = remaining.match(/^("""[\s\S]*?"""|'''[\s\S]*?'''|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')/);
-            const numberLiteral = remaining.match(/^\d+(?:\.\d+)?/);
-            const identifier = remaining.match(/^[A-Za-z_][A-Za-z0-9_]*/);
-            const operator = remaining.match(/^(==|!=|<=|>=|\+=|-=|\*=|\/=|%=|\/\/=|\*\*=|\/\/|\*\*|->|=|\+|-|\*|\/|%|<|>)/);
-            const punctuation = remaining.match(/^[:.,()[\]{}]/);
-
-            if (whitespace) {
-                html += escapeHtml(whitespace[0]);
-                index += whitespace[0].length;
-                continue;
-            }
-
-            if (comment) {
-                html += wrapToken("comment", comment[0]);
-                break;
-            }
-
-            if (stringLiteral) {
-                html += wrapToken("string", stringLiteral[0]);
-                index += stringLiteral[0].length;
-                continue;
-            }
-
-            if (numberLiteral) {
-                html += wrapToken("number", numberLiteral[0]);
-                index += numberLiteral[0].length;
-                continue;
-            }
-
-            if (identifier) {
-                html += wrapToken(resolveIdentifierClass(source, index, identifier[0]), identifier[0]);
-                index += identifier[0].length;
-                continue;
-            }
-
-            if (operator) {
-                html += wrapToken("operator", operator[0]);
-                index += operator[0].length;
-                continue;
-            }
-
-            if (punctuation) {
-                html += wrapToken("punctuation", punctuation[0]);
-                index += punctuation[0].length;
-                continue;
-            }
-
-            html += escapeHtml(remaining.charAt(0));
-            index += 1;
-        }
-
-        return html;
+    function clearCompletionOverlay() {
+        document.querySelectorAll(".completion-overlay").forEach(function (overlay) {
+            overlay.remove();
+        });
+        document.body.classList.remove("quiz-complete");
     }
 
-    function resolveIdentifierClass(source, startIndex, value) {
-        const prefix = source.slice(0, startIndex);
-        const suffix = source.slice(startIndex + value.length);
+    function showFloatingResult(type, title, detail) {
+        clearAnswerPopup();
 
-        if (PYTHON_KEYWORDS.has(value)) {
-            return "keyword";
-        }
+        const popup = document.createElement("div");
+        popup.className = "answer-popup floating-answer-popup is-" + (type === "success" ? "success" : "error");
+        popup.innerHTML = [
+            "<span class=\"answer-popup-icon\">", type === "success" ? "OK" : "!", "</span>",
+            "<div>",
+            "<strong>", escapeHtml(title), "</strong>",
+            "<span>", escapeHtml(detail), "</span>",
+            "</div>"
+        ].join("");
 
-        if (PYTHON_BUILTINS.has(value)) {
-            return "builtin";
-        }
-
-        if (/\bdef\s+$/.test(prefix) || /\bclass\s+$/.test(prefix) || /^\s*\(/.test(suffix)) {
-            return "function";
-        }
-
-        return "variable";
+        document.body.appendChild(popup);
+        answerPopupTimer = window.setTimeout(clearAnswerPopup, 2200);
     }
 
-    function wrapToken(type, value) {
-        return "<span class=\"code-token-" + type + "\">" + escapeHtml(value) + "</span>";
+    function clearAnswerPopup() {
+        window.clearTimeout(answerPopupTimer);
+        answerPopupTimer = 0;
+        document.querySelectorAll(".floating-answer-popup").forEach(function (popup) {
+            popup.remove();
+        });
     }
 
-    function handleDragStart(event) {
-        event.currentTarget.classList.add("is-dragging");
-        event.dataTransfer.effectAllowed = "move";
-        event.dataTransfer.setData("text/plain", event.currentTarget.dataset.index);
-    }
+    function moveOrderItem(index, direction) {
+        const nextIndex = direction === "up" ? index - 1 : index + 1;
 
-    function handleDragOver(event) {
-        event.preventDefault();
-        event.currentTarget.classList.add("is-drop-target");
-    }
-
-    function handleDrop(event) {
-        event.preventDefault();
-        clearDragState();
-        const fromIndex = Number(event.dataTransfer.getData("text/plain"));
-        const toIndex = Number(event.currentTarget.dataset.index);
-
-        if (Number.isNaN(fromIndex) || Number.isNaN(toIndex) || fromIndex === toIndex) {
+        if (nextIndex < 0 || nextIndex >= state.orderItems.length) {
             return;
         }
 
-        const moved = state.orderItems.splice(fromIndex, 1)[0];
-        state.orderItems.splice(toIndex, 0, moved);
+        const nextItems = state.orderItems.slice();
+        const current = nextItems[index];
+        nextItems[index] = nextItems[nextIndex];
+        nextItems[nextIndex] = current;
+        state.orderItems = nextItems;
         paintSortable();
     }
 
-    document.addEventListener("dragend", clearDragState);
+    function fillActiveBlank(exercise, word) {
+        if (!state.activeBlankKey) {
+            state.activeBlankKey = getFirstBlankKey(exercise);
+        }
 
-    function clearDragState() {
-        document.querySelectorAll(".sortable-row").forEach(function (row) {
-            row.classList.remove("is-dragging");
-            row.classList.remove("is-drop-target");
+        if (!state.activeBlankKey) {
+            return;
+        }
+
+        state.blankAnswers[state.activeBlankKey] = word;
+        renderFillBlanks(exercise);
+    }
+
+    function getFirstBlankKey(exercise) {
+        const template = (exercise.contentData.template || []).join("\n");
+        const match = template.match(/\{([^}]+)\}/);
+        return match ? match[1] : "";
+    }
+
+    function buildTemplateLineMarkup(line) {
+        return escapeHtml(line).replace(/\{([^}]+)\}/g, function (_, key) {
+            const value = state.blankAnswers[key] || "";
+            const isActive = state.activeBlankKey === key;
+
+            return [
+                "<button class=\"code-blank",
+                value ? " is-filled" : " is-empty",
+                isActive ? " is-active" : "",
+                "\" type=\"button\" data-blank-key=\"", escapeAttribute(key), "\">",
+                value ? escapeHtml(value) : escapeHtml(key),
+                "</button>"
+            ].join("");
         });
     }
 
-    function sameItems(left, right) {
-        if (left.length !== right.length) {
-            return false;
+    function createCodeStage(lines) {
+        const stage = document.createElement("div");
+        stage.className = "code-stage";
+        stage.innerHTML = (lines || []).map(function (line, index) {
+            return buildCodeLineMarkup(line, index + 1, lines.length);
+        }).join("");
+        return stage;
+    }
+
+    function buildCodeLineMarkup(line, lineNumber, totalLines) {
+        return [
+            "<div class=\"code-line\">",
+            "<span class=\"code-line-number\">", formatLineNumber(lineNumber, totalLines), "</span>",
+            "<code class=\"code-line-content\">", highlightPython(line), "</code>",
+            "</div>"
+        ].join("");
+    }
+
+    function highlightPython(line) {
+        const escaped = escapeHtml(line);
+        const tokens = escaped.match(/(&quot;.*?&quot;|&#039;.*?&#039;|#[^\n]*|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|==|!=|<=|>=|[-+*/%=<>()[\]{},.:]|[^\sA-Za-z0-9_]+)/g);
+
+        if (!tokens) {
+            return escaped;
         }
 
-        return left.slice().sort().every(function (item, index) {
-            return item === right.slice().sort()[index];
+        let output = "";
+        let cursor = 0;
+
+        tokens.forEach(function (token) {
+            const index = escaped.indexOf(token, cursor);
+            if (index > cursor) {
+                output += escaped.slice(cursor, index);
+            }
+
+            output += wrapToken(token);
+            cursor = index + token.length;
         });
+
+        output += escaped.slice(cursor);
+        return output;
+    }
+
+    function wrapToken(token) {
+        if (/^#/.test(token)) {
+            return "<span class=\"code-token-comment\">" + token + "</span>";
+        }
+        if (/^(&quot;|&#039;)/.test(token)) {
+            return "<span class=\"code-token-string\">" + token + "</span>";
+        }
+        if (/^\d/.test(token)) {
+            return "<span class=\"code-token-number\">" + token + "</span>";
+        }
+        if (PYTHON_KEYWORDS.has(token)) {
+            return "<span class=\"code-token-keyword\">" + token + "</span>";
+        }
+        if (PYTHON_BUILTINS.has(token)) {
+            return "<span class=\"code-token-builtin\">" + token + "</span>";
+        }
+        if (/^[A-Za-z_][A-Za-z0-9_]*$/.test(token)) {
+            return "<span class=\"code-token-variable\">" + token + "</span>";
+        }
+        if (/^[-+*/%=<>!]+$/.test(token)) {
+            return "<span class=\"code-token-operator\">" + token + "</span>";
+        }
+        if (/^[()[\]{},.:]$/.test(token)) {
+            return "<span class=\"code-token-punctuation\">" + token + "</span>";
+        }
+        return token;
+    }
+
+    function toggleListValue(list, value) {
+        const index = list.indexOf(value);
+        if (index >= 0) {
+            list.splice(index, 1);
+            return;
+        }
+        list.push(value);
+    }
+
+    function shuffleArray(items) {
+        const copy = (items || []).slice();
+
+        for (let index = copy.length - 1; index > 0; index -= 1) {
+            const swapIndex = Math.floor(Math.random() * (index + 1));
+            const current = copy[index];
+            copy[index] = copy[swapIndex];
+            copy[swapIndex] = current;
+        }
+
+        return copy;
+    }
+
+    function normalizeLevelId(rawLevelId) {
+        const parsed = Number(rawLevelId);
+        const total = api.getTotalLevelCountSync();
+
+        if (!Number.isFinite(parsed)) {
+            return 1;
+        }
+
+        return Math.max(1, Math.min(Math.trunc(parsed), total));
+    }
+
+    function formatLineNumber(lineNumber, totalLines) {
+        const width = String(totalLines || 1).length;
+        return String(lineNumber).padStart(width, "0");
     }
 
     function escapeHtml(value) {
-        return String(value)
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#39;");
+        return window.CapyCore.escapeHtml(value);
     }
 
     function escapeAttribute(value) {
-        return escapeHtml(value).replace(/`/g, "&#96;");
+        return window.CapyCore.escapeAttribute(value);
+    }
+
+    function createAudioSystem() {
+        let context = null;
+        let musicOscillator = null;
+        let musicGain = null;
+        let musicInterval = 0;
+        let musicStep = 0;
+        const melody = [392, 440, 523.25, 587.33, 523.25, 440, 349.23, 392];
+        const harmony = [196, 220, 261.63, 293.66];
+
+        function ensureContext() {
+            if (!context) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) {
+                    return null;
+                }
+                context = new AudioContext();
+            }
+
+            if (context.state === "suspended") {
+                context.resume();
+            }
+
+            return context;
+        }
+
+        function playTone(frequency, duration, type, gainValue) {
+            const ctx = ensureContext();
+            if (!ctx) {
+                return;
+            }
+
+            const oscillator = ctx.createOscillator();
+            const gain = ctx.createGain();
+            oscillator.type = type || "sine";
+            oscillator.frequency.value = frequency;
+            gain.gain.setValueAtTime(gainValue || 0.045, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+            oscillator.connect(gain);
+            gain.connect(ctx.destination);
+            oscillator.start();
+            oscillator.stop(ctx.currentTime + duration);
+        }
+
+        function playMusicNote(frequency, startDelay, duration, gainValue, type) {
+            const ctx = ensureContext();
+            if (!ctx || !musicGain) {
+                return;
+            }
+
+            const oscillator = ctx.createOscillator();
+            const gain = ctx.createGain();
+            const startAt = ctx.currentTime + startDelay;
+            oscillator.type = type || "sine";
+            oscillator.frequency.setValueAtTime(frequency, startAt);
+            gain.gain.setValueAtTime(0.001, startAt);
+            gain.gain.linearRampToValueAtTime(gainValue, startAt + 0.04);
+            gain.gain.exponentialRampToValueAtTime(0.001, startAt + duration);
+            oscillator.connect(gain);
+            gain.connect(musicGain);
+            oscillator.start(startAt);
+            oscillator.stop(startAt + duration + 0.05);
+        }
+
+        function scheduleMusicPhrase() {
+            const melodyNote = melody[musicStep % melody.length];
+            const harmonyNote = harmony[Math.floor(musicStep / 2) % harmony.length];
+
+            playMusicNote(harmonyNote, 0, 1.55, 0.075, "triangle");
+            playMusicNote(melodyNote, 0.02, 0.34, 0.105, "sine");
+            playMusicNote(melody[(musicStep + 2) % melody.length], 0.42, 0.32, 0.085, "sine");
+            playMusicNote(melody[(musicStep + 4) % melody.length], 0.82, 0.38, 0.07, "triangle");
+            musicStep += 1;
+        }
+
+        function startMusic() {
+            const ctx = ensureContext();
+            if (!ctx || musicOscillator) {
+                return;
+            }
+
+            musicOscillator = ctx.createOscillator();
+            musicGain = ctx.createGain();
+            const droneGain = ctx.createGain();
+            musicOscillator.type = "sine";
+            musicOscillator.frequency.value = 130.81;
+            droneGain.gain.value = 0.028;
+            musicGain.gain.value = 1.15;
+            musicOscillator.connect(droneGain);
+            droneGain.connect(musicGain);
+            musicGain.connect(ctx.destination);
+            musicOscillator.start();
+            scheduleMusicPhrase();
+            musicInterval = window.setInterval(scheduleMusicPhrase, 1600);
+        }
+
+        return {
+            startMusic: startMusic,
+            playCorrect: function () {
+                playTone(660, 0.13, "sine", 0.14);
+                window.setTimeout(function () { playTone(880, 0.13, "sine", 0.12); }, 90);
+            },
+            playIncorrect: function () {
+                playTone(170, 0.2, "sawtooth", 0.105);
+            },
+            playComplete: function () {
+                playTone(523, 0.16, "sine", 0.13);
+                window.setTimeout(function () { playTone(659, 0.16, "sine", 0.13); }, 110);
+                window.setTimeout(function () { playTone(784, 0.24, "sine", 0.13); }, 220);
+            }
+        };
     }
 }());

@@ -26,7 +26,7 @@
         </main>
     </div>
     <script>
-        const session = localStorage.getItem("capycodeSession");
+        const session = sessionStorage.getItem("capycodeSessionV3") || localStorage.getItem("capycodeSession");
         window.location.href = session ? "mapa.html" : "iniciar_sesion.html";
     </script>
 </body>

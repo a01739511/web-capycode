@@ -46,6 +46,258 @@ body.quiz-page {
     overflow: hidden;
 }
 
+.hud-stat.has-icon {
+    display: inline-grid;
+    grid-template-columns: auto auto;
+    grid-template-rows: auto auto;
+    column-gap: 0.42rem;
+    align-items: center;
+}
+
+.hud-stat.has-icon img {
+    grid-row: 1 / span 2;
+    width: 1.24rem;
+    height: 1.24rem;
+}
+
+.topbar-right .hud-stat.has-icon {
+    padding-left: 0.8rem;
+}
+
+.topbar-right .hud-stat.has-icon::before {
+    content: none;
+}
+
+.mission-timer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    min-height: 2.35rem;
+    padding: 0.48rem 0.68rem;
+    border-radius: 14px;
+    background: rgba(18, 10, 34, 0.48);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.mission-timer span {
+    color: var(--accent-lilac);
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+}
+
+.mission-timer strong {
+    font-size: 1.08rem;
+    line-height: 1;
+}
+
+.mission-timer.is-danger {
+    border-color: rgba(255, 94, 106, 0.48);
+    background: rgba(100, 28, 58, 0.48);
+}
+
+.floating-answer-popup {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 180;
+    max-width: min(520px, calc(100vw - 2rem));
+    pointer-events: none;
+}
+
+.level-reward-pill {
+    justify-self: center;
+    width: fit-content;
+    padding: 0.5rem 0.8rem;
+    border-radius: 999px;
+    background: rgba(143, 238, 255, 0.14);
+    border: 1px solid rgba(143, 238, 255, 0.26);
+    color: var(--accent-cyan-soft);
+    font-weight: 900;
+}
+
+.store-toast {
+    position: fixed;
+    right: 1rem;
+    bottom: 1rem;
+    z-index: 180;
+    max-width: min(380px, calc(100vw - 2rem));
+    padding: 0.82rem 0.95rem;
+    border-radius: 16px;
+    background: rgba(18, 10, 34, 0.92);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    box-shadow: 0 18px 38px rgba(3, 1, 10, 0.28);
+    color: var(--text-main);
+    font-weight: 800;
+}
+
+.profile-settings-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.85rem;
+}
+
+.profile-inline-form {
+    display: grid;
+    gap: 0.58rem;
+    min-width: 0;
+    padding: 0.82rem;
+    border-radius: 18px;
+    background: rgba(18, 10, 34, 0.38);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.profile-inline-form label {
+    display: grid;
+    gap: 0.32rem;
+    color: var(--text-soft);
+    font-size: 0.86rem;
+    font-weight: 800;
+}
+
+.profile-inline-form .magic-input {
+    width: 100%;
+    min-width: 0;
+}
+
+.profile-form-message {
+    min-height: 1.1rem;
+    color: var(--text-soft);
+    font-size: 0.84rem;
+    font-weight: 800;
+}
+
+.profile-form-message.is-success {
+    color: var(--success);
+}
+
+.profile-form-message.is-error {
+    color: #ffb9c0;
+}
+
+.scene-button.compact {
+    min-height: 40px;
+    padding: 0.62rem 0.82rem;
+    border-radius: 13px;
+    font-size: 0.88rem;
+}
+
+.profile-account-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.55rem;
+    margin-top: 0.7rem;
+}
+
+.profile-dialog-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 170;
+    display: grid;
+    place-items: center;
+    padding: 1rem;
+    background: rgba(9, 5, 18, 0.48);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+}
+
+.profile-dialog-card {
+    position: relative;
+    width: min(460px, calc(100vw - 2rem));
+    display: grid;
+    gap: 0.8rem;
+    padding: 1.25rem;
+    border-radius: 22px;
+    background:
+        linear-gradient(145deg, rgba(255, 255, 255, 0.14), rgba(143, 238, 255, 0.04)),
+        rgba(39, 23, 72, 0.82);
+}
+
+.profile-dialog-card h2 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: clamp(1.28rem, 3vw, 1.65rem);
+    line-height: 1.06;
+}
+
+.profile-dialog-copy {
+    color: var(--text-soft);
+    line-height: 1.42;
+}
+
+.profile-dialog-close {
+    position: absolute;
+    top: 0.8rem;
+    right: 0.8rem;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-main);
+    cursor: pointer;
+    font-size: 1.15rem;
+    line-height: 1;
+}
+
+.profile-dialog-form {
+    display: grid;
+    gap: 0.72rem;
+}
+
+.profile-dialog-form label {
+    display: grid;
+    gap: 0.32rem;
+    color: var(--text-soft);
+    font-size: 0.88rem;
+    font-weight: 800;
+}
+
+.profile-dialog-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 0.65rem;
+}
+
+.gameplay-shell[data-level-runner="true"] #secondary-action-button {
+    display: none;
+}
+
+.gameplay-shell[data-level-runner="true"] .action-strip {
+    justify-content: flex-end;
+}
+
+.gameplay-shell[data-level-runner="true"] #primary-action-button {
+    margin-left: auto;
+}
+
+.completion-screen.is-game-over {
+    background:
+        linear-gradient(145deg, rgba(255, 94, 106, 0.22), rgba(90, 61, 161, 0.18)),
+        rgba(56, 36, 113, 0.62);
+}
+
+.completion-screen.is-game-over .panel-kicker {
+    color: #ffb9c0;
+}
+
+@media (max-width: 860px) {
+    .profile-settings-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .floating-answer-popup {
+        left: 1rem;
+        right: 1rem;
+    }
+
+    .profile-dialog-actions {
+        grid-template-columns: 1fr;
+    }
+}
+
 .quiz-page .sidebar-layout {
     min-height: 100svh;
     height: 100svh;

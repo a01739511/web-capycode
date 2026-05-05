@@ -2,10 +2,10 @@
     const gridRoot = document.getElementById("store-grid");
     const modalRoot = document.getElementById("shop-modal");
     const modalContentRoot = document.getElementById("shop-modal-content");
-    const data = window.CAPYCODE_APP_DATA;
+    const api = window.CapyApi;
     let activeItemId = "";
 
-    if (!gridRoot || !modalRoot || !modalContentRoot || !data || !window.CapyCore) {
+    if (!gridRoot || !modalRoot || !modalContentRoot || !api || !window.CapyCore) {
         return;
     }
 
@@ -14,36 +14,35 @@
 
     function renderStore() {
         const profile = window.CapyCore.getProfile();
+        const outfits = api.getOutfitsSync();
 
-        gridRoot.innerHTML = data.shopItems.map(function (item) {
+        gridRoot.innerHTML = outfits.map(function (item) {
             const state = getItemState(item, profile);
-            const itemName = getItemName(item);
-            const itemSlogan = getItemSlogan(item);
 
             return [
                 "<article class=\"shop-item-card shop-item-tile",
                 state.owned ? " is-owned" : "",
                 state.equippedNow ? " is-equipped" : "",
                 state.statusTone === "is-locked" ? " is-locked" : "",
-                "\" data-tilt-card=\"true\" aria-label=\"Vestuario ", itemName, "\">",
+                "\" data-tilt-card=\"true\" aria-label=\"Vestuario ", escapeAttribute(item.name), "\">",
                 "<span class=\"shop-card-glow\" aria-hidden=\"true\"></span>",
                 "<div class=\"shop-card-top\">",
                 "<span class=\"shop-card-status ", state.statusTone, "\">", state.statusLabel, "</span>",
-                "<span class=\"shop-card-price\">", getPriceLabel(getItemCost(item)), "</span>",
+                "<span class=\"shop-card-price\">", getPriceLabel(item.cost), "</span>",
                 "</div>",
                 "<div class=\"shop-art-frame shop-art-frame-magic\">",
-                "<img src=\"", item.image, "\" alt=\"", itemName, "\">",
+                "<img src=\"", escapeAttribute(item.image), "\" alt=\"", escapeAttribute(item.name), "\">",
                 "</div>",
                 "<div class=\"shop-item-copy\">",
-                "<span class=\"shop-item-name\">", itemName, "</span>",
-                "<p class=\"shop-item-perk\">", itemSlogan, "</p>",
+                "<span class=\"shop-item-name\">", escapeHtml(item.name), "</span>",
+                "<p class=\"shop-item-perk\">", escapeHtml(item.tagline), "</p>",
                 "</div>",
-                "<p class=\"shop-meta-note\">", state.metaNote, "</p>",
+                "<p class=\"shop-meta-note\">", escapeHtml(state.metaNote), "</p>",
                 "<div class=\"shop-item-actions\">",
                 "<button class=\"shop-action", state.actionClass ? (" " + state.actionClass) : "", "\" type=\"button\" data-item-action-inline=\"", item.id, "\"", state.actionDisabled ? " disabled" : "", ">",
                 state.actionLabel,
                 "</button>",
-                "<button class=\"shop-secondary-action\" type=\"button\" data-item-open=\"", item.id, "\" aria-haspopup=\"dialog\" aria-label=\"Ver detalle de ", itemName, "\">Detalle</button>",
+                "<button class=\"shop-secondary-action\" type=\"button\" data-item-open=\"", item.id, "\" aria-haspopup=\"dialog\" aria-label=\"Ver detalle de ", escapeAttribute(item.name), "\">Detalle</button>",
                 "</div>",
                 "</article>"
             ].join("");
@@ -54,6 +53,7 @@
         }
 
         window.CapyCore.updateHud();
+        window.CapyCore.renderSidebarSkins();
         initializeTilt();
     }
 
@@ -67,11 +67,9 @@
                 return;
             }
 
-            if (!trigger) {
-                return;
+            if (trigger) {
+                openModal(trigger.dataset.itemOpen);
             }
-
-            openModal(trigger.dataset.itemOpen);
         });
 
         modalRoot.addEventListener("click", function (event) {
@@ -101,6 +99,7 @@
         modalRoot.classList.remove("is-hidden");
         modalRoot.setAttribute("aria-hidden", "false");
         document.body.classList.add("is-modal-open");
+
         if (window.CapyCore && window.CapyCore.refreshInteractiveTilts) {
             window.CapyCore.refreshInteractiveTilts();
         }
@@ -120,39 +119,35 @@
 
     function renderModal(itemId) {
         const profile = window.CapyCore.getProfile();
-        const item = data.shopItems.find(function (entry) {
-            return entry.id === itemId;
-        });
+        const item = api.getOutfitByIdSync(itemId);
 
         if (!item) {
             return;
         }
 
         const state = getItemState(item, profile);
-        const itemName = getItemName(item);
-        const itemSlogan = getItemSlogan(item);
 
         modalContentRoot.innerHTML = [
             "<div class=\"shop-modal-media\">",
             "<div class=\"shop-art-frame shop-art-frame-magic shop-art-frame-modal\">",
-            "<img src=\"", item.image, "\" alt=\"", itemName, "\">",
+            "<img src=\"", escapeAttribute(item.image), "\" alt=\"", escapeAttribute(item.name), "\">",
             "</div>",
             "</div>",
             "<div class=\"shop-modal-copy\">",
             "<p class=\"panel-kicker\">Detalle del vestuario</p>",
-            "<h2 id=\"shop-modal-title\">", itemName, "</h2>",
-            "<p class=\"shop-modal-description\">", getItemDescription(item), "</p>",
+            "<h2 id=\"shop-modal-title\">", escapeHtml(item.name), "</h2>",
+            "<p class=\"shop-modal-description\">", escapeHtml(item.description), "</p>",
             "<div class=\"shop-modal-tags\">",
             "<span class=\"shop-modal-tag\">", state.statusLabel, "</span>",
-            "<span class=\"shop-modal-tag\">Costo: ", getPriceLabel(getItemCost(item)), "</span>",
-            "<span class=\"shop-modal-tag\">Frase: ", itemSlogan, "</span>",
+            "<span class=\"shop-modal-tag\">Costo: ", getPriceLabel(item.cost), "</span>",
+            "<span class=\"shop-modal-tag\">Frase: ", escapeHtml(item.tagline), "</span>",
             "</div>",
-            "<p class=\"shop-modal-note\">", getSupportCopy(state), "</p>",
+            "<p class=\"shop-modal-note\">", escapeHtml(getSupportCopy(state)), "</p>",
             "<div class=\"shop-modal-actions\">",
             "<button class=\"shop-action", state.actionClass ? (" " + state.actionClass) : "", "\" type=\"button\" data-item-action=\"", item.id, "\"", state.actionDisabled ? " disabled" : "", ">",
             state.actionLabel,
             "</button>",
-            "<a class=\"scene-button ghost\" href=\"p_opcionMultiple.html\">Conseguir XP</a>",
+            "<a class=\"scene-button ghost\" href=\"mapa.html\">Conseguir XP</a>",
             "</div>",
             "</div>"
         ].join("");
@@ -179,46 +174,37 @@
         });
     }
 
-    function handleAction(itemId) {
+    async function handleAction(itemId) {
         const profile = window.CapyCore.getProfile();
-        const item = data.shopItems.find(function (entry) {
-            return entry.id === itemId;
-        });
+        const item = api.getOutfitByIdSync(itemId);
 
         if (!item) {
             return;
         }
 
-        const owned = window.CapyCore.isUnlocked(itemId, profile);
-
-        if (!owned) {
-            const itemCost = getItemCost(item);
-
-            if (profile.xp < itemCost) {
-                return;
+        try {
+            if (isUnlocked(item.id, profile)) {
+                await api.equipOutfit(item.id);
+            } else {
+                await api.unlockOutfit(item.id);
             }
 
-            profile.xp -= itemCost;
-            profile.unlockedCharacters.push(itemId);
+            renderStore();
+        } catch (error) {
+            showStoreMessage(error.message || "No se pudo completar la accion.");
         }
-
-        profile.equippedCharacter = itemId;
-        window.CapyCore.saveProfile(profile);
-        renderSidebarSkin(item);
-        renderStore();
     }
 
     function getItemState(item, profile) {
-        const owned = window.CapyCore.isUnlocked(item.id, profile);
-        const equippedNow = profile.equippedCharacter === item.id;
-        const itemCost = getItemCost(item);
-        const affordable = profile.xp >= itemCost;
-        const lockedPoints = Math.max(itemCost - profile.xp, 0);
+        const owned = isUnlocked(item.id, profile);
+        const equippedNow = profile.currentOutfitId === item.id || profile.equippedCharacter === item.id;
+        const affordable = profile.xp >= item.cost;
+        const lockedPoints = Math.max(item.cost - profile.xp, 0);
 
         if (equippedNow) {
             return {
                 owned: owned,
-                equippedNow: equippedNow,
+                equippedNow: true,
                 affordable: affordable,
                 lockedPoints: lockedPoints,
                 statusLabel: "Equipado",
@@ -232,8 +218,8 @@
 
         if (owned) {
             return {
-                owned: owned,
-                equippedNow: equippedNow,
+                owned: true,
+                equippedNow: false,
                 affordable: affordable,
                 lockedPoints: lockedPoints,
                 statusLabel: "Desbloqueado",
@@ -247,10 +233,10 @@
 
         if (affordable) {
             return {
-                owned: owned,
-                equippedNow: equippedNow,
-                affordable: affordable,
-                lockedPoints: lockedPoints,
+                owned: false,
+                equippedNow: false,
+                affordable: true,
+                lockedPoints: 0,
                 statusLabel: "Por comprar",
                 statusTone: "is-buyable",
                 actionLabel: "Comprar",
@@ -261,9 +247,9 @@
         }
 
         return {
-            owned: owned,
-            equippedNow: equippedNow,
-            affordable: affordable,
+            owned: false,
+            equippedNow: false,
+            affordable: false,
             lockedPoints: lockedPoints,
             statusLabel: "XP insuficiente",
             statusTone: "is-locked",
@@ -274,56 +260,47 @@
         };
     }
 
-    function renderSidebarSkin(item) {
-        document.querySelectorAll("[data-sidebar-skin]").forEach(function (element) {
-            element.innerHTML = [
-                "<a class=\"sidebar-skin-link\" data-interactive-tilt=\"sidebar-card\" href=\"perfil.html#profile-collection-section\">",
-                "<p class=\"panel-kicker\">Vestuario activo</p>",
-                "<div class=\"sidebar-skin-art\"><img src=\"", item.image, "\" alt=\"", getItemName(item), "\"></div>",
-                "<div class=\"sidebar-skin-copy\">",
-                "<strong>", getItemName(item), "</strong>",
-                "<span>", getItemSlogan(item), "</span>",
-                "</div>",
-                "</a>"
-            ].join("");
-        });
-
-        window.CapyCore.refreshInteractiveTilts();
-    }
-
     function getPriceLabel(price) {
-        return price === 0 ? "Gratis" : "XP " + window.CapyCore.formatNumber(price);
+        return Number(price) === 0 ? "Gratis" : "XP " + window.CapyCore.formatNumber(price);
     }
 
     function getSupportCopy(state) {
         if (state.equippedNow) {
-            return "Este es tu vestuario activo. Puedes cerrar esta ventana y seguir explorando la colecci&oacute;n.";
+            return "Este es tu vestuario activo.";
         }
 
         if (state.owned) {
-            return "Ya forma parte de tu colecci&oacute;n. Equ&iacute;palo para cambiar el estilo de tu aventura.";
+            return "Ya forma parte de tu coleccion. Equipalo para cambiar el estilo.";
         }
 
         if (state.affordable) {
-            return "Tienes puntos suficientes para desbloquearlo ahora mismo y sumarlo a tu equipo.";
+            return "Tienes XP suficiente para desbloquearlo. No se equipara automaticamente.";
         }
 
         return "Te faltan XP " + window.CapyCore.formatNumber(state.lockedPoints) + " para comprar este vestuario.";
     }
 
-    function getItemDescription(item) {
-        return item.descripcion || item.description || "Un vestuario decorativo para personalizar tu aventura en CapyCode.";
+    function isUnlocked(itemId, profile) {
+        const unlocked = profile.unlockedOutfitIds || profile.unlockedCharacters || [];
+        return unlocked.includes(itemId);
     }
 
-    function getItemName(item) {
-        return window.CapyCore.getItemName ? window.CapyCore.getItemName(item) : (item.nombre || item.name);
+    function showStoreMessage(text) {
+        const message = document.createElement("div");
+        message.className = "store-toast";
+        message.textContent = text;
+        document.body.appendChild(message);
+
+        window.setTimeout(function () {
+            message.remove();
+        }, 2600);
     }
 
-    function getItemSlogan(item) {
-        return window.CapyCore.getItemSlogan ? window.CapyCore.getItemSlogan(item) : (item.slogan || item.perk || item.frase);
+    function escapeHtml(value) {
+        return window.CapyCore.escapeHtml(value);
     }
 
-    function getItemCost(item) {
-        return window.CapyCore.getItemCost ? window.CapyCore.getItemCost(item) : Number(item.costo || item.price || 0);
+    function escapeAttribute(value) {
+        return window.CapyCore.escapeAttribute(value);
     }
 }());

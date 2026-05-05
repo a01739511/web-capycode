@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CapyCode | Ordenar l&iacute;neas</title>
+    <title>CapyCode | Nivel</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Metamorphous&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -23,7 +23,7 @@
         </aside>
 
         <div class="sidebar-main">
-            <div class="gameplay-shell" data-question-types="ordenar_lineas" data-progress-key="order" data-completion-key="order" data-progress-label="NIVEL 5: CICLOS" data-hero-tag="Ruta del nivel 5" data-next-page="p_completarPlantilla.html">
+            <div class="gameplay-shell" data-level-runner="true">
                 <header class="scene-topbar glass-surface">
                     <button class="menu-link" type="button" data-action="toggle-sidebar">
                         <img src="assets/menu-icon.svg" alt="">
@@ -31,11 +31,13 @@
                     </button>
                     <div class="topbar-page-title" id="mission-label">Nivel</div>
                     <div class="topbar-right">
-                        <div class="hud-stat">
+                        <div class="hud-stat has-icon">
+                            <img src="assets/hud-streak.svg" alt="" aria-hidden="true">
                             <span>Racha</span>
                             <strong data-player-streak>0</strong>
                         </div>
-                        <div class="hud-stat">
+                        <div class="hud-stat has-icon">
+                            <img src="assets/hud-xp.svg" alt="" aria-hidden="true">
                             <span>XP</span>
                             <strong data-player-xp>0</strong>
                         </div>
@@ -50,15 +52,19 @@
                         <div class="mission-hero-progress">
                             <div class="mission-progress-head">
                                 <p class="panel-kicker">Progreso</p>
-                                <strong id="progress-ratio">9/12</strong>
+                                <strong id="progress-ratio">1/5</strong>
                             </div>
                             <div class="progress-track">
                                 <div class="progress-meter" id="progress-fill"></div>
                             </div>
+                            <div class="mission-timer" id="exercise-timer">
+                                <span>Tiempo</span>
+                                <strong>0s</strong>
+                            </div>
                         </div>
                         <div class="mission-question-summary">
-                            <p class="panel-kicker">Instrucciones</p>
-                            <h2 id="question-title">Ordena correctamente el c&oacute;digo</h2>
+                            <p class="panel-kicker">Ejercicio</p>
+                            <h2 id="question-title">Cargando nivel</h2>
                         </div>
                     </section>
 
@@ -66,7 +72,7 @@
                         <div id="question-content"></div>
                         <p class="feedback-banner" id="feedback-message"></p>
                         <div class="action-strip">
-                            <button class="scene-button ghost" id="secondary-action-button" type="button">Reiniciar reto</button>
+                            <button class="scene-button ghost" id="secondary-action-button" type="button">Reiniciar nivel</button>
                             <button class="scene-button primary" id="primary-action-button" type="button">Comprobar</button>
                         </div>
                     </section>
@@ -79,7 +85,6 @@
     <script src="js/api-client.js"></script>
     <script src="js/hotkeys.js"></script>
     <script src="js/common.js"></script>
-    <script src="js/legacy-level-redirect.js"></script>
     <script src="js/questions-data.js"></script>
     <script src="js/game.js"></script>
 </body>
