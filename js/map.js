@@ -11,6 +11,26 @@
     const LOCK_ICON_PATH = "assets/lock-icon.svg";
     const LEVEL_ORB_PATH = "assets/esfera_nivel.png";
     const ACTIVE_ROUTE_KEY = "capycodeActiveRouteIdV3";
+    const FALLBACK_LAYOUT_ANCHORS = {
+        sidebar: [
+            { x: "16.2%", y: "52%" },
+            { x: "34.3%", y: "42.2%" },
+            { x: "33.2%", y: "74.9%" },
+            { x: "49.8%", y: "59.9%" },
+            { x: "66.5%", y: "37.2%" },
+            { x: "88.4%", y: "49.8%" },
+            { x: "77.2%", y: "73.7%" }
+        ],
+        full: [
+            { x: "16.4%", y: "52.2%" },
+            { x: "34.2%", y: "42%" },
+            { x: "33.4%", y: "74.6%" },
+            { x: "50.2%", y: "60.2%" },
+            { x: "66.8%", y: "38.4%" },
+            { x: "88.1%", y: "51.2%" },
+            { x: "77.6%", y: "73.6%" }
+        ]
+    };
 
     if (!root || !routeList || !routeTrigger || !routePopover || !routeOrder || !routeTitle || !tooltip || !stage || !api || !window.CapyCore) {
         return;
@@ -22,6 +42,7 @@
     const gameCompleted = currentLevelId === totalLevels + 1;
     const routes = api.getRoutesSync();
     let activeRoute = resolveActiveRoute();
+    let activeLayoutMode = getMapLayoutMode();
     let activeNode = null;
     let activeLevel = null;
 
@@ -29,12 +50,17 @@
     renderRouteSwitcher();
     renderLevels();
     bindRouteMenu();
+    bindMapLayoutMode();
 
-    window.addEventListener("resize", syncTooltipPosition);
+    window.addEventListener("resize", function () {
+        syncMapLayoutMode();
+        syncTooltipPosition();
+    });
     window.addEventListener("scroll", syncTooltipPosition, true);
 
     function renderLevels() {
         const routeLevels = getPositionedRouteLevels();
+        root.dataset.layoutMode = activeLayoutMode;
 
         root.innerHTML = buildAmbientOrbMarkup(routeLevels) + routeLevels.map(function (level) {
             const status = resolveStatus(level.id);
@@ -44,7 +70,7 @@
                 : "";
 
             return [
-                "<a class=\"level-node is-", status, "\" href=\"", isLocked ? "#" : level.href, "\" data-level-id=\"", level.id, "\" aria-disabled=\"", isLocked ? "true" : "false", "\" style=\"left:", level.x, "; top:", level.y, ";\">",
+                "<a class=\"level-node is-", status, " is-order-", level.routeOrder, "\" href=\"", isLocked ? "#" : level.href, "\" data-level-id=\"", level.id, "\" data-route-order=\"", level.routeOrder, "\" aria-disabled=\"", isLocked ? "true" : "false", "\" style=\"left:", level.x, "; top:", level.y, ";\">",
                 "<span class=\"level-orb-shell\">",
                 "<span class=\"level-orb\">",
                 "<img class=\"level-orb-image\" src=\"", LEVEL_ORB_PATH, "\" alt=\"\" aria-hidden=\"true\">",
@@ -219,10 +245,10 @@
         }
 
         const anchor = node.querySelector(".level-orb-shell") || node;
-        const gap = 10;
-        const width = tooltip.offsetWidth || 260;
-        const height = tooltip.offsetHeight || 180;
-        const safeMargin = 16;
+        const gap = 6;
+        const width = tooltip.offsetWidth || 210;
+        const height = tooltip.offsetHeight || 120;
+        const safeMargin = 8;
         const rect = anchor.getBoundingClientRect();
         const stageRect = stage.getBoundingClientRect();
         const baseX = rect.left - stageRect.left + rect.width / 2;
@@ -302,22 +328,68 @@
     }
 
     function getRouteLayoutAnchors() {
+        const configuredAnchors = getConfiguredLayoutAnchors(activeLayoutMode);
+
+        if (configuredAnchors.length) {
+            return configuredAnchors;
+        }
+
+        if (activeLayoutMode !== "sidebar") {
+            return FALLBACK_LAYOUT_ANCHORS[activeLayoutMode] || FALLBACK_LAYOUT_ANCHORS.sidebar;
+        }
+
         const levels = api.getLevelsByRouteSync(activeRoute.id);
         const anchors = levels.map(function (level) {
             return { x: level.x, y: level.y };
-        }).filter(function (anchor) {
-            return anchor.x && anchor.y;
-        });
+        }).filter(isValidAnchor);
 
-        return anchors.length ? anchors : [
-            { x: "16.2%", y: "52%" },
-            { x: "34.3%", y: "42.2%" },
-            { x: "33.2%", y: "74.9%" },
-            { x: "49.8%", y: "59.9%" },
-            { x: "66.5%", y: "37.2%" },
-            { x: "88.4%", y: "49.8%" },
-            { x: "77.2%", y: "73.7%" }
-        ];
+        return anchors.length ? anchors : FALLBACK_LAYOUT_ANCHORS.sidebar;
+    }
+
+    function getConfiguredLayoutAnchors(layoutMode) {
+        const mapData = window.CAPYCODE_APP_DATA && window.CAPYCODE_APP_DATA.map
+            ? window.CAPYCODE_APP_DATA.map
+            : {};
+        const layouts = mapData.levelAnchorsByLayout || {};
+        const anchors = layouts[layoutMode];
+
+        return Array.isArray(anchors)
+            ? anchors.filter(isValidAnchor).map(function (anchor) {
+                return { x: anchor.x, y: anchor.y };
+            })
+            : [];
+    }
+
+    function isValidAnchor(anchor) {
+        return anchor && anchor.x && anchor.y;
+    }
+
+    function bindMapLayoutMode() {
+        window.addEventListener("capycode:sidebar-state-change", syncMapLayoutMode);
+        document.addEventListener("DOMContentLoaded", syncMapLayoutMode);
+
+        if (window.MutationObserver) {
+            new MutationObserver(syncMapLayoutMode).observe(document.body, {
+                attributes: true,
+                attributeFilter: ["class"]
+            });
+        }
+    }
+
+    function syncMapLayoutMode() {
+        const nextLayoutMode = getMapLayoutMode();
+
+        if (nextLayoutMode === activeLayoutMode) {
+            return;
+        }
+
+        activeLayoutMode = nextLayoutMode;
+        hideTooltip();
+        renderLevels();
+    }
+
+    function getMapLayoutMode() {
+        return document.body.classList.contains("sidebar-collapsed") ? "full" : "sidebar";
     }
 
     function resolveActiveRoute() {

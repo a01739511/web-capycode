@@ -171,25 +171,45 @@ window.CAPYCODE_APP_DATA = {
             { x: "88.4%", y: "49.8%" },
             { x: "77.2%", y: "73.7%" }
         ],
+        levelAnchorsByLayout: {
+            sidebar: [
+                { x: "17%", y: "48.5%" },
+                { x: "33.8%", y: "32.2%" },
+                { x: "33.3%", y: "75.9%" },
+                { x: "49.8%", y: "60.9%" },
+                { x: "66.5%", y: "32%" },
+                { x: "88.2%", y: "46%" },
+                { x: "75.2%", y: "75.7%" }
+            ],
+            full: [
+                { x: "16.8%", y: "44.2%" },
+                { x: "33.7%", y: "25%" },
+                { x: "33.2%", y: "78.6%" },
+                { x: "49.8%", y: "60.2%" },
+                { x: "66.5%", y: "22%" },
+                { x: "88.6%", y: "41.2%" },
+                { x: "75.6%", y: "77%" }
+            ]
+        },
         routes: [
             {
                 id: "ruta-grimorio-algoritmo",
                 order: "Ruta 1",
-                title: "Grimorio del Algoritmo Antiguo",
+                title: "Algoritmo Antiguo",
                 background: "assets/fondo1.png",
                 unlockLevel: 1
             },
             {
                 id: "ruta-pocimas-tipo",
                 order: "Ruta 2",
-                title: "Pócimas de Tipo Puro",
+                title: "Alquimista de Tipos",
                 background: "assets/fondo1.png",
                 unlockLevel: 2
             },
             {
                 id: "ruta-altar-expresiones",
                 order: "Ruta 3",
-                title: "El Altar de las Expresiones",
+                title: "Altar de las Expresiones",
                 background: "assets/fondo1.png",
                 unlockLevel: 3
             },
@@ -217,7 +237,7 @@ window.CAPYCODE_APP_DATA = {
             {
                 id: "ruta-criaturas-datos",
                 order: "Ruta 7",
-                title: "Biblioteca de Criaturas de Datos",
+                title: "Biblioteca de Estructuras de Datos",
                 background: "assets/fondo1.png",
                 unlockLevel: 7
             },

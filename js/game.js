@@ -726,6 +726,7 @@
 
         const practice = outcome && outcome.practice;
         const reward = outcome && outcome.reward ? Number(outcome.reward) : 0;
+        const nextHref = getNextLevelHref(outcome);
         const title = outcome && outcome.gameCompleted
             ? "Juego completado"
             : (outcome && outcome.routeCompleted ? "Ruta completada" : (practice ? "Práctica completada" : "Nivel completado"));
@@ -738,7 +739,7 @@
         overlay.innerHTML = [
             "<span class=\"completion-spotlight\" aria-hidden=\"true\"></span>",
             buildCompletionRadiance(),
-            "<section class=\"completion-screen\" role=\"dialog\" aria-modal=\"true\">",
+            "<section class=\"completion-screen", practice ? " is-practice" : "", "\" role=\"dialog\" aria-modal=\"true\">",
             buildConfetti(),
             "<div class=\"completion-screen-art\">",
             "<img src=\"assets/characters/Capythilda.png\" alt=\"Capythilda\">",
@@ -748,9 +749,10 @@
             "<h2>", escapeHtml(title), "</h2>",
             "<p class=\"completion-lead\">", escapeHtml(copy), "</p>",
             reward ? "<p class=\"level-reward-pill\">+" + window.CapyCore.formatNumber(reward) + " XP</p>" : "",
-            "<div class=\"completion-actions\">",
+            "<div class=\"completion-actions is-three-actions\">",
+            "<button class=\"scene-button ghost\" type=\"button\" data-retry-level>Repetir</button>",
             "<a class=\"scene-button primary\" href=\"mapa.html\">Volver al mapa</a>",
-            "<button class=\"scene-button ghost\" type=\"button\" data-retry-level>Repetir nivel</button>",
+            "<a class=\"scene-button primary\" href=\"", escapeAttribute(nextHref), "\">Siguiente</a>",
             "</div>",
             "</div>",
             "</section>"
@@ -770,7 +772,7 @@
         clearAnswerPopup();
 
         const overlay = document.createElement("div");
-        overlay.className = "completion-overlay";
+        overlay.className = "completion-overlay is-game-over";
         overlay.innerHTML = [
             "<span class=\"completion-spotlight\" aria-hidden=\"true\"></span>",
             buildCompletionRadiance(),
@@ -797,6 +799,25 @@
             overlay.remove();
             startAttempt("manual");
         });
+    }
+
+    function getNextLevelHref(outcome) {
+        const totalLevels = api.getTotalLevelCountSync();
+        const profile = window.CapyCore.getProfile();
+        const outcomeNextId = outcome && Number(outcome.nextLevelId);
+        const sequentialNextId = level.id + 1;
+        const nextLevelId = outcome && outcome.practice ? sequentialNextId : (outcomeNextId || sequentialNextId);
+
+        if (!Number.isFinite(nextLevelId) || nextLevelId > totalLevels) {
+            return "mapa.html";
+        }
+
+        if (profile.currentLevelId !== totalLevels + 1 && nextLevelId > profile.currentLevelId) {
+            return "mapa.html";
+        }
+
+        const nextLevel = api.getLevelByIdSync(nextLevelId);
+        return nextLevel ? nextLevel.href : "mapa.html";
     }
 
     function buildCompletionRadiance() {
@@ -1038,6 +1059,8 @@
         let musicGain = null;
         let musicInterval = 0;
         let musicStep = 0;
+        const volumeMultiplier = 5;
+        const musicTimeScale = 0.85;
         const melody = [392, 440, 523.25, 587.33, 523.25, 440, 349.23, 392];
         const harmony = [196, 220, 261.63, 293.66];
 
@@ -1067,7 +1090,7 @@
             const gain = ctx.createGain();
             oscillator.type = type || "sine";
             oscillator.frequency.value = frequency;
-            gain.gain.setValueAtTime(gainValue || 0.045, ctx.currentTime);
+            gain.gain.setValueAtTime((gainValue || 0.045) * volumeMultiplier, ctx.currentTime);
             gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
             oscillator.connect(gain);
             gain.connect(ctx.destination);
@@ -1083,16 +1106,18 @@
 
             const oscillator = ctx.createOscillator();
             const gain = ctx.createGain();
-            const startAt = ctx.currentTime + startDelay;
+            const scaledDelay = startDelay * musicTimeScale;
+            const scaledDuration = duration * musicTimeScale;
+            const startAt = ctx.currentTime + scaledDelay;
             oscillator.type = type || "sine";
             oscillator.frequency.setValueAtTime(frequency, startAt);
             gain.gain.setValueAtTime(0.001, startAt);
-            gain.gain.linearRampToValueAtTime(gainValue, startAt + 0.04);
-            gain.gain.exponentialRampToValueAtTime(0.001, startAt + duration);
+            gain.gain.linearRampToValueAtTime(gainValue * volumeMultiplier, startAt + 0.04);
+            gain.gain.exponentialRampToValueAtTime(0.001, startAt + scaledDuration);
             oscillator.connect(gain);
             gain.connect(musicGain);
             oscillator.start(startAt);
-            oscillator.stop(startAt + duration + 0.05);
+            oscillator.stop(startAt + scaledDuration + 0.05);
         }
 
         function scheduleMusicPhrase() {
@@ -1117,14 +1142,14 @@
             const droneGain = ctx.createGain();
             musicOscillator.type = "sine";
             musicOscillator.frequency.value = 130.81;
-            droneGain.gain.value = 0.028;
+            droneGain.gain.value = 0.028 * volumeMultiplier;
             musicGain.gain.value = 1.15;
             musicOscillator.connect(droneGain);
             droneGain.connect(musicGain);
             musicGain.connect(ctx.destination);
             musicOscillator.start();
             scheduleMusicPhrase();
-            musicInterval = window.setInterval(scheduleMusicPhrase, 1600);
+            musicInterval = window.setInterval(scheduleMusicPhrase, 1600 * musicTimeScale);
         }
 
         return {

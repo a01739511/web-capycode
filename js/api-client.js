@@ -58,56 +58,56 @@
         {
             id: 1,
             key: "algoritmos",
-            name: "Algoritmos",
+            name: "Algoritmo Antiguo",
             backgroundImage: "assets/fondo1.png",
             content: "Secuencia, selección, repetición y razonamiento algorítmico."
         },
         {
             id: 2,
             key: "tipos_de_datos",
-            name: "Tipos de datos",
+            name: "Alquimista de Tipos",
             backgroundImage: "assets/fondo1.png",
             content: "Tipos primitivos, conversiones y lectura de valores."
         },
         {
             id: 3,
             key: "expresiones",
-            name: "Expresiones",
+            name: "Altar de las Expresiones",
             backgroundImage: "assets/fondo1.png",
             content: "Operadores aritméticos, relacionales y lógicos."
         },
         {
             id: 4,
             key: "condicionales",
-            name: "Condicionales",
+            name: "Hechizos Condicionales",
             backgroundImage: "assets/fondo1.png",
             content: "Decisiones con if, else y combinaciones de condiciones."
         },
         {
             id: 5,
             key: "ciclos",
-            name: "Ciclos",
+            name: "Círculo de Repetición Infinita",
             backgroundImage: "assets/fondo1.png",
             content: "Repetición controlada con for, while, break y continue."
         },
         {
             id: 6,
             key: "funciones",
-            name: "Funciones",
+            name: "Taller de Funciones Encantadas",
             backgroundImage: "assets/fondo1.png",
             content: "Funciones, parámetros, retorno y reutilización."
         },
         {
             id: 7,
             key: "estructuras_de_datos",
-            name: "Estructuras de datos",
+            name: "Biblioteca de Estructuras de Datos",
             backgroundImage: "assets/fondo1.png",
             content: "Listas, colecciones y operaciones sobre datos agrupados."
         },
         {
             id: 8,
             key: "archivos_de_texto_plano",
-            name: "Archivos de texto plano",
+            name: "El Archivo Perdido",
             backgroundImage: "assets/fondo1.png",
             content: "Lectura, escritura y procesamiento de archivos simples."
         }

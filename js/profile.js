@@ -85,12 +85,16 @@
         const currentItem = unlockedItems[currentIndex] || unlockedItems[0];
         const previousItem = unlockedItems[(currentIndex - 1 + unlockedItems.length) % unlockedItems.length] || currentItem;
         const nextItem = unlockedItems[(currentIndex + 1) % unlockedItems.length] || currentItem;
+        const hasMultipleItems = unlockedItems.length > 1;
+        const hasSideItems = unlockedItems.length > 2;
         const equippedNow = currentItem.id === profile.currentOutfitId;
 
         collectionRoot.innerHTML = [
-            "<div class=\"collection-carousel-main\">",
-            "<button class=\"collection-nav\" type=\"button\" data-collection-nav=\"prev\" aria-label=\"Mostrar vestuario anterior\">&#8249;</button>",
-            buildSideCard(previousItem, "prev"),
+            "<div class=\"collection-carousel-main",
+            !hasMultipleItems ? " has-single-item" : (!hasSideItems ? " has-two-items" : ""),
+            "\">",
+            hasMultipleItems ? "<button class=\"collection-nav\" type=\"button\" data-collection-nav=\"prev\" aria-label=\"Mostrar vestuario anterior\">&#8249;</button>" : "",
+            hasSideItems ? buildSideCard(previousItem, "prev") : "",
             "<article class=\"collection-focus-card", equippedNow ? " is-equipped" : "", "\" data-interactive-tilt=\"shop-card\">",
             "<span class=\"collection-focus-glow\" aria-hidden=\"true\"></span>",
             "<div class=\"collection-focus-art\">",
@@ -114,16 +118,16 @@
             "</div>",
             "</div>",
             "</article>",
-            buildSideCard(nextItem, "next"),
-            "<button class=\"collection-nav\" type=\"button\" data-collection-nav=\"next\" aria-label=\"Mostrar vestuario siguiente\">&#8250;</button>",
+            hasSideItems ? buildSideCard(nextItem, "next") : "",
+            hasMultipleItems ? "<button class=\"collection-nav\" type=\"button\" data-collection-nav=\"next\" aria-label=\"Mostrar vestuario siguiente\">&#8250;</button>" : "",
             "</div>",
-            "<div class=\"collection-carousel-dots\">",
-            unlockedItems.map(function (item) {
+            hasMultipleItems ? "<div class=\"collection-carousel-dots\">" : "",
+            hasMultipleItems ? unlockedItems.map(function (item) {
                 return [
                     "<button class=\"collection-dot", item.id === currentItem.id ? " is-active" : "", "\" type=\"button\" data-collection-select=\"", item.id, "\" aria-label=\"Ver ", escapeAttribute(item.name), "\"></button>"
                 ].join("");
-            }).join(""),
-            "</div>"
+            }).join("") : "",
+            hasMultipleItems ? "</div>" : ""
         ].join("");
 
         window.CapyCore.refreshInteractiveTilts();

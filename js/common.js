@@ -136,7 +136,6 @@
         const items = [
             { href: "mapa.html", label: "Mapa", icon: "assets/nav-map.svg" },
             { href: "tienda.html", label: "Tienda", icon: "assets/nav-store.svg" },
-            { href: "about.html", label: "Historia", icon: "assets/nav-story.svg" },
             { href: "tutorial.html", label: "Tutorial", icon: "assets/magic-wand.svg" },
             { href: "perfil.html", label: "Perfil", icon: "assets/user-avatar.svg" }
         ];
@@ -170,6 +169,7 @@
                 window.requestAnimationFrame(function () {
                     document.body.classList.toggle("sidebar-collapsed");
                     localStorage.setItem("capycodeSidebarCollapsed", document.body.classList.contains("sidebar-collapsed") ? "true" : "false");
+                    notifySidebarStateChange();
                 });
 
                 animationTimer = window.setTimeout(function () {
@@ -236,23 +236,12 @@
                 }
             },
             {
-                id: "nav-story",
-                key: "h",
-                label: "Historia",
-                description: "Abre la historia de CapyCode.",
-                group: "Atajos globales",
-                order: 12,
-                action: function () {
-                    window.CapyHotkeys.navigateTo("about.html");
-                }
-            },
-            {
                 id: "nav-tutorial",
                 key: "u",
                 label: "Tutorial",
                 description: "Abre la página de tutorial.",
                 group: "Atajos globales",
-                order: 13,
+                order: 12,
                 action: function () {
                     window.CapyHotkeys.navigateTo("tutorial.html");
                 }
@@ -263,7 +252,7 @@
                 label: "Perfil",
                 description: "Abre el perfil del jugador.",
                 group: "Atajos globales",
-                order: 14,
+                order: 13,
                 action: function () {
                     window.CapyHotkeys.navigateTo("perfil.html");
                 }
@@ -274,7 +263,7 @@
                 label: "Menú lateral",
                 description: "Contrae o expande la barra lateral.",
                 group: "Atajos globales",
-                order: 15,
+                order: 14,
                 action: function () {
                     window.CapyHotkeys.clickSelector("[data-action=\"toggle-sidebar\"]");
                 },
@@ -411,6 +400,16 @@
         if (localStorage.getItem("capycodeSidebarCollapsed") === "true") {
             document.body.classList.add("sidebar-collapsed");
         }
+
+        notifySidebarStateChange();
+    }
+
+    function notifySidebarStateChange() {
+        window.dispatchEvent(new CustomEvent("capycode:sidebar-state-change", {
+            detail: {
+                collapsed: document.body.classList.contains("sidebar-collapsed")
+            }
+        }));
     }
 
     function escapeHtml(value) {
