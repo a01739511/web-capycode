@@ -845,8 +845,6 @@
                 orderIndex: index + 1,
                 backgroundImage: route.backgroundImage,
                 content: route.content,
-                badgeName: route.badgeName || ("Insignia de " + route.name),
-                badgeDescription: route.badgeDescription || ("Reconocimiento por completar la ruta " + route.name + "."),
                 badgeImage: route.badgeImage || ("assets/badges/badge-route-" + (index + 1) + ".svg")
             };
         });

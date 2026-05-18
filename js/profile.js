@@ -85,12 +85,11 @@
                 unlocked ? " is-unlocked" : " is-locked",
                 "\">",
                 "<div class=\"badge-card-art\">",
-                "<img src=\"", escapeAttribute(route.badgeImage || "assets/tec-emblem.svg"), "\" alt=\"", escapeAttribute(route.badgeName || route.name), "\">",
+                "<img src=\"", escapeAttribute(route.badgeImage || "assets/tec-emblem.svg"), "\" alt=\"", escapeAttribute(route.name), "\">",
                 "</div>",
                 "<div class=\"badge-card-copy\">",
                 "<span class=\"badge-card-state\">", unlocked ? "Desbloqueada" : "Bloqueada", "</span>",
-                "<h3>", escapeHtml(route.badgeName || route.name), "</h3>",
-                "<p>", escapeHtml(route.badgeDescription || ("Completa " + route.name + " para obtener esta insignia.")), "</p>",
+                "<h3>", escapeHtml(route.name), "</h3>",
                 "</div>",
                 "</article>"
             ].join("");

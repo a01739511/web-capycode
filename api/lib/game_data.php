@@ -9,8 +9,6 @@ function capy_route_definitions(): array
             'name' => 'Algoritmo Antiguo',
             'background_image' => 'assets/world/routes/route-01-algoritmo-antiguo.webp',
             'content' => 'Secuencia, selección, repetición y razonamiento algorítmico.',
-            'badge_name' => 'Insignia del Algoritmo Antiguo',
-            'badge_description' => 'Reconocimiento por completar la ruta de algoritmos.',
             'badge_image' => 'assets/badges/badge-route-1.svg',
         ],
         [
@@ -19,8 +17,6 @@ function capy_route_definitions(): array
             'name' => 'Alquimista de Tipos',
             'background_image' => 'assets/world/routes/route-02-alquimista-de-tipos.webp',
             'content' => 'Tipos primitivos, conversiones y lectura de valores.',
-            'badge_name' => 'Insignia del Alquimista de Tipos',
-            'badge_description' => 'Reconocimiento por completar la ruta de tipos de datos.',
             'badge_image' => 'assets/badges/badge-route-2.svg',
         ],
         [
@@ -29,8 +25,6 @@ function capy_route_definitions(): array
             'name' => 'Altar de las Expresiones',
             'background_image' => 'assets/world/routes/route-03-expresiones.webp',
             'content' => 'Operadores aritméticos, relacionales y lógicos.',
-            'badge_name' => 'Insignia del Altar de las Expresiones',
-            'badge_description' => 'Reconocimiento por completar la ruta de expresiones.',
             'badge_image' => 'assets/badges/badge-route-3.svg',
         ],
         [
@@ -39,8 +33,6 @@ function capy_route_definitions(): array
             'name' => 'Hechizos Condicionales',
             'background_image' => 'assets/world/routes/route-04-condicionales.webp',
             'content' => 'Decisiones con if, else y combinaciones de condiciones.',
-            'badge_name' => 'Insignia de Hechizos Condicionales',
-            'badge_description' => 'Reconocimiento por completar la ruta de condicionales.',
             'badge_image' => 'assets/badges/badge-route-4.svg',
         ],
         [
@@ -49,8 +41,6 @@ function capy_route_definitions(): array
             'name' => 'Círculo de Repetición Infinita',
             'background_image' => 'assets/world/routes/route-05-ciclos.webp',
             'content' => 'Repetición controlada con for, while, break y continue.',
-            'badge_name' => 'Insignia del Círculo de Repetición',
-            'badge_description' => 'Reconocimiento por completar la ruta de ciclos.',
             'badge_image' => 'assets/badges/badge-route-5.svg',
         ],
         [
@@ -59,8 +49,6 @@ function capy_route_definitions(): array
             'name' => 'Taller de Funciones Encantadas',
             'background_image' => 'assets/world/routes/route-06-funciones.webp',
             'content' => 'Funciones, parámetros, retorno y reutilización.',
-            'badge_name' => 'Insignia del Taller de Funciones',
-            'badge_description' => 'Reconocimiento por completar la ruta de funciones.',
             'badge_image' => 'assets/badges/badge-route-6.svg',
         ],
         [
@@ -69,8 +57,6 @@ function capy_route_definitions(): array
             'name' => 'Biblioteca de Estructuras de Datos',
             'background_image' => 'assets/world/routes/route-07-estructuras-de-datos.webp',
             'content' => 'Listas, colecciones y operaciones sobre datos agrupados.',
-            'badge_name' => 'Insignia de la Biblioteca de Estructuras',
-            'badge_description' => 'Reconocimiento por completar la ruta de estructuras de datos.',
             'badge_image' => 'assets/badges/badge-route-7.svg',
         ],
         [
@@ -79,8 +65,6 @@ function capy_route_definitions(): array
             'name' => 'El Archivo Perdido',
             'background_image' => 'assets/world/routes/route-08-archivos-de-texto-plano.webp',
             'content' => 'Lectura, escritura y procesamiento de archivos simples.',
-            'badge_name' => 'Insignia del Archivo Perdido',
-            'badge_description' => 'Reconocimiento por completar la ruta de archivos de texto plano.',
             'badge_image' => 'assets/badges/badge-route-8.svg',
         ],
     ];

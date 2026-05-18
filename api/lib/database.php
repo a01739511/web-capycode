@@ -138,9 +138,9 @@ function capy_seed_routes(PDO $pdo): void
             ':order_index' => $index + 1,
             ':background_image' => $route['background_image'],
             ':content' => $route['content'],
-            ':badge_name' => $route['badge_name'],
-            ':badge_description' => $route['badge_description'],
-            ':badge_image' => $route['badge_image'],
+            ':badge_name' => null,
+            ':badge_description' => null,
+            ':badge_image' => $route['badge_image'] ?? null,
         ]);
     }
 }

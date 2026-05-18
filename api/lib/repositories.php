@@ -147,8 +147,6 @@ function capy_get_routes(PDO $pdo, ?int $userId = null): array
                 'orderIndex' => (int) $row['order_index'],
                 'backgroundImage' => $row['background_image'],
                 'content' => $row['content'],
-                'badgeName' => $row['badge_name'],
-                'badgeDescription' => $row['badge_description'],
                 'badgeImage' => $row['badge_image'],
                 'badgeUnlocked' => in_array((int) $row['id'], $unlockedBadgeRouteIds, true),
             ];
