@@ -34,7 +34,7 @@ body {
     min-height: 100vh;
     font-family: var(--font-body);
     color: var(--text-main);
-    background: linear-gradient(rgba(18, 10, 34, 0.45), rgba(18, 10, 34, 0.68)), url("assets/fondo.png") center / cover fixed no-repeat;
+    background: linear-gradient(rgba(18, 10, 34, 0.45), rgba(18, 10, 34, 0.68)), url("assets/fondo.webp") center / cover fixed no-repeat;
 }
 
 body.scene-body {
@@ -607,7 +607,7 @@ html.mobile-download-mode body > .mobile-download-shell {
 body.login-page {
     min-height: 100svh;
     overflow: hidden;
-    background: linear-gradient(rgba(18, 10, 34, 0.4), rgba(18, 10, 34, 0.72)), url("assets/fondo_login.jpeg") center / cover fixed no-repeat;
+    background: linear-gradient(rgba(18, 10, 34, 0.4), rgba(18, 10, 34, 0.72)), url("assets/fondo_login.webp") center / cover fixed no-repeat;
 }
 
 a {
@@ -2283,7 +2283,7 @@ body.sidebar-animating .sidebar-main {
     min-height: clamp(400px, 38vw, 540px);
     overflow: hidden;
     padding: clamp(0.75rem, 1.6vw, 1rem);
-    background-image: linear-gradient(rgba(21, 12, 39, 0.24), rgba(21, 12, 39, 0.52)), var(--map-background-image, url("assets/fondo1.png"));
+    background-image: linear-gradient(rgba(21, 12, 39, 0.24), rgba(21, 12, 39, 0.52)), var(--map-background-image, url("assets/fondo1.webp"));
     background-position: center 70%;
     background-size: cover;
     background-repeat: no-repeat;

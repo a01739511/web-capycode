@@ -60,56 +60,56 @@
             id: 1,
             key: "algoritmos",
             name: "Algoritmo Antiguo",
-            backgroundImage: "assets/world/routes/route-01-algoritmo-antiguo.png",
+            backgroundImage: "assets/world/routes/route-01-algoritmo-antiguo.webp",
             content: "Secuencia, selección, repetición y razonamiento algorítmico."
         },
         {
             id: 2,
             key: "tipos_de_datos",
             name: "Alquimista de Tipos",
-            backgroundImage: "assets/world/routes/route-02-alquimista-de-tipos.jpg",
+            backgroundImage: "assets/world/routes/route-02-alquimista-de-tipos.webp",
             content: "Tipos primitivos, conversiones y lectura de valores."
         },
         {
             id: 3,
             key: "expresiones",
             name: "Altar de las Expresiones",
-            backgroundImage: "assets/world/routes/route-03-expresiones.jpg",
+            backgroundImage: "assets/world/routes/route-03-expresiones.webp",
             content: "Operadores aritméticos, relacionales y lógicos."
         },
         {
             id: 4,
             key: "condicionales",
             name: "Hechizos Condicionales",
-            backgroundImage: "assets/world/routes/route-04-condicionales.jpg",
+            backgroundImage: "assets/world/routes/route-04-condicionales.webp",
             content: "Decisiones con if, else y combinaciones de condiciones."
         },
         {
             id: 5,
             key: "ciclos",
             name: "Círculo de Repetición Infinita",
-            backgroundImage: "assets/world/routes/route-05-ciclos.png",
+            backgroundImage: "assets/world/routes/route-05-ciclos.webp",
             content: "Repetición controlada con for, while, break y continue."
         },
         {
             id: 6,
             key: "funciones",
             name: "Taller de Funciones Encantadas",
-            backgroundImage: "assets/world/routes/route-06-funciones.png",
+            backgroundImage: "assets/world/routes/route-06-funciones.webp",
             content: "Funciones, parámetros, retorno y reutilización."
         },
         {
             id: 7,
             key: "estructuras_de_datos",
             name: "Biblioteca de Estructuras de Datos",
-            backgroundImage: "assets/world/routes/route-07-estructuras-de-datos.png",
+            backgroundImage: "assets/world/routes/route-07-estructuras-de-datos.webp",
             content: "Listas, colecciones y operaciones sobre datos agrupados."
         },
         {
             id: 8,
             key: "archivos_de_texto_plano",
             name: "El Archivo Perdido",
-            backgroundImage: "assets/world/routes/route-08-archivos-de-texto-plano.jpg",
+            backgroundImage: "assets/world/routes/route-08-archivos-de-texto-plano.webp",
             content: "Lectura, escritura y procesamiento de archivos simples."
         }
     ];
@@ -144,63 +144,63 @@
             name: "CapyBlack",
             description: "Vestuario base de la aventura CapyCode.",
             tagline: "Sombra elegante",
-            image: "assets/characters/CapyBlack.png"
+            image: "assets/characters/CapyBlack.webp"
         },
         {
             id: "CapyAqua",
             name: "CapyAqua",
             description: "Tonos acuáticos para avanzar con calma.",
             tagline: "Marea tranquila",
-            image: "assets/characters/CapyAqua.png"
+            image: "assets/characters/CapyAqua.webp"
         },
         {
             id: "CapyKing",
             name: "CapyKing",
             description: "Corona y capa para una presencia solemne.",
             tagline: "Corona serena",
-            image: "assets/characters/CapyKing.png"
+            image: "assets/characters/CapyKing.webp"
         },
         {
             id: "CapyExplorer",
             name: "CapyExplorer",
             description: "Equipo de exploración para recorrer rutas.",
             tagline: "Ruta curiosa",
-            image: "assets/characters/CapyExplorer.png"
+            image: "assets/characters/CapyExplorer.webp"
         },
         {
             id: "CapyRuna",
             name: "CapyRuna",
             description: "Marcas antiguas para retos misteriosos.",
             tagline: "Runa paciente",
-            image: "assets/characters/CapyRuna.png"
+            image: "assets/characters/CapyRuna.webp"
         },
         {
             id: "CapyCandy",
             name: "CapyCandy",
             description: "Colores dulces para una colección alegre.",
             tagline: "Chispa dulce",
-            image: "assets/characters/CapyCandy.png"
+            image: "assets/characters/CapyCandy.webp"
         },
         {
             id: "CapySun",
             name: "CapySun",
             description: "Detalles solares para iluminar el recorrido.",
             tagline: "Amanecer claro",
-            image: "assets/characters/CapySun.png"
+            image: "assets/characters/CapySun.webp"
         },
         {
             id: "CapyEarth",
             name: "CapyEarth",
             description: "Tonos de tierra para una presencia constante.",
             tagline: "Raíz constante",
-            image: "assets/characters/CapyEarth.png"
+            image: "assets/characters/CapyEarth.webp"
         },
         {
             id: "CapyConstelation",
             name: "CapyConstelation",
             description: "Detalles estelares para destacar en la colección.",
             tagline: "Cielo estelar",
-            image: "assets/characters/CapyConstelation.png"
+            image: "assets/characters/CapyConstelation.webp"
         }
     ];
 
@@ -935,7 +935,7 @@
                 description: item.description || item.descripcion || "Vestuario decorativo de CapyCode.",
                 tagline: item.tagline || item.slogan || item.perk || item.frase || "",
                 cost: OUTFIT_COSTS[outfitId],
-                image: item.image || ("assets/characters/" + outfitId + ".png")
+                image: item.image || ("assets/characters/" + outfitId + ".webp")
             };
         });
     }

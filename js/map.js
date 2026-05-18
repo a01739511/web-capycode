@@ -9,7 +9,7 @@
     const stage = root ? root.closest(".map-stage") : null;
     const api = window.CapyApi;
     const LOCK_ICON_PATH = "assets/lock-icon.svg";
-    const LEVEL_ORB_PATH = "assets/esfera_nivel.png";
+    const LEVEL_ORB_PATH = "assets/esfera_nivel.webp";
     const ACTIVE_ROUTE_KEY = "capycodeActiveRouteIdV3";
     const UNLOCK_ALL_ROUTES_FOR_PREVIEW = Boolean(
         window.CAPYCODE_CONFIG && window.CAPYCODE_CONFIG.UNLOCK_ALL_ROUTES_FOR_PREVIEW
@@ -133,7 +133,7 @@
     function renderRouteCopy() {
         routeOrder.textContent = "Ruta " + activeRoute.orderIndex;
         routeTitle.textContent = activeRoute.name;
-        stage.style.setProperty("--map-background-image", "url(\"" + (activeRoute.backgroundImage || "assets/fondo1.png") + "\")");
+        stage.style.setProperty("--map-background-image", "url(\"" + (activeRoute.backgroundImage || "assets/fondo1.webp") + "\")");
     }
 
     function renderRouteSwitcher() {

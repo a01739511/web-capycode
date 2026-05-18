@@ -5,15 +5,15 @@
     const badgesRoot = document.getElementById("profile-badges");
     const api = window.CapyApi;
     const transparentImages = {
-        CapyBlack: "assets/characters/no_bg/Capy_Black.png",
-        CapyAqua: "assets/characters/no_bg/Capy_Aqua..png",
-        CapyKing: "assets/characters/no_bg/Capy_King.png",
-        CapyExplorer: "assets/characters/no_bg/Capy_Explorer.png",
-        CapyCandy: "assets/characters/no_bg/Capy_Candy.png",
-        CapyRuna: "assets/characters/no_bg/Capy_Runa.png",
-        CapySun: "assets/characters/no_bg/Capy_Sun.png",
-        CapyEarth: "assets/characters/no_bg/Capy_Earth.png",
-        CapyConstelation: "assets/characters/no_bg/Capy_Constelation.png"
+        CapyBlack: "assets/characters/no_bg/Capy_Black.webp",
+        CapyAqua: "assets/characters/no_bg/Capy_Aqua..webp",
+        CapyKing: "assets/characters/no_bg/Capy_King.webp",
+        CapyExplorer: "assets/characters/no_bg/Capy_Explorer.webp",
+        CapyCandy: "assets/characters/no_bg/Capy_Candy.webp",
+        CapyRuna: "assets/characters/no_bg/Capy_Runa.webp",
+        CapySun: "assets/characters/no_bg/Capy_Sun.webp",
+        CapyEarth: "assets/characters/no_bg/Capy_Earth.webp",
+        CapyConstelation: "assets/characters/no_bg/Capy_Constelation.webp"
     };
     let activeCollectionId = "";
 
