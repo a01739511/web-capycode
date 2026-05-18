@@ -14,6 +14,40 @@
     const UNLOCK_ALL_ROUTES_FOR_PREVIEW = Boolean(
         window.CAPYCODE_CONFIG && window.CAPYCODE_CONFIG.UNLOCK_ALL_ROUTES_FOR_PREVIEW
     );
+    const ROUTE_MASCOTS = {
+        algoritmos: {
+            name: "CapyBlack",
+            image: "assets/characters/no_bg/Capy_Black.webp"
+        },
+        tipos_de_datos: {
+            name: "CapyRuna",
+            image: "assets/characters/no_bg/Capy_Runa.webp"
+        },
+        expresiones: {
+            name: "CapyAqua",
+            image: "assets/characters/no_bg/Capy_Aqua..webp"
+        },
+        condicionales: {
+            name: "CapyConstelation",
+            image: "assets/characters/no_bg/Capy_Constelation.webp"
+        },
+        ciclos: {
+            name: "CapyEarth",
+            image: "assets/characters/no_bg/Capy_Earth.webp"
+        },
+        funciones: {
+            name: "CapyKing",
+            image: "assets/characters/no_bg/Capy_King.webp"
+        },
+        estructuras_de_datos: {
+            name: "CapySun",
+            image: "assets/characters/no_bg/Capy_Sun.webp"
+        },
+        archivos_de_texto_plano: {
+            name: "CapyCandy",
+            image: "assets/characters/no_bg/Capy_Candy.webp"
+        }
+    };
     const FALLBACK_LAYOUT_ANCHORS = {
         sidebar: [
             { x: "16.2%", y: "52%" },
@@ -22,7 +56,8 @@
             { x: "49.8%", y: "59.9%" },
             { x: "66.5%", y: "37.2%" },
             { x: "88.4%", y: "49.8%" },
-            { x: "77.2%", y: "73.7%" }
+            { x: "77.2%", y: "73.7%" },
+            { x: "90.3%", y: "86.6%" }
         ],
         full: [
             { x: "16.4%", y: "52.2%" },
@@ -31,7 +66,8 @@
             { x: "50.2%", y: "60.2%" },
             { x: "66.8%", y: "38.4%" },
             { x: "88.1%", y: "51.2%" },
-            { x: "77.6%", y: "73.6%" }
+            { x: "77.6%", y: "73.6%" },
+            { x: "90.8%", y: "88.8%" }
         ]
     };
 
@@ -81,8 +117,8 @@
                 "</span>",
                 lockMarkup,
                 "</span>",
-                "<span class=\"level-label\">", escapeHtml(level.name), "</span>",
-                "<span class=\"level-topic\">", escapeHtml(level.difficultyLabel), "</span>",
+                "<span class=\"level-label\">", escapeHtml(normalizeDisplayText(level.name)), "</span>",
+                "<span class=\"level-topic\">", escapeHtml(normalizeDisplayText(level.difficultyLabel)), "</span>",
                 "</a>"
             ].join("");
         }).join("");
@@ -112,12 +148,19 @@
         const occupiedAnchors = new Set(routeLevels.map(function (level) {
             return getPositionKey(level);
         }));
+        const routeMascot = getRouteMascot();
+        let mascotRendered = false;
 
         return getRouteLayoutAnchors().map(function (anchor, index) {
             return Object.assign({ number: index + 1 }, anchor);
         }).filter(function (anchor) {
             return !occupiedAnchors.has(getPositionKey(anchor));
         }).map(function (anchor, index) {
+            if (routeMascot && !mascotRendered && anchor.number > routeLevels.length) {
+                mascotRendered = true;
+                return buildRouteMascotMarkup(routeMascot, anchor);
+            }
+
             return [
                 "<span class=\"ambient-level-orb is-variant-", (index % 3) + 1, "\" aria-hidden=\"true\" style=\"left:", anchor.x, "; top:", anchor.y, ";\">",
                 "<span class=\"ambient-level-orb-shell\">",
@@ -130,9 +173,21 @@
         }).join("");
     }
 
+    function buildRouteMascotMarkup(routeMascot, anchor) {
+        return [
+            "<span class=\"route-mascot-node\" aria-hidden=\"true\" data-route-mascot=\"", escapeHtml(routeMascot.name), "\" style=\"left:", anchor.x, "; top:", anchor.y, ";\">",
+            "<span class=\"route-mascot-aura\"></span>",
+            "<span class=\"route-mascot-art\">",
+            "<img class=\"route-mascot-image\" src=\"", routeMascot.image, "\" alt=\"\">",
+            "</span>",
+            "<span class=\"route-mascot-badge\">", escapeHtml(routeMascot.name), "</span>",
+            "</span>"
+        ].join("");
+    }
+
     function renderRouteCopy() {
         routeOrder.textContent = "Ruta " + activeRoute.orderIndex;
-        routeTitle.textContent = activeRoute.name;
+        routeTitle.textContent = normalizeDisplayText(activeRoute.name);
         stage.style.setProperty("--map-background-image", "url(\"" + (activeRoute.backgroundImage || "assets/fondo1.webp") + "\")");
     }
 
@@ -148,8 +203,8 @@
                 state.isSelectable ? "" : " disabled",
                 ">",
                 "<span class=\"map-route-chip-order\">Ruta ", routeItem.orderIndex, "</span>",
-                "<strong class=\"map-route-chip-title\">", escapeHtml(routeItem.name), "</strong>",
-                "<span class=\"map-route-chip-status\">", state.label, "</span>",
+                "<strong class=\"map-route-chip-title\">", escapeHtml(normalizeDisplayText(routeItem.name)), "</strong>",
+                "<span class=\"map-route-chip-status\">", escapeHtml(normalizeDisplayText(state.label)), "</span>",
                 "</button>"
             ].join("");
         }).join("");
@@ -227,13 +282,13 @@
         const status = resolveStatus(level.id);
         tooltip.innerHTML = [
             "<div class=\"map-tooltip-head\">",
-            "<p class=\"map-tooltip-order\">", escapeHtml(level.name), "</p>",
-            "<span class=\"map-state-pill is-", status, "\">", getStatusLabel(status), "</span>",
+            "<p class=\"map-tooltip-order\">", escapeHtml(normalizeDisplayText(level.name)), "</p>",
+            "<span class=\"map-state-pill is-", status, "\">", escapeHtml(normalizeDisplayText(getStatusLabel(status))), "</span>",
             "</div>",
-            "<h3>", escapeHtml(activeRoute.name), "</h3>",
+            "<h3>", escapeHtml(normalizeDisplayText(activeRoute.name)), "</h3>",
             "<div class=\"map-tooltip-meta\">",
-            buildTooltipCard("Dificultad", level.difficultyLabel, ""),
-            buildTooltipCard("Contenido", level.content, "is-content is-wide"),
+            buildTooltipCard("Dificultad", normalizeDisplayText(level.difficultyLabel), ""),
+            buildTooltipCard("Contenido", normalizeDisplayText(level.content), "is-content is-wide"),
             "</div>"
         ].join("");
         tooltip.classList.remove("is-hidden");
@@ -349,6 +404,12 @@
         return anchors.length ? anchors : FALLBACK_LAYOUT_ANCHORS.sidebar;
     }
 
+    function getRouteMascot() {
+        return activeRoute && activeRoute.key
+            ? ROUTE_MASCOTS[activeRoute.key] || null
+            : null;
+    }
+
     function getConfiguredLayoutAnchors(layoutMode) {
         const mapData = window.CAPYCODE_APP_DATA && window.CAPYCODE_APP_DATA.map
             ? window.CAPYCODE_APP_DATA.map
@@ -452,6 +513,20 @@
 
     function getPositionKey(point) {
         return [point && point.x ? point.x : "", point && point.y ? point.y : ""].join("|");
+    }
+
+    function normalizeDisplayText(value) {
+        const text = String(value || "");
+
+        if (text.indexOf("Ã") === -1 && text.indexOf("Â") === -1) {
+            return text;
+        }
+
+        try {
+            return decodeURIComponent(escape(text));
+        } catch (error) {
+            return text;
+        }
     }
 
     function escapeHtml(value) {
