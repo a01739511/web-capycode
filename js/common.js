@@ -86,7 +86,9 @@
             currentOutfitId: "CapyBlack",
             equippedCharacter: "CapyBlack",
             unlockedOutfitIds: ["CapyBlack"],
-            unlockedCharacters: ["CapyBlack"]
+            unlockedCharacters: ["CapyBlack"],
+            discoveredOutfitIds: ["CapyBlack", "CapyExplorer"],
+            unlockedBadgeRouteIds: []
         };
     }
 

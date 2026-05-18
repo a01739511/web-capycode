@@ -3,6 +3,7 @@
     const modalRoot = document.getElementById("shop-modal");
     const modalContentRoot = document.getElementById("shop-modal-content");
     const api = window.CapyApi;
+    const LOCK_ICON_PATH = "assets/lock-icon.svg";
     let activeItemId = "";
 
     if (!gridRoot || !modalRoot || !modalContentRoot || !api || !window.CapyCore) {
@@ -24,6 +25,7 @@
                 state.owned ? " is-owned" : "",
                 state.equippedNow ? " is-equipped" : "",
                 state.statusTone === "is-locked" ? " is-locked" : "",
+                state.blockedByRoute ? " is-route-locked" : "",
                 "\" data-tilt-card=\"true\" aria-label=\"Vestuario ", escapeAttribute(item.name), "\">",
                 "<span class=\"shop-card-glow\" aria-hidden=\"true\"></span>",
                 "<div class=\"shop-card-top\">",
@@ -32,6 +34,7 @@
                 "</div>",
                 "<div class=\"shop-art-frame shop-art-frame-magic\">",
                 "<img src=\"", escapeAttribute(item.image), "\" alt=\"", escapeAttribute(item.name), "\">",
+                state.blockedByRoute ? buildLockedArtMarkup(state) : "",
                 "</div>",
                 "<div class=\"shop-item-copy\">",
                 "<span class=\"shop-item-name\">", escapeHtml(item.name), "</span>",
@@ -140,6 +143,7 @@
             "<div class=\"shop-modal-tags\">",
             "<span class=\"shop-modal-tag\">", state.statusLabel, "</span>",
             "<span class=\"shop-modal-tag\">Costo: ", getPriceLabel(item.cost), "</span>",
+            state.blockedByRoute ? "<span class=\"shop-modal-tag\">Se habilita en " + escapeHtml(state.unlockRouteLabel) + "</span>" : "",
             "<span class=\"shop-modal-tag\">Frase: ", escapeHtml(item.tagline), "</span>",
             "</div>",
             "<p class=\"shop-modal-note\">", escapeHtml(getSupportCopy(state)), "</p>",
@@ -183,6 +187,10 @@
         }
 
         try {
+            if (!isDiscovered(item.id, profile)) {
+                throw new Error(getLockedRouteMessage(item));
+            }
+
             if (isUnlocked(item.id, profile)) {
                 await api.equipOutfit(item.id);
             } else {
@@ -197,16 +205,21 @@
 
     function getItemState(item, profile) {
         const owned = isUnlocked(item.id, profile);
+        const discovered = isDiscovered(item.id, profile);
         const equippedNow = profile.currentOutfitId === item.id || profile.equippedCharacter === item.id;
         const affordable = profile.xp >= item.cost;
         const lockedPoints = Math.max(item.cost - profile.xp, 0);
+        const unlockRouteLabel = getUnlockRouteLabel(item);
 
         if (equippedNow) {
             return {
                 owned: owned,
+                discovered: true,
                 equippedNow: true,
                 affordable: affordable,
                 lockedPoints: lockedPoints,
+                blockedByRoute: false,
+                unlockRouteLabel: unlockRouteLabel,
                 statusLabel: "Equipado",
                 statusTone: "is-equipped",
                 actionLabel: "En uso",
@@ -219,9 +232,12 @@
         if (owned) {
             return {
                 owned: true,
+                discovered: true,
                 equippedNow: false,
                 affordable: affordable,
                 lockedPoints: lockedPoints,
+                blockedByRoute: false,
+                unlockRouteLabel: unlockRouteLabel,
                 statusLabel: "Desbloqueado",
                 statusTone: "is-owned",
                 actionLabel: "Equipar",
@@ -231,12 +247,33 @@
             };
         }
 
+        if (!discovered) {
+            return {
+                owned: false,
+                discovered: false,
+                equippedNow: false,
+                affordable: affordable,
+                lockedPoints: lockedPoints,
+                blockedByRoute: true,
+                unlockRouteLabel: unlockRouteLabel,
+                statusLabel: "Bloqueado",
+                statusTone: "is-route-locked",
+                actionLabel: "No disponible",
+                actionDisabled: true,
+                actionClass: "is-route-locked",
+                metaNote: getLockedRouteMessage(item)
+            };
+        }
+
         if (affordable) {
             return {
                 owned: false,
+                discovered: true,
                 equippedNow: false,
                 affordable: true,
                 lockedPoints: 0,
+                blockedByRoute: false,
+                unlockRouteLabel: unlockRouteLabel,
                 statusLabel: "Por comprar",
                 statusTone: "is-buyable",
                 actionLabel: "Comprar",
@@ -248,9 +285,12 @@
 
         return {
             owned: false,
+            discovered: true,
             equippedNow: false,
             affordable: false,
             lockedPoints: lockedPoints,
+            blockedByRoute: false,
+            unlockRouteLabel: unlockRouteLabel,
             statusLabel: "XP insuficiente",
             statusTone: "is-locked",
             actionLabel: "No alcanza",
@@ -273,6 +313,12 @@
             return "Ya forma parte de tu colección. Equípalo para cambiar el estilo.";
         }
 
+        if (state.blockedByRoute) {
+            return state.unlockRouteLabel
+                ? "Completa " + state.unlockRouteLabel + " para habilitarlo en la tienda. Despues aun deberas pagar su costo en XP."
+                : "Todavia no has encontrado este vestuario dentro del recorrido.";
+        }
+
         if (state.affordable) {
             return "Tienes XP suficiente para desbloquearlo. No se equipara automaticamente.";
         }
@@ -283,6 +329,37 @@
     function isUnlocked(itemId, profile) {
         const unlocked = profile.unlockedOutfitIds || profile.unlockedCharacters || [];
         return unlocked.includes(itemId);
+    }
+
+    function buildLockedArtMarkup(state) {
+        return [
+            "<span class=\"shop-art-lock\" aria-hidden=\"true\">",
+            "<span class=\"shop-art-lock-icon\"><img src=\"", LOCK_ICON_PATH, "\" alt=\"\"></span>",
+            "<span class=\"shop-art-lock-copy\">", escapeHtml(state.unlockRouteLabel || "Ruta pendiente"), "</span>",
+            "</span>"
+        ].join("");
+    }
+
+    function isDiscovered(itemId, profile) {
+        const discovered = profile.discoveredOutfitIds || profile.availableOutfitIds || [];
+        return discovered.includes(itemId) || isUnlocked(itemId, profile);
+    }
+
+    function getUnlockRouteLabel(item) {
+        if (!item || !item.unlockRouteId) {
+            return "";
+        }
+
+        return item.unlockRouteName
+            ? ("Ruta " + item.unlockRouteId + " - " + item.unlockRouteName)
+            : ("Ruta " + item.unlockRouteId);
+    }
+
+    function getLockedRouteMessage(item) {
+        const unlockRouteLabel = getUnlockRouteLabel(item);
+        return unlockRouteLabel
+            ? "Completa " + unlockRouteLabel + " para habilitar este vestuario."
+            : "Este vestuario todavia no esta disponible.";
     }
 
     function showStoreMessage(text) {

@@ -96,6 +96,7 @@ function capy_outfit_definitions(): array
             'tagline' => 'Marea tranquila',
             'cost' => 300,
             'image' => 'assets/characters/CapyAqua.webp',
+            'unlock_route_id' => 3,
         ],
         [
             'id' => 'CapyKing',
@@ -104,6 +105,7 @@ function capy_outfit_definitions(): array
             'tagline' => 'Corona serena',
             'cost' => 750,
             'image' => 'assets/characters/CapyKing.webp',
+            'unlock_route_id' => 6,
         ],
         [
             'id' => 'CapyExplorer',
@@ -120,6 +122,7 @@ function capy_outfit_definitions(): array
             'tagline' => 'Runa paciente',
             'cost' => 1800,
             'image' => 'assets/characters/CapyRuna.webp',
+            'unlock_route_id' => 2,
         ],
         [
             'id' => 'CapyCandy',
@@ -128,6 +131,7 @@ function capy_outfit_definitions(): array
             'tagline' => 'Chispa dulce',
             'cost' => 2000,
             'image' => 'assets/characters/CapyCandy.webp',
+            'unlock_route_id' => 8,
         ],
         [
             'id' => 'CapySun',
@@ -136,6 +140,7 @@ function capy_outfit_definitions(): array
             'tagline' => 'Amanecer claro',
             'cost' => 2200,
             'image' => 'assets/characters/CapySun.webp',
+            'unlock_route_id' => 7,
         ],
         [
             'id' => 'CapyEarth',
@@ -144,6 +149,7 @@ function capy_outfit_definitions(): array
             'tagline' => 'Raíz constante',
             'cost' => 2600,
             'image' => 'assets/characters/CapyEarth.webp',
+            'unlock_route_id' => 5,
         ],
         [
             'id' => 'CapyConstelation',
@@ -152,7 +158,16 @@ function capy_outfit_definitions(): array
             'tagline' => 'Cielo estelar',
             'cost' => 2900,
             'image' => 'assets/characters/CapyConstelation.webp',
+            'unlock_route_id' => 4,
         ],
+    ];
+}
+
+function capy_starter_discovered_outfit_ids(): array
+{
+    return [
+        'CapyBlack',
+        'CapyExplorer',
     ];
 }
 

@@ -436,7 +436,8 @@ window.CAPYCODE_APP_DATA = {
             perk: "Marea tranquila",
             price: 300,
             costo: 300,
-            image: "assets/characters/CapyAqua.webp"
+            image: "assets/characters/CapyAqua.webp",
+            unlockRouteId: 3
         },
         {
             id: "CapyKing",
@@ -449,7 +450,8 @@ window.CAPYCODE_APP_DATA = {
             perk: "Corona serena",
             price: 750,
             costo: 750,
-            image: "assets/characters/CapyKing.webp"
+            image: "assets/characters/CapyKing.webp",
+            unlockRouteId: 6
         },
         {
             id: "CapyExplorer",
@@ -475,7 +477,8 @@ window.CAPYCODE_APP_DATA = {
             perk: "Chispa dulce",
             price: 2000,
             costo: 2000,
-            image: "assets/characters/CapyCandy.webp"
+            image: "assets/characters/CapyCandy.webp",
+            unlockRouteId: 8
         },
         {
             id: "CapyRuna",
@@ -488,7 +491,8 @@ window.CAPYCODE_APP_DATA = {
             perk: "Runa paciente",
             price: 1800,
             costo: 1800,
-            image: "assets/characters/CapyRuna.webp"
+            image: "assets/characters/CapyRuna.webp",
+            unlockRouteId: 2
         },
         {
             id: "CapySun",
@@ -501,7 +505,8 @@ window.CAPYCODE_APP_DATA = {
             perk: "Amanecer claro",
             price: 2200,
             costo: 2200,
-            image: "assets/characters/CapySun.webp"
+            image: "assets/characters/CapySun.webp",
+            unlockRouteId: 7
         },
         {
             id: "CapyEarth",
@@ -514,7 +519,8 @@ window.CAPYCODE_APP_DATA = {
             perk: "Raíz constante",
             price: 2600,
             costo: 2600,
-            image: "assets/characters/CapyEarth.webp"
+            image: "assets/characters/CapyEarth.webp",
+            unlockRouteId: 5
         },
         {
             id: "CapyConstelation",
@@ -527,7 +533,8 @@ window.CAPYCODE_APP_DATA = {
             perk: "Cielo estelar",
             price: 2900,
             costo: 2900,
-            image: "assets/characters/CapyConstelation.webp"
+            image: "assets/characters/CapyConstelation.webp",
+            unlockRouteId: 4
         }
     ],
     achievements: [

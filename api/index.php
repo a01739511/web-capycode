@@ -192,6 +192,7 @@ try {
             'routeCompleted' => $result['routeCompleted'],
             'gameCompleted' => $result['gameCompleted'],
             'badgeUnlocked' => $result['badgeUnlocked'],
+            'newlyDiscoveredOutfits' => $result['newlyDiscoveredOutfits'],
             'user' => capy_get_public_user($pdo, $result['user'], $config),
         ]);
     }

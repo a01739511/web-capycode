@@ -77,6 +77,8 @@ function capy_require_current_user(PDO $pdo): array
 
 function capy_get_public_user(PDO $pdo, array $user, array $config): array
 {
+    $unlockedOutfitIds = capy_get_unlocked_outfit_ids($pdo, (int) $user['id'], $config);
+    $unlockedBadgeRouteIds = capy_get_unlocked_badge_route_ids($pdo, (int) $user['id']);
     $publicUser = [
         'id' => (int) $user['id'],
         'username' => $user['username'],
@@ -88,9 +90,11 @@ function capy_get_public_user(PDO $pdo, array $user, array $config): array
         'lastCompletionAt' => $user['last_completion_at'],
         'currentOutfitId' => $user['current_outfit_id'] ?: $config['default_outfit_id'],
         'equippedCharacter' => $user['current_outfit_id'] ?: $config['default_outfit_id'],
-        'unlockedOutfitIds' => capy_get_unlocked_outfit_ids($pdo, (int) $user['id'], $config),
-        'unlockedCharacters' => capy_get_unlocked_outfit_ids($pdo, (int) $user['id'], $config),
-        'unlockedBadgeRouteIds' => capy_get_unlocked_badge_route_ids($pdo, (int) $user['id']),
+        'unlockedOutfitIds' => $unlockedOutfitIds,
+        'unlockedCharacters' => $unlockedOutfitIds,
+        'unlockedBadgeRouteIds' => $unlockedBadgeRouteIds,
+        'discoveredOutfitIds' => capy_get_discovered_outfit_ids($unlockedOutfitIds, $unlockedBadgeRouteIds),
+        'availableOutfitIds' => capy_get_discovered_outfit_ids($unlockedOutfitIds, $unlockedBadgeRouteIds),
     ];
 
     return $publicUser;
@@ -131,6 +135,56 @@ function capy_get_unlocked_badge_route_ids(PDO $pdo, int $userId): array
     return array_map(static function ($row) {
         return (int) $row['route_id'];
     }, $statement->fetchAll());
+}
+
+function capy_get_outfit_definition_map(): array
+{
+    $definitions = [];
+
+    foreach (capy_outfit_definitions() as $outfit) {
+        $definitions[(string) $outfit['id']] = $outfit;
+    }
+
+    return $definitions;
+}
+
+function capy_get_route_reward_outfit_by_route_id(int $routeId): ?array
+{
+    foreach (capy_outfit_definitions() as $outfit) {
+        if ((int) ($outfit['unlock_route_id'] ?? 0) === $routeId) {
+            return $outfit;
+        }
+    }
+
+    return null;
+}
+
+function capy_get_route_name_by_id(int $routeId): string
+{
+    foreach (capy_route_definitions() as $route) {
+        if ((int) $route['id'] === $routeId) {
+            return (string) $route['name'];
+        }
+    }
+
+    return '';
+}
+
+function capy_get_discovered_outfit_ids(array $unlockedOutfitIds, array $unlockedBadgeRouteIds): array
+{
+    $discovered = array_values(array_unique(array_merge(
+        capy_starter_discovered_outfit_ids(),
+        array_map('strval', $unlockedOutfitIds)
+    )));
+
+    foreach ($unlockedBadgeRouteIds as $routeId) {
+        $outfit = capy_get_route_reward_outfit_by_route_id((int) $routeId);
+        if ($outfit && !in_array($outfit['id'], $discovered, true)) {
+            $discovered[] = $outfit['id'];
+        }
+    }
+
+    return array_values(array_unique($discovered));
 }
 
 function capy_get_routes(PDO $pdo, ?int $userId = null): array
@@ -216,8 +270,17 @@ function capy_get_exercises_by_level(PDO $pdo, int $levelId): array
 function capy_get_outfits(PDO $pdo): array
 {
     $rows = $pdo->query('SELECT * FROM outfits ORDER BY cost ASC, name ASC')->fetchAll();
+    $definitionMap = capy_get_outfit_definition_map();
+    $routeNameById = [];
+
+    foreach (capy_route_definitions() as $route) {
+        $routeNameById[(int) $route['id']] = (string) $route['name'];
+    }
+
     return array_map(
-        static function (array $row): array {
+        static function (array $row) use ($definitionMap, $routeNameById): array {
+            $definition = $definitionMap[(string) $row['id']] ?? [];
+            $unlockRouteId = (int) ($definition['unlock_route_id'] ?? 0);
             return [
                 'id' => $row['id'],
                 'name' => $row['name'],
@@ -225,6 +288,8 @@ function capy_get_outfits(PDO $pdo): array
                 'tagline' => $row['tagline'],
                 'cost' => (int) $row['cost'],
                 'image' => $row['image'],
+                'unlockRouteId' => $unlockRouteId > 0 ? $unlockRouteId : null,
+                'unlockRouteName' => $unlockRouteId > 0 ? ($routeNameById[$unlockRouteId] ?? '') : '',
             ];
         },
         $rows
@@ -241,6 +306,11 @@ function capy_get_outfit(PDO $pdo, string $outfitId): ?array
         return null;
     }
 
+    $definitionMap = capy_get_outfit_definition_map();
+    $definition = $definitionMap[(string) $row['id']] ?? [];
+    $unlockRouteId = (int) ($definition['unlock_route_id'] ?? 0);
+    $unlockRouteName = $unlockRouteId > 0 ? capy_get_route_name_by_id($unlockRouteId) : '';
+
     return [
         'id' => $row['id'],
         'name' => $row['name'],
@@ -248,12 +318,25 @@ function capy_get_outfit(PDO $pdo, string $outfitId): ?array
         'tagline' => $row['tagline'],
         'cost' => (int) $row['cost'],
         'image' => $row['image'],
+        'unlockRouteId' => $unlockRouteId > 0 ? $unlockRouteId : null,
+        'unlockRouteName' => $unlockRouteName,
     ];
 }
 
 function capy_unlock_outfit(PDO $pdo, array $user, array $outfit, array $config): array
 {
     $unlockedIds = capy_get_unlocked_outfit_ids($pdo, (int) $user['id'], $config);
+    $unlockedBadgeRouteIds = capy_get_unlocked_badge_route_ids($pdo, (int) $user['id']);
+    $discoveredOutfitIds = capy_get_discovered_outfit_ids($unlockedIds, $unlockedBadgeRouteIds);
+
+    if (!in_array($outfit['id'], $discoveredOutfitIds, true)) {
+        if (!empty($outfit['unlockRouteId'])) {
+            throw new CapyHttpException(422, 'Completa la ruta ' . (int) $outfit['unlockRouteId'] . ' para habilitar este vestuario.');
+        }
+
+        throw new CapyHttpException(422, 'Este vestuario todavÃ­a no estÃ¡ disponible.');
+    }
+
     if (in_array($outfit['id'], $unlockedIds, true)) {
         return [
             'alreadyUnlocked' => true,
@@ -355,6 +438,7 @@ function capy_complete_level(PDO $pdo, array $user, int $levelId, $answers, arra
     $routeCompleted = false;
     $gameCompleted = false;
     $badgeUnlocked = false;
+    $newlyDiscoveredOutfits = [];
 
     if (!$practice) {
         $reward = capy_xp_rewards()[$level['difficulty']] ?? 0;
@@ -389,6 +473,24 @@ function capy_complete_level(PDO $pdo, array $user, int $levelId, $answers, arra
                     ':unlocked_at' => capy_now_iso(),
                 ]);
                 $badgeUnlocked = $badgeInsert->rowCount() > 0;
+
+                if ($badgeUnlocked) {
+                    $routeRewardOutfit = capy_get_route_reward_outfit_by_route_id((int) $level['routeId']);
+                    if ($routeRewardOutfit) {
+                        $newlyDiscoveredOutfits[] = [
+                            'id' => $routeRewardOutfit['id'],
+                            'name' => $routeRewardOutfit['name'],
+                            'description' => $routeRewardOutfit['description'],
+                            'tagline' => $routeRewardOutfit['tagline'],
+                            'cost' => (int) $routeRewardOutfit['cost'],
+                            'image' => $routeRewardOutfit['image'],
+                            'unlockRouteId' => (int) ($routeRewardOutfit['unlock_route_id'] ?? 0),
+                            'unlockRouteName' => !empty($routeRewardOutfit['unlock_route_id'])
+                                ? capy_get_route_name_by_id((int) $routeRewardOutfit['unlock_route_id'])
+                                : '',
+                        ];
+                    }
+                }
             }
 
             $pdo->commit();
@@ -405,6 +507,7 @@ function capy_complete_level(PDO $pdo, array $user, int $levelId, $answers, arra
         'routeCompleted' => $routeCompleted,
         'gameCompleted' => $gameCompleted,
         'badgeUnlocked' => $badgeUnlocked,
+        'newlyDiscoveredOutfits' => $newlyDiscoveredOutfits,
         'user' => capy_find_user_by_id($pdo, (int) $user['id']),
     ];
 }

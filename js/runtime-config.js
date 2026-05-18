@@ -21,6 +21,9 @@
             : (inferredBase ? "auto" : "local"),
         UNLOCK_ALL_ROUTES_FOR_PREVIEW: existing.UNLOCK_ALL_ROUTES_FOR_PREVIEW !== undefined
             ? existing.UNLOCK_ALL_ROUTES_FOR_PREVIEW
+            : true,
+        UNLOCK_ALL_LEVELS_FOR_PREVIEW: existing.UNLOCK_ALL_LEVELS_FOR_PREVIEW !== undefined
+            ? existing.UNLOCK_ALL_LEVELS_FOR_PREVIEW
             : true
     }, existing);
 }());

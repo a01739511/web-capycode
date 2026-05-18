@@ -20,6 +20,9 @@
     const levelId = normalizeLevelId(searchParams.get("levelId") || searchParams.get("level"));
     const level = api.getLevelByIdSync(levelId);
     const timerSeconds = level ? api.getDifficultySeconds(level.difficulty) : 30;
+    const UNLOCK_ALL_LEVELS_FOR_PREVIEW = Boolean(
+        window.CAPYCODE_CONFIG && window.CAPYCODE_CONFIG.UNLOCK_ALL_LEVELS_FOR_PREVIEW
+    );
 
     const elements = {
         shell: app,
@@ -77,7 +80,9 @@
     async function start() {
         const profile = window.CapyCore.getProfile();
 
-        if (level.id > profile.currentLevelId && profile.currentLevelId !== api.getTotalLevelCountSync() + 1) {
+        if (!UNLOCK_ALL_LEVELS_FOR_PREVIEW &&
+            level.id > profile.currentLevelId &&
+            profile.currentLevelId !== api.getTotalLevelCountSync() + 1) {
             renderLockedState();
             return;
         }
@@ -726,6 +731,7 @@
 
         const practice = outcome && outcome.practice;
         const reward = outcome && outcome.reward ? Number(outcome.reward) : 0;
+        const newlyDiscoveredOutfits = getNewlyDiscoveredOutfits(outcome);
         const nextHref = getNextLevelHref(outcome);
         const title = outcome && outcome.gameCompleted
             ? "Juego completado"
@@ -749,6 +755,7 @@
             "<h2>", escapeHtml(title), "</h2>",
             "<p class=\"completion-lead\">", escapeHtml(copy), "</p>",
             reward ? "<p class=\"level-reward-pill\">+" + window.CapyCore.formatNumber(reward) + " XP</p>" : "",
+            buildOutfitDiscoveryShowcase(newlyDiscoveredOutfits),
             "<div class=\"completion-actions is-three-actions\">",
             "<button class=\"scene-button ghost\" type=\"button\" data-retry-level>Repetir</button>",
             "<a class=\"scene-button primary\" href=\"mapa.html\">Volver al mapa</a>",
@@ -812,7 +819,9 @@
             return "mapa.html";
         }
 
-        if (profile.currentLevelId !== totalLevels + 1 && nextLevelId > profile.currentLevelId) {
+        if (!UNLOCK_ALL_LEVELS_FOR_PREVIEW &&
+            profile.currentLevelId !== totalLevels + 1 &&
+            nextLevelId > profile.currentLevelId) {
             return "mapa.html";
         }
 
@@ -857,6 +866,43 @@
                     "; --piece-size:", 7 + (index % 4), "px",
                     "; --duration:", 4.2 + (index % 6) * 0.2, "s",
                     "; --delay:", -1 * (index % 9) * 0.22, "s\"></span>"
+                ].join("");
+            }).join(""),
+            "</div>"
+        ].join("");
+    }
+
+    function getNewlyDiscoveredOutfits(outcome) {
+        if (!outcome || !Array.isArray(outcome.newlyDiscoveredOutfits)) {
+            return [];
+        }
+
+        return outcome.newlyDiscoveredOutfits.filter(function (item) {
+            return item && item.id && item.image;
+        });
+    }
+
+    function buildOutfitDiscoveryShowcase(outfits) {
+        if (!outfits.length) {
+            return "";
+        }
+
+        return [
+            "<div class=\"completion-unlock-showcase\">",
+            outfits.map(function (item) {
+                return [
+                    "<article class=\"unlock-reward-card\">",
+                    "<span class=\"unlock-reward-burst\" aria-hidden=\"true\"></span>",
+                    "<div class=\"unlock-reward-art\">",
+                    "<img src=\"", escapeAttribute(item.image), "\" alt=\"", escapeAttribute(item.name), "\">",
+                    "</div>",
+                    "<div class=\"unlock-reward-copy\">",
+                    "<p class=\"unlock-reward-kicker\">Personaje encontrado</p>",
+                    "<strong>", escapeHtml(item.name), "</strong>",
+                    "<span>", escapeHtml(item.unlockRouteName ? "Ya puedes comprarlo en la tienda." : "Ya estÃ¡ disponible en la tienda."), "</span>",
+                    "<span class=\"unlock-reward-cost\">Costo: XP ", window.CapyCore.formatNumber(item.cost || 0), "</span>",
+                    "</div>",
+                    "</article>"
                 ].join("");
             }).join(""),
             "</div>"

@@ -146,6 +146,21 @@
         "CapyConstelation"
     ];
 
+    const OUTFIT_ROUTE_REQUIREMENTS = {
+        CapyAqua: 3,
+        CapyKing: 6,
+        CapyRuna: 2,
+        CapyCandy: 8,
+        CapySun: 7,
+        CapyEarth: 5,
+        CapyConstelation: 4
+    };
+
+    const STARTER_DISCOVERED_OUTFIT_IDS = [
+        DEFAULT_OUTFIT_ID,
+        "CapyExplorer"
+    ];
+
     const DEFAULT_OUTFITS = [
         {
             id: "CapyBlack",
@@ -159,14 +174,16 @@
             name: "CapyAqua",
             description: "Tonos acuáticos para avanzar con calma.",
             tagline: "Marea tranquila",
-            image: "assets/characters/CapyAqua.webp"
+            image: "assets/characters/CapyAqua.webp",
+            unlockRouteId: 3
         },
         {
             id: "CapyKing",
             name: "CapyKing",
             description: "Corona y capa para una presencia solemne.",
             tagline: "Corona serena",
-            image: "assets/characters/CapyKing.webp"
+            image: "assets/characters/CapyKing.webp",
+            unlockRouteId: 6
         },
         {
             id: "CapyExplorer",
@@ -180,35 +197,40 @@
             name: "CapyRuna",
             description: "Marcas antiguas para retos misteriosos.",
             tagline: "Runa paciente",
-            image: "assets/characters/CapyRuna.webp"
+            image: "assets/characters/CapyRuna.webp",
+            unlockRouteId: 2
         },
         {
             id: "CapyCandy",
             name: "CapyCandy",
             description: "Colores dulces para una colección alegre.",
             tagline: "Chispa dulce",
-            image: "assets/characters/CapyCandy.webp"
+            image: "assets/characters/CapyCandy.webp",
+            unlockRouteId: 8
         },
         {
             id: "CapySun",
             name: "CapySun",
             description: "Detalles solares para iluminar el recorrido.",
             tagline: "Amanecer claro",
-            image: "assets/characters/CapySun.webp"
+            image: "assets/characters/CapySun.webp",
+            unlockRouteId: 7
         },
         {
             id: "CapyEarth",
             name: "CapyEarth",
             description: "Tonos de tierra para una presencia constante.",
             tagline: "Raíz constante",
-            image: "assets/characters/CapyEarth.webp"
+            image: "assets/characters/CapyEarth.webp",
+            unlockRouteId: 5
         },
         {
             id: "CapyConstelation",
             name: "CapyConstelation",
             description: "Detalles estelares para destacar en la colección.",
             tagline: "Cielo estelar",
-            image: "assets/characters/CapyConstelation.webp"
+            image: "assets/characters/CapyConstelation.webp",
+            unlockRouteId: 4
         }
     ];
 
@@ -403,7 +425,9 @@
             xp: 0,
             lastCompletionAt: null,
             currentOutfitId: DEFAULT_OUTFIT_ID,
-            unlockedOutfitIds: [DEFAULT_OUTFIT_ID]
+            unlockedOutfitIds: [DEFAULT_OUTFIT_ID],
+            unlockedBadgeRouteIds: [],
+            discoveredOutfitIds: STARTER_DISCOVERED_OUTFIT_IDS.slice()
         };
     }
 
@@ -414,6 +438,41 @@
         } catch (error) {
             return null;
         }
+    }
+
+    function getStarterDiscoveredOutfitIds() {
+        return STARTER_DISCOVERED_OUTFIT_IDS.slice();
+    }
+
+    function getUnlockRouteIdForOutfit(outfitId) {
+        return OUTFIT_ROUTE_REQUIREMENTS[String(outfitId)] || null;
+    }
+
+    function getInferredUnlockedBadgeRouteIds(currentLevelId) {
+        const highestCompletedLevel = Math.max(0, Math.min(getTotalLevelCountSync(), Number(currentLevelId || 1) - 1));
+
+        return getRoutesSync().filter(function (route) {
+            return highestCompletedLevel >= route.orderIndex * TOTAL_LEVELS_PER_ROUTE;
+        }).map(function (route) {
+            return Number(route.id);
+        });
+    }
+
+    function getDiscoveredOutfitIdsFromState(explicitIds, unlockedOutfitIds, unlockedBadgeRouteIds) {
+        const discovered = uniqueList(
+            arrayCopy(explicitIds)
+                .concat(arrayCopy(unlockedOutfitIds))
+                .concat(getStarterDiscoveredOutfitIds())
+        );
+
+        arrayCopy(unlockedBadgeRouteIds).forEach(function (routeId) {
+            const routeOutfit = getRouteRewardOutfitSync(routeId);
+            if (routeOutfit && !discovered.includes(routeOutfit.id)) {
+                discovered.push(routeOutfit.id);
+            }
+        });
+
+        return uniqueList(discovered);
     }
 
     function normalizeUser(user, fallbackUsername) {
@@ -440,10 +499,24 @@
             (Array.isArray(legacyProfile.unlockedCharacters) ? legacyProfile.unlockedCharacters : null) ||
             [DEFAULT_OUTFIT_ID]
         );
+        const explicitUnlockedBadgeRouteIds = uniqueList(
+            (
+                (Array.isArray(legacy.unlockedBadgeRouteIds) ? legacy.unlockedBadgeRouteIds : null) ||
+                (Array.isArray(legacyProfile.unlockedBadgeRouteIds) ? legacyProfile.unlockedBadgeRouteIds : null) ||
+                []
+            ).map(function (routeId) {
+                return readNumber(routeId, 0);
+            }).filter(function (routeId) {
+                return routeId > 0;
+            })
+        );
         const currentOutfitId = legacy.currentOutfitId ||
             legacy.equippedCharacter ||
             legacyProfile.equippedCharacter ||
             DEFAULT_OUTFIT_ID;
+        const unlockedBadgeRouteIds = explicitUnlockedBadgeRouteIds.length
+            ? explicitUnlockedBadgeRouteIds
+            : getInferredUnlockedBadgeRouteIds(currentLevelId);
 
         if (!unlockedOutfitIds.includes(DEFAULT_OUTFIT_ID)) {
             unlockedOutfitIds.unshift(DEFAULT_OUTFIT_ID);
@@ -452,6 +525,15 @@
         if (!unlockedOutfitIds.includes(currentOutfitId)) {
             unlockedOutfitIds.push(currentOutfitId);
         }
+
+        const discoveredOutfitIds = getDiscoveredOutfitIdsFromState(
+            (Array.isArray(legacy.discoveredOutfitIds) ? legacy.discoveredOutfitIds : null) ||
+            (Array.isArray(legacy.availableOutfitIds) ? legacy.availableOutfitIds : null) ||
+            (Array.isArray(legacyProfile.discoveredOutfitIds) ? legacyProfile.discoveredOutfitIds : null) ||
+            [],
+            unlockedOutfitIds,
+            unlockedBadgeRouteIds
+        );
 
         return {
             id: readNumber(legacy.id, getStableFallbackId(username)),
@@ -462,7 +544,9 @@
             xp: Math.max(0, readNumber(legacy.xp !== undefined ? legacy.xp : legacyProfile.xp, 0)),
             lastCompletionAt: legacy.lastCompletionAt || legacy.lastCompletedAt || null,
             currentOutfitId: currentOutfitId,
-            unlockedOutfitIds: unlockedOutfitIds
+            unlockedOutfitIds: unlockedOutfitIds,
+            unlockedBadgeRouteIds: unlockedBadgeRouteIds,
+            discoveredOutfitIds: discoveredOutfitIds
         };
     }
 
@@ -542,6 +626,9 @@
         publicUser.level = publicUser.currentLevelId;
         publicUser.equippedCharacter = publicUser.currentOutfitId;
         publicUser.unlockedCharacters = publicUser.unlockedOutfitIds.slice();
+        publicUser.unlockedBadgeRouteIds = arrayCopy(publicUser.unlockedBadgeRouteIds);
+        publicUser.discoveredOutfitIds = arrayCopy(publicUser.discoveredOutfitIds);
+        publicUser.availableOutfitIds = publicUser.discoveredOutfitIds.slice();
         return publicUser;
     }
 
@@ -723,6 +810,9 @@
         const level = getLevelByIdSync(numericLevelId);
         const record = getUserRecordBySession();
         const answerList = Array.isArray(answers) ? answers : [];
+        const previewAllLevels = Boolean(
+            window.CAPYCODE_CONFIG && window.CAPYCODE_CONFIG.UNLOCK_ALL_LEVELS_FOR_PREVIEW
+        );
 
         if (!record) {
             throw new Error("Inicia sesión para completar niveles.");
@@ -735,7 +825,7 @@
         const totalLevels = getTotalLevelCountSync();
         const isGameAlreadyCompleted = record.user.currentLevelId === totalLevels + 1;
 
-        if (!isGameAlreadyCompleted && numericLevelId > record.user.currentLevelId) {
+        if (!previewAllLevels && !isGameAlreadyCompleted && numericLevelId > record.user.currentLevelId) {
             throw new Error("Este nivel sigue bloqueado.");
         }
 
@@ -751,16 +841,50 @@
             throw new Error("Hay respuestas incorrectas o incompletas.");
         }
 
-        const isPractice = isGameAlreadyCompleted || numericLevelId < record.user.currentLevelId;
+        const isPractice = !previewAllLevels &&
+            (isGameAlreadyCompleted || numericLevelId < record.user.currentLevelId);
         let reward = 0;
-        let nextLevelId = record.user.currentLevelId;
+        let nextLevelId = previewAllLevels
+            ? Math.min(numericLevelId + 1, totalLevels + 1)
+            : record.user.currentLevelId;
+        let badgeUnlocked = false;
+        let newlyDiscoveredOutfits = [];
 
         if (!isPractice) {
             reward = XP_REWARD[level.difficulty] || 0;
             record.user.xp += reward;
             updateStreakOnCompletion(record.user, new Date());
             nextLevelId = Math.min(numericLevelId + 1, totalLevels + 1);
-            record.user.currentLevelId = nextLevelId;
+
+            if (!previewAllLevels) {
+                record.user.currentLevelId = nextLevelId;
+            }
+
+            if (level.routeOrder === TOTAL_LEVELS_PER_ROUTE) {
+                const unlockedBadgeRouteIds = arrayCopy(record.user.unlockedBadgeRouteIds);
+                badgeUnlocked = !unlockedBadgeRouteIds.includes(Number(level.routeId));
+
+                if (badgeUnlocked) {
+                    unlockedBadgeRouteIds.push(Number(level.routeId));
+                }
+
+                const discoveredBefore = arrayCopy(record.user.discoveredOutfitIds);
+                const discoveredAfter = getDiscoveredOutfitIdsFromState(
+                    discoveredBefore,
+                    record.user.unlockedOutfitIds,
+                    unlockedBadgeRouteIds
+                );
+                const routeRewardOutfit = getRouteRewardOutfitSync(level.routeId);
+
+                record.user.unlockedBadgeRouteIds = uniqueList(unlockedBadgeRouteIds);
+                record.user.discoveredOutfitIds = discoveredAfter;
+
+                if (routeRewardOutfit &&
+                    discoveredAfter.includes(routeRewardOutfit.id) &&
+                    !discoveredBefore.includes(routeRewardOutfit.id)) {
+                    newlyDiscoveredOutfits = [routeRewardOutfit];
+                }
+            }
         }
 
         record.users[record.key] = normalizeUser(record.user, record.user.username);
@@ -773,7 +897,9 @@
             user: getPublicUser(record.users[record.key]),
             nextLevelId: nextLevelId,
             routeCompleted: !isPractice && level.routeOrder === TOTAL_LEVELS_PER_ROUTE,
-            gameCompleted: !isPractice && nextLevelId === totalLevels + 1
+            gameCompleted: !previewAllLevels && !isPractice && nextLevelId === totalLevels + 1,
+            badgeUnlocked: badgeUnlocked,
+            newlyDiscoveredOutfits: newlyDiscoveredOutfits
         };
     }
 
@@ -801,6 +927,10 @@
 
         if (!outfit) {
             throw new Error("Vestuario no encontrado.");
+        }
+
+        if (!arrayCopy(record.user.discoveredOutfitIds).includes(outfit.id)) {
+            throw new Error(getOutfitUnlockMessage(outfit));
         }
 
         if (record.user.unlockedOutfitIds.includes(outfit.id)) {
@@ -902,6 +1032,29 @@
         }) || null;
     }
 
+    function getRouteByIdSync(routeId) {
+        return getRoutesSync().find(function (route) {
+            return Number(route.id) === Number(routeId);
+        }) || null;
+    }
+
+    function getRouteRewardOutfitSync(routeId) {
+        return getOutfitsSync().find(function (outfit) {
+            return Number(outfit.unlockRouteId) === Number(routeId);
+        }) || null;
+    }
+
+    function getOutfitUnlockMessage(outfit) {
+        if (!outfit || !outfit.unlockRouteId) {
+            return "Este vestuario todavÃ­a no estÃ¡ disponible.";
+        }
+
+        const route = getRouteByIdSync(outfit.unlockRouteId);
+        return route
+            ? "Completa la ruta " + route.orderIndex + " para habilitar este vestuario."
+            : "Completa la ruta asociada para habilitar este vestuario.";
+    }
+
     function getCurrentRouteForUserSync(user) {
         const currentUser = user || getCurrentUserSync();
         const totalLevels = getTotalLevelCountSync();
@@ -914,9 +1067,7 @@
             return null;
         }
 
-        return getRoutesSync().find(function (route) {
-            return String(route.id) === String(level.routeId);
-        }) || null;
+        return getRouteByIdSync(level.routeId);
     }
 
     function getTotalLevelCountSync() {
@@ -942,7 +1093,13 @@
                 description: item.description || item.descripcion || "Vestuario decorativo de CapyCode.",
                 tagline: item.tagline || item.slogan || item.perk || item.frase || "",
                 cost: OUTFIT_COSTS[outfitId],
-                image: item.image || ("assets/characters/" + outfitId + ".webp")
+                image: item.image || ("assets/characters/" + outfitId + ".webp"),
+                unlockRouteId: readNumber(item.unlockRouteId, getUnlockRouteIdForOutfit(outfitId) || 0) || null,
+                unlockRouteName: (function () {
+                    const routeId = readNumber(item.unlockRouteId, getUnlockRouteIdForOutfit(outfitId) || 0);
+                    const route = routeId ? getRouteByIdSync(routeId) : null;
+                    return route ? route.name : "";
+                }())
             };
         });
     }

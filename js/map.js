@@ -14,6 +14,9 @@
     const UNLOCK_ALL_ROUTES_FOR_PREVIEW = Boolean(
         window.CAPYCODE_CONFIG && window.CAPYCODE_CONFIG.UNLOCK_ALL_ROUTES_FOR_PREVIEW
     );
+    const UNLOCK_ALL_LEVELS_FOR_PREVIEW = Boolean(
+        window.CAPYCODE_CONFIG && window.CAPYCODE_CONFIG.UNLOCK_ALL_LEVELS_FOR_PREVIEW
+    );
     const ROUTE_MASCOTS = {
         algoritmos: {
             name: "CapyBlack",
@@ -347,6 +350,10 @@
     }
 
     function resolveStatus(levelId) {
+        if (UNLOCK_ALL_LEVELS_FOR_PREVIEW) {
+            return levelId < currentLevelId ? "completed" : "current";
+        }
+
         if (gameCompleted) {
             return "completed";
         }
