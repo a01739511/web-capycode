@@ -4133,8 +4133,9 @@ body.is-modal-open {
 
 .badge-card-copy h3 {
     font-family: var(--font-display);
-    font-size: 1.04rem;
-    line-height: 1.08;
+    font-size: 0.94rem;
+    line-height: 1.02;
+    text-wrap: balance;
 }
 
 .badge-card-copy p {

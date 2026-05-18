@@ -88,7 +88,7 @@
                 "<img src=\"", escapeAttribute(route.badgeImage || "assets/tec-emblem.svg"), "\" alt=\"", escapeAttribute(route.name), "\">",
                 "</div>",
                 "<div class=\"badge-card-copy\">",
-                "<span class=\"badge-card-state\">", unlocked ? "Desbloqueada" : "Bloqueada", "</span>",
+                "<span class=\"badge-card-state\">", unlocked ? "Encontrada" : "No encontrada", "</span>",
                 "<h3>", escapeHtml(route.name), "</h3>",
                 "</div>",
                 "</article>"
