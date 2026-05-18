@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title>Insignia Ruta 5</title>
+  <desc>Insignia provisional para la ruta 5 de CapyCode.</desc>
+  <defs>
+    <linearGradient id="g5" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#78e6a5"/>
+      <stop offset="100%" stop-color="#2dd4bf"/>
+    </linearGradient>
+  </defs>
+  <circle cx="64" cy="64" r="54" fill="#22143d"/>
+  <circle cx="64" cy="64" r="48" fill="url(#g5)"/>
+  <circle cx="64" cy="64" r="34" fill="#fff6db" opacity="0.92"/>
+  <path d="M64 42c12.2 0 22 9.8 22 22S76.2 86 64 86 42 76.2 42 64h10c0 6.6 5.4 12 12 12s12-5.4 12-12-5.4-12-12-12z" fill="#22143d"/>
+  <text x="64" y="112" text-anchor="middle" font-family="Verdana, sans-serif" font-size="14" font-weight="700" fill="#ffffff">RUTA 5</text>
+</svg>

@@ -11,6 +11,9 @@
     const LOCK_ICON_PATH = "assets/lock-icon.svg";
     const LEVEL_ORB_PATH = "assets/esfera_nivel.png";
     const ACTIVE_ROUTE_KEY = "capycodeActiveRouteIdV3";
+    const UNLOCK_ALL_ROUTES_FOR_PREVIEW = Boolean(
+        window.CAPYCODE_CONFIG && window.CAPYCODE_CONFIG.UNLOCK_ALL_ROUTES_FOR_PREVIEW
+    );
     const FALLBACK_LAYOUT_ANCHORS = {
         sidebar: [
             { x: "16.2%", y: "52%" },
@@ -415,6 +418,14 @@
     }
 
     function getRouteState(routeItem, activeRouteId) {
+        if (UNLOCK_ALL_ROUTES_FOR_PREVIEW) {
+            if (String(routeItem.id) === String(activeRouteId || "")) {
+                return { label: "Vista previa", isLocked: false, isSelectable: true };
+            }
+
+            return { label: "Disponible", isLocked: false, isSelectable: true };
+        }
+
         const firstLevel = api.getLevelsByRouteSync(routeItem.id)[0];
         const isLocked = !gameCompleted && firstLevel && firstLevel.id > currentLevelId;
         const selectedRouteId = activeRouteId || "";

@@ -1,4 +1,8 @@
 (function () {
+    if (window.CAPYCODE_MOBILE_DOWNLOAD_ONLY) {
+        return;
+    }
+
     const form = document.getElementById("auth-form");
     const message = document.getElementById("form-message");
     const api = window.CapyApi;
@@ -10,6 +14,16 @@
     if (api.getCurrentUserSync()) {
         window.location.href = "mapa.html";
         return;
+    }
+
+    if (api.isBackendMode()) {
+        api.getCurrentUser().then(function (response) {
+            if (response && response.user) {
+                window.location.href = "mapa.html";
+            }
+        }).catch(function () {
+            // If there is no active backend session, keep the auth form visible.
+        });
     }
 
     form.addEventListener("submit", async function (event) {

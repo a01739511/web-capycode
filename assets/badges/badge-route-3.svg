@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title>Insignia Ruta 3</title>
+  <desc>Insignia provisional para la ruta 3 de CapyCode.</desc>
+  <defs>
+    <linearGradient id="g3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#78f2ff"/>
+      <stop offset="100%" stop-color="#c983ff"/>
+    </linearGradient>
+  </defs>
+  <circle cx="64" cy="64" r="54" fill="#22143d"/>
+  <circle cx="64" cy="64" r="48" fill="url(#g3)"/>
+  <circle cx="64" cy="64" r="34" fill="#fff6db" opacity="0.92"/>
+  <path d="M46 80l18-32 18 32H46zm18-14l4 7h-8z" fill="#22143d"/>
+  <text x="64" y="112" text-anchor="middle" font-family="Verdana, sans-serif" font-size="14" font-weight="700" fill="#ffffff">RUTA 3</text>
+</svg>

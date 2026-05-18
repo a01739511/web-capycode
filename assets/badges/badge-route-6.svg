@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title>Insignia Ruta 6</title>
+  <desc>Insignia provisional para la ruta 6 de CapyCode.</desc>
+  <defs>
+    <linearGradient id="g6" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#c49bff"/>
+      <stop offset="100%" stop-color="#6f6dff"/>
+    </linearGradient>
+  </defs>
+  <circle cx="64" cy="64" r="54" fill="#22143d"/>
+  <circle cx="64" cy="64" r="48" fill="url(#g6)"/>
+  <circle cx="64" cy="64" r="34" fill="#fff6db" opacity="0.92"/>
+  <path d="M48 46h20c8.8 0 16 7.2 16 16s-7.2 16-16 16H48zm10 10v12h10c3.3 0 6-2.7 6-6s-2.7-6-6-6z" fill="#22143d"/>
+  <text x="64" y="112" text-anchor="middle" font-family="Verdana, sans-serif" font-size="14" font-weight="700" fill="#ffffff">RUTA 6</text>
+</svg>

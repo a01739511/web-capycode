@@ -1,4 +1,8 @@
 (function () {
+    if (window.CAPYCODE_MOBILE_DOWNLOAD_ONLY) {
+        return;
+    }
+
     const data = window.CAPYCODE_APP_DATA || {};
     const api = window.CapyApi;
 
@@ -7,8 +11,8 @@
     }
 
     document.addEventListener("DOMContentLoaded", function () {
-        if (document.body.dataset.requiresAuth === "true") {
-            ensureSession();
+        if (document.body.dataset.requiresAuth === "true" && !ensureSession()) {
+            return;
         }
 
         applySidebarState();
@@ -22,9 +26,27 @@
     });
 
     function ensureSession() {
-        if (!getSession()) {
-            window.location.href = "iniciar_sesion.html";
+        if (getSession()) {
+            return true;
         }
+
+        if (api.isBackendMode()) {
+            api.getCurrentUser().then(function (response) {
+                if (response && response.user) {
+                    api.saveCurrentUserSync(response.user);
+                    window.location.reload();
+                    return;
+                }
+
+                window.location.href = "iniciar_sesion.html";
+            }).catch(function () {
+                window.location.href = "iniciar_sesion.html";
+            });
+            return false;
+        }
+
+        window.location.href = "iniciar_sesion.html";
+        return false;
     }
 
     function getSession() {

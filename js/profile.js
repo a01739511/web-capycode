@@ -2,6 +2,7 @@
     const heroRoot = document.getElementById("profile-hero");
     const collectionRoot = document.getElementById("profile-collection");
     const collectionCountRoot = document.getElementById("profile-collection-count");
+    const badgesRoot = document.getElementById("profile-badges");
     const api = window.CapyApi;
     const transparentImages = {
         CapyBlack: "assets/characters/no_bg/Capy_Black.png",
@@ -16,7 +17,7 @@
     };
     let activeCollectionId = "";
 
-    if (!heroRoot || !collectionRoot || !collectionCountRoot || !api || !window.CapyCore) {
+    if (!heroRoot || !collectionRoot || !collectionCountRoot || !badgesRoot || !api || !window.CapyCore) {
         return;
     }
 
@@ -68,7 +69,47 @@
 
         collectionCountRoot.textContent = unlockedItems.length + "/" + api.getOutfitsSync().length;
         renderCollection(profile);
+        renderBadges(profile);
         window.CapyCore.updateHud();
+    }
+
+    function renderBadges(profile) {
+        const routes = api.getRoutesSync();
+        const unlockedRouteIds = getUnlockedRouteBadgeIds(profile);
+
+        badgesRoot.innerHTML = routes.map(function (route) {
+            const unlocked = unlockedRouteIds.includes(route.id);
+
+            return [
+                "<article class=\"badge-card",
+                unlocked ? " is-unlocked" : " is-locked",
+                "\">",
+                "<div class=\"badge-card-art\">",
+                "<img src=\"", escapeAttribute(route.badgeImage || "assets/tec-emblem.svg"), "\" alt=\"", escapeAttribute(route.badgeName || route.name), "\">",
+                "</div>",
+                "<div class=\"badge-card-copy\">",
+                "<span class=\"badge-card-state\">", unlocked ? "Desbloqueada" : "Bloqueada", "</span>",
+                "<h3>", escapeHtml(route.badgeName || route.name), "</h3>",
+                "<p>", escapeHtml(route.badgeDescription || ("Completa " + route.name + " para obtener esta insignia.")), "</p>",
+                "</div>",
+                "</article>"
+            ].join("");
+        }).join("");
+    }
+
+    function getUnlockedRouteBadgeIds(profile) {
+        if (Array.isArray(profile.unlockedBadgeRouteIds) && profile.unlockedBadgeRouteIds.length) {
+            return profile.unlockedBadgeRouteIds.map(Number);
+        }
+
+        const levelsPerRoute = 7;
+        const highestCompletedLevel = Math.max(0, Math.min(api.getTotalLevelCountSync(), Number(profile.currentLevelId || 1) - 1));
+
+        return api.getRoutesSync().filter(function (route) {
+            return highestCompletedLevel >= route.orderIndex * levelsPerRoute;
+        }).map(function (route) {
+            return Number(route.id);
+        });
     }
 
     function renderCollection(profile) {

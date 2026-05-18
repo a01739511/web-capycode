@@ -13,8 +13,50 @@
     <link rel="icon" href="assets/favicons/favicon.ico">
     <link rel="manifest" href="site.webmanifest">
     <link rel="stylesheet" href="style.css">
+    <script>
+        (function () {
+            var mobileRegex = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|Silk/i;
+            var userAgent = navigator.userAgent || navigator.vendor || window.opera || "";
+            var isMobileDevice = mobileRegex.test(userAgent);
+            window.CAPYCODE_MOBILE_DOWNLOAD_ONLY = isMobileDevice;
+
+            if (isMobileDevice) {
+                document.documentElement.classList.add("mobile-download-mode");
+            }
+        }());
+    </script>
+    <style>
+        html.mobile-download-mode body {
+            margin: 0;
+            overflow: hidden;
+            background: #120a22;
+        }
+
+        html.mobile-download-mode body > :not(.mobile-download-shell) {
+            display: none !important;
+        }
+
+        html.mobile-download-mode .mobile-download-shell {
+            display: grid !important;
+        }
+    </style>
 </head>
 <body class="scene-body" data-requires-auth="true">
+    <div class="mobile-download-shell">
+        <main class="mobile-download-screen glass-surface">
+            <div class="mobile-download-copy">
+                <p class="eyebrow">CapyCode</p>
+                <h1>Descarga la app</h1>
+                <p>La versi&oacute;n m&oacute;vil de CapyCode vive en la app. Inst&aacute;lala para seguir explorando niveles, rutas y personajes.</p>
+                <div class="mobile-download-actions">
+                    <a class="mobile-download-button" href="assets/downloads/CapyCode.apk" download="CapyCode.apk">Descargar la app</a>
+                </div>
+            </div>
+            <div class="mobile-download-art">
+                <img src="assets/characters/no_bg/Capy_Runa.png" alt="Capy Runa">
+            </div>
+        </main>
+    </div>
     <div class="sidebar-layout">
         <aside class="sidebar-panel app-sidebar glass-surface" data-app-sidebar>
             <a class="sidebar-brand" href="mapa.html">CapyCode</a>
@@ -57,11 +99,22 @@
                     </div>
                     <div class="collection-carousel" id="profile-collection"></div>
                 </section>
+
+                <section class="glass-surface profile-section" id="profile-badges-section">
+                    <div class="panel-header">
+                        <div>
+                            <p class="panel-kicker">Insignias</p>
+                            <h2>Progreso por rutas</h2>
+                        </div>
+                    </div>
+                    <div class="badge-grid" id="profile-badges"></div>
+                </section>
             </main>
         </div>
     </div>
 
     <script src="js/app-data.js"></script>
+    <script src="js/runtime-config.js"></script>
     <script src="js/api-client.js"></script>
     <script src="js/hotkeys.js"></script>
     <script src="js/common.js"></script>

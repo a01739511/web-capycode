@@ -8,6 +8,7 @@
     const DATA_SOURCE = String(CONFIG.DATA_SOURCE || "auto").toLowerCase();
     const USERS_KEY = "capycodeUsersV3";
     const SESSION_KEY = "capycodeSessionV3";
+    const BACKEND_USER_KEY = "capycodeBackendUserV1";
     const LEGACY_SESSION_KEY = "capycodeSession";
     const LEGACY_PROFILE_PREFIX = "capycodeProfile::";
     const NEXT_USER_ID_KEY = "capycodeNextUserIdV3";
@@ -73,42 +74,42 @@
             id: 3,
             key: "expresiones",
             name: "Altar de las Expresiones",
-            backgroundImage: "assets/fondo1.png",
+            backgroundImage: "assets/world/routes/route-03-expresiones.jpg",
             content: "Operadores aritméticos, relacionales y lógicos."
         },
         {
             id: 4,
             key: "condicionales",
             name: "Hechizos Condicionales",
-            backgroundImage: "assets/fondo1.png",
+            backgroundImage: "assets/world/routes/route-04-condicionales.jpg",
             content: "Decisiones con if, else y combinaciones de condiciones."
         },
         {
             id: 5,
             key: "ciclos",
             name: "Círculo de Repetición Infinita",
-            backgroundImage: "assets/fondo1.png",
+            backgroundImage: "assets/world/routes/route-05-ciclos.png",
             content: "Repetición controlada con for, while, break y continue."
         },
         {
             id: 6,
             key: "funciones",
             name: "Taller de Funciones Encantadas",
-            backgroundImage: "assets/fondo1.png",
+            backgroundImage: "assets/world/routes/route-06-funciones.png",
             content: "Funciones, parámetros, retorno y reutilización."
         },
         {
             id: 7,
             key: "estructuras_de_datos",
             name: "Biblioteca de Estructuras de Datos",
-            backgroundImage: "assets/fondo1.png",
+            backgroundImage: "assets/world/routes/route-07-estructuras-de-datos.png",
             content: "Listas, colecciones y operaciones sobre datos agrupados."
         },
         {
             id: 8,
             key: "archivos_de_texto_plano",
             name: "El Archivo Perdido",
-            backgroundImage: "assets/fondo1.png",
+            backgroundImage: "assets/world/routes/route-08-archivos-de-texto-plano.jpg",
             content: "Lectura, escritura y procesamiento de archivos simples."
         }
     ];
@@ -313,7 +314,60 @@
 
     function clearSession() {
         sessionStorage.removeItem(SESSION_KEY);
+        sessionStorage.removeItem(BACKEND_USER_KEY);
         localStorage.removeItem(LEGACY_SESSION_KEY);
+    }
+
+    function readBackendCachedUser() {
+        try {
+            const raw = sessionStorage.getItem(BACKEND_USER_KEY);
+            if (!raw) {
+                return null;
+            }
+
+            const parsed = JSON.parse(raw);
+            if (!parsed || !parsed.username) {
+                return null;
+            }
+
+            return normalizeBackendCachedUser(parsed);
+        } catch (error) {
+            sessionStorage.removeItem(BACKEND_USER_KEY);
+            return null;
+        }
+    }
+
+    function saveBackendCachedUser(user) {
+        if (!user || !user.username) {
+            sessionStorage.removeItem(BACKEND_USER_KEY);
+            return null;
+        }
+
+        const normalized = normalizeBackendCachedUser(user);
+        sessionStorage.setItem(BACKEND_USER_KEY, JSON.stringify(normalized));
+        return normalized;
+    }
+
+    function normalizeBackendCachedUser(user) {
+        const normalized = getPublicUser(normalizeUser(user, user.username));
+        normalized.unlockedBadgeRouteIds = uniqueList(
+            (Array.isArray(user && user.unlockedBadgeRouteIds) ? user.unlockedBadgeRouteIds : [])
+                .map(function (routeId) {
+                    return readNumber(routeId, 0);
+                })
+                .filter(function (routeId) {
+                    return routeId > 0;
+                })
+        );
+        return normalized;
+    }
+
+    function syncBackendPayload(payload) {
+        if (payload && payload.user) {
+            payload.user = saveBackendCachedUser(payload.user);
+        }
+
+        return payload;
     }
 
     function ensureLocalUser(username, password) {
@@ -411,6 +465,10 @@
     }
 
     function getCurrentUserSync() {
+        if (isBackendMode()) {
+            return readBackendCachedUser();
+        }
+
         const session = readSession();
 
         if (!session || !session.username) {
@@ -427,6 +485,10 @@
     }
 
     function saveCurrentUserSync(user) {
+        if (isBackendMode()) {
+            return saveBackendCachedUser(user);
+        }
+
         if (!user || !user.username) {
             return null;
         }
@@ -477,10 +539,10 @@
 
     async function registerUser(username, password) {
         if (isBackendMode()) {
-            return request("auth/register", {
+            return syncBackendPayload(await request("auth/register", {
                 method: "POST",
                 body: { username: username, password: password }
-            });
+            }));
         }
 
         const cleanUsername = String(username || "").trim();
@@ -504,10 +566,10 @@
 
     async function loginUser(username, password) {
         if (isBackendMode()) {
-            return request("auth/login", {
+            return syncBackendPayload(await request("auth/login", {
                 method: "POST",
                 body: { username: username, password: password }
-            });
+            }));
         }
 
         const cleanUsername = String(username || "").trim();
@@ -547,7 +609,7 @@
 
     async function getCurrentUser() {
         if (isBackendMode()) {
-            return request("me", { method: "GET" });
+            return syncBackendPayload(await request("me", { method: "GET" }));
         }
 
         return { ok: true, user: getCurrentUserSync() };
@@ -555,10 +617,10 @@
 
     async function updateUsername(username) {
         if (isBackendMode()) {
-            return request("me/username", {
+            return syncBackendPayload(await request("me/username", {
                 method: "PATCH",
                 body: { username: username }
-            });
+            }));
         }
 
         const cleanUsername = String(username || "").trim();
@@ -588,13 +650,13 @@
 
     async function updatePassword(currentPassword, newPassword) {
         if (isBackendMode()) {
-            return request("me/password", {
+            return syncBackendPayload(await request("me/password", {
                 method: "PATCH",
                 body: {
                     currentPassword: currentPassword,
                     newPassword: newPassword
                 }
-            });
+            }));
         }
 
         const record = getUserRecordBySession();
@@ -643,10 +705,10 @@
 
     async function completeLevel(levelId, answers) {
         if (isBackendMode()) {
-            return request("levels/" + encodeURIComponent(levelId) + "/complete", {
+            return syncBackendPayload(await request("levels/" + encodeURIComponent(levelId) + "/complete", {
                 method: "POST",
                 body: { answers: answers || [] }
-            });
+            }));
         }
 
         const numericLevelId = readNumber(levelId, 0);
@@ -717,9 +779,9 @@
 
     async function unlockOutfit(outfitId) {
         if (isBackendMode()) {
-            return request("outfits/" + encodeURIComponent(outfitId) + "/unlock", {
+            return syncBackendPayload(await request("outfits/" + encodeURIComponent(outfitId) + "/unlock", {
                 method: "POST"
-            });
+            }));
         }
 
         const record = getUserRecordBySession();
@@ -751,9 +813,9 @@
 
     async function equipOutfit(outfitId) {
         if (isBackendMode()) {
-            return request("outfits/" + encodeURIComponent(outfitId) + "/equip", {
+            return syncBackendPayload(await request("outfits/" + encodeURIComponent(outfitId) + "/equip", {
                 method: "POST"
-            });
+            }));
         }
 
         const record = getUserRecordBySession();
@@ -781,7 +843,11 @@
                 key: route.key,
                 name: route.name,
                 orderIndex: index + 1,
-                backgroundImage: route.backgroundImage
+                backgroundImage: route.backgroundImage,
+                content: route.content,
+                badgeName: route.badgeName || ("Insignia de " + route.name),
+                badgeDescription: route.badgeDescription || ("Reconocimiento por completar la ruta " + route.name + "."),
+                badgeImage: route.badgeImage || ("assets/badges/badge-route-" + (index + 1) + ".svg")
             };
         });
     }

@@ -50,6 +50,264 @@ body.map-page {
     overflow: hidden;
 }
 
+.mobile-download-shell {
+    display: none;
+}
+
+html.mobile-download-mode,
+html.mobile-download-mode body {
+    min-height: 100vh;
+    overflow: hidden;
+}
+
+html.mobile-download-mode body {
+    background:
+        radial-gradient(circle at top, rgba(76, 194, 219, 0.22), transparent 36%),
+        radial-gradient(circle at bottom right, rgba(209, 167, 255, 0.24), transparent 34%),
+        linear-gradient(180deg, rgba(12, 7, 26, 0.98), rgba(27, 18, 48, 1));
+}
+
+html.mobile-download-mode body > .mobile-download-shell {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: grid;
+    width: 100vw;
+    height: 100vh;
+    padding: 0;
+    overflow: hidden;
+}
+
+.mobile-download-screen {
+    width: 100%;
+    min-height: 100vh;
+    margin: 0;
+    display: grid;
+    gap: 1.25rem;
+    align-items: center;
+    padding: clamp(1.25rem, 5vw, 2rem);
+    border-radius: 0;
+    border: 0;
+    background:
+        linear-gradient(145deg, rgba(255, 255, 255, 0.14), rgba(143, 238, 255, 0.05)),
+        rgba(24, 14, 43, 0.98);
+    box-shadow: none;
+    overflow: hidden;
+}
+
+.mobile-download-screen.glass-surface {
+    border-radius: 0 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+}
+
+.mobile-download-copy {
+    display: grid;
+    gap: 0.9rem;
+    align-content: center;
+    justify-items: start;
+    position: relative;
+    z-index: 2;
+    min-width: 0;
+}
+
+.mobile-download-copy h1 {
+    font-family: var(--font-display);
+    font-size: clamp(2.1rem, 10vw, 3.5rem);
+    line-height: 0.96;
+}
+
+.mobile-download-copy p {
+    color: var(--text-soft);
+    font-size: 1rem;
+    line-height: 1.6;
+}
+
+.mobile-download-actions {
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    gap: 0.9rem;
+    align-items: center;
+    justify-content: center;
+    width: auto;
+    justify-self: center;
+}
+
+.mobile-download-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 52px;
+    width: auto;
+    padding: 0.9rem 1.3rem;
+    border-radius: 999px;
+    background: linear-gradient(135deg, var(--accent-cyan), var(--accent-lilac));
+    color: #150d28;
+    font-weight: 900;
+    text-decoration: none;
+    box-shadow: 0 18px 36px rgba(76, 194, 219, 0.28);
+}
+
+.mobile-download-button:hover {
+    transform: translateY(-1px);
+}
+
+.mobile-download-art {
+    position: relative;
+    display: grid;
+    place-items: center;
+    min-height: 0;
+    padding: 0;
+    z-index: 1;
+}
+
+.mobile-download-art::before {
+    content: "";
+    position: absolute;
+    width: min(72vw, 320px);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(76, 194, 219, 0.26), rgba(209, 167, 255, 0.06) 65%, transparent 72%);
+    filter: blur(8px);
+}
+
+.mobile-download-art img {
+    position: relative;
+    z-index: 1;
+    width: min(100%, 320px);
+    height: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 22px 34px rgba(4, 2, 10, 0.42));
+}
+
+@media (min-width: 760px) {
+    .mobile-download-screen {
+        grid-template-columns: minmax(0, 1.05fr) minmax(260px, 0.95fr);
+        gap: clamp(1.25rem, 4vw, 3rem);
+    }
+
+    .mobile-download-copy {
+        max-width: 42rem;
+    }
+
+    .mobile-download-actions {
+        align-items: center;
+        justify-self: center;
+    }
+}
+
+@media (max-width: 759px) {
+    .mobile-download-screen {
+        grid-template-rows: auto minmax(0, 1fr);
+        align-content: space-between;
+        gap: 1rem;
+        padding: clamp(1.1rem, 5vw, 1.75rem);
+    }
+
+    .mobile-download-copy {
+        align-self: start;
+        justify-items: stretch;
+        gap: 0.8rem;
+    }
+
+    .mobile-download-art {
+        align-self: end;
+    }
+
+    .mobile-download-art img {
+        width: min(62vw, 240px);
+    }
+}
+
+@media (max-width: 959px) and (orientation: landscape) {
+    .mobile-download-screen {
+        grid-template-columns: minmax(0, 1.2fr) minmax(180px, 0.8fr);
+        grid-template-rows: 1fr;
+        gap: clamp(1rem, 3vw, 2rem);
+        padding: clamp(1rem, 3vw, 1.6rem) clamp(1.4rem, 4vw, 2.25rem);
+        align-items: center;
+    }
+
+    .mobile-download-copy {
+        align-content: center;
+        gap: 0.7rem;
+        max-width: none;
+    }
+
+    .mobile-download-copy h1 {
+        font-size: clamp(2.4rem, 8vw, 4.3rem);
+    }
+
+    .mobile-download-copy p {
+        max-width: 34rem;
+        font-size: 0.98rem;
+        line-height: 1.45;
+    }
+
+    .mobile-download-actions {
+        align-items: center;
+        margin-top: 0.3rem;
+        justify-self: center;
+    }
+
+    .mobile-download-button {
+        width: min(100%, 280px);
+    }
+
+    .mobile-download-art {
+        align-self: center;
+        justify-self: center;
+    }
+
+    .mobile-download-art::before {
+        width: min(52vw, 420px);
+    }
+
+    .mobile-download-art img {
+        width: min(48vw, 400px);
+        max-height: 82vh;
+    }
+}
+
+@media (max-width: 759px) and (orientation: portrait) {
+    .mobile-download-screen {
+        grid-template-rows: auto auto 1fr;
+        gap: 1.75rem;
+        padding: 1.8rem 1.5rem 1.35rem;
+    }
+
+    .mobile-download-copy h1 {
+        font-size: clamp(2.6rem, 12vw, 4.4rem);
+        line-height: 0.92;
+    }
+
+    .mobile-download-copy p {
+        font-size: 0.98rem;
+        line-height: 1.5;
+    }
+
+    .mobile-download-actions {
+        align-items: center;
+        justify-self: center;
+    }
+
+    .mobile-download-art {
+        min-height: 0;
+        align-self: end;
+        margin-top: auto;
+    }
+
+    .mobile-download-art::before {
+        width: min(72vw, 280px);
+    }
+
+    .mobile-download-art img {
+        width: min(82vw, 360px);
+        max-height: 42vh;
+    }
+}
+
 .hud-stat.has-icon {
     display: inline-grid;
     grid-template-columns: auto auto;
@@ -3724,6 +3982,96 @@ body.is-modal-open {
 
 .collection-card.is-locked {
     opacity: 0.55;
+}
+
+.badge-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+}
+
+.badge-card {
+    display: grid;
+    gap: 0.85rem;
+    min-height: 100%;
+    padding: 1rem;
+    border-radius: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.04);
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+.badge-card.is-unlocked {
+    background:
+        radial-gradient(circle at top, rgba(143, 238, 255, 0.12), transparent 46%),
+        linear-gradient(180deg, rgba(42, 21, 79, 0.92), rgba(28, 13, 56, 0.94));
+    border-color: rgba(143, 238, 255, 0.2);
+    box-shadow: 0 20px 38px rgba(7, 4, 16, 0.24);
+}
+
+.badge-card.is-locked {
+    opacity: 0.72;
+}
+
+.badge-card:hover,
+.badge-card:focus-within {
+    transform: translateY(-2px);
+    border-color: rgba(143, 238, 255, 0.28);
+}
+
+.badge-card-art {
+    min-height: 130px;
+    display: grid;
+    place-items: center;
+    padding: 1rem;
+    border-radius: 20px;
+    background: linear-gradient(180deg, rgba(255, 241, 213, 0.94), rgba(252, 245, 231, 0.86));
+}
+
+.badge-card.is-locked .badge-card-art {
+    filter: grayscale(1) saturate(0.2);
+}
+
+.badge-card-art img {
+    width: min(104px, 100%);
+    height: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 12px 16px rgba(0, 0, 0, 0.18));
+}
+
+.badge-card-copy {
+    display: grid;
+    gap: 0.45rem;
+}
+
+.badge-card-state {
+    display: inline-flex;
+    width: fit-content;
+    padding: 0.32rem 0.68rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.badge-card.is-unlocked .badge-card-state {
+    background: rgba(143, 238, 255, 0.16);
+    color: var(--accent-cyan-soft);
+}
+
+.badge-card-copy h3 {
+    font-family: var(--font-display);
+    font-size: 1.04rem;
+    line-height: 1.08;
+}
+
+.badge-card-copy p {
+    color: var(--text-soft);
+    font-size: 0.84rem;
+    line-height: 1.46;
 }
 
 .achievement-grid {
