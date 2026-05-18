@@ -9,7 +9,7 @@
     const stage = root ? root.closest(".map-stage") : null;
     const api = window.CapyApi;
     const LOCK_ICON_PATH = "assets/lock-icon.svg";
-    const LEVEL_ORB_PATH = "assets/esfera_nivel.webp";
+    const DEFAULT_LEVEL_ORB_PATH = "assets/esfera_nivel.webp";
     const ACTIVE_ROUTE_KEY = "capycodeActiveRouteIdV3";
     const UNLOCK_ALL_ROUTES_FOR_PREVIEW = Boolean(
         window.CAPYCODE_CONFIG && window.CAPYCODE_CONFIG.UNLOCK_ALL_ROUTES_FOR_PREVIEW
@@ -57,7 +57,7 @@
             { x: "66.5%", y: "37.2%" },
             { x: "88.4%", y: "49.8%" },
             { x: "77.2%", y: "73.7%" },
-            { x: "93.2%", y: "83.4%" }
+            { x: "94.4%", y: "81.8%" }
         ],
         full: [
             { x: "16.4%", y: "52.2%" },
@@ -67,7 +67,7 @@
             { x: "66.8%", y: "38.4%" },
             { x: "88.1%", y: "51.2%" },
             { x: "77.6%", y: "73.6%" },
-            { x: "93.6%", y: "85.2%" }
+            { x: "94.8%", y: "83.4%" }
         ]
     };
 
@@ -99,6 +99,7 @@
 
     function renderLevels() {
         const routeLevels = getPositionedRouteLevels();
+        const activeOrbImage = getActiveOrbImage();
         root.dataset.layoutMode = activeLayoutMode;
 
         root.innerHTML = buildAmbientOrbMarkup(routeLevels) + routeLevels.map(function (level) {
@@ -112,7 +113,7 @@
                 "<a class=\"level-node is-", status, " is-order-", level.routeOrder, "\" href=\"", isLocked ? "#" : level.href, "\" data-level-id=\"", level.id, "\" data-route-order=\"", level.routeOrder, "\" aria-disabled=\"", isLocked ? "true" : "false", "\" style=\"left:", level.x, "; top:", level.y, ";\">",
                 "<span class=\"level-orb-shell\">",
                 "<span class=\"level-orb\">",
-                "<img class=\"level-orb-image\" src=\"", LEVEL_ORB_PATH, "\" alt=\"\" aria-hidden=\"true\">",
+                "<img class=\"level-orb-image\" src=\"", activeOrbImage, "\" alt=\"\" aria-hidden=\"true\">",
                 "<span class=\"level-orb-number\">", level.id, "</span>",
                 "</span>",
                 lockMarkup,
@@ -148,6 +149,7 @@
         const occupiedAnchors = new Set(routeLevels.map(function (level) {
             return getPositionKey(level);
         }));
+        const activeOrbImage = getActiveOrbImage();
         const routeMascot = getRouteMascot();
         let mascotRendered = false;
 
@@ -164,7 +166,7 @@
             return [
                 "<span class=\"ambient-level-orb is-variant-", (index % 3) + 1, "\" aria-hidden=\"true\" style=\"left:", anchor.x, "; top:", anchor.y, ";\">",
                 "<span class=\"ambient-level-orb-shell\">",
-                "<img class=\"ambient-level-orb-image\" src=\"", LEVEL_ORB_PATH, "\" alt=\"\">",
+                "<img class=\"ambient-level-orb-image\" src=\"", activeOrbImage, "\" alt=\"\">",
                 "<span class=\"ambient-level-orb-core\"></span>",
                 "<span class=\"ambient-level-orb-number\">", anchor.number, "</span>",
                 "</span>",
@@ -408,6 +410,12 @@
         return activeRoute && activeRoute.key
             ? ROUTE_MASCOTS[activeRoute.key] || null
             : null;
+    }
+
+    function getActiveOrbImage() {
+        return activeRoute && activeRoute.orbImage
+            ? activeRoute.orbImage
+            : DEFAULT_LEVEL_ORB_PATH;
     }
 
     function getConfiguredLayoutAnchors(layoutMode) {

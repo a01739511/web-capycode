@@ -146,6 +146,7 @@ function capy_get_routes(PDO $pdo, ?int $userId = null): array
                 'name' => $row['name'],
                 'orderIndex' => (int) $row['order_index'],
                 'backgroundImage' => $row['background_image'],
+                'orbImage' => $row['orb_image'] ?: 'assets/esfera_nivel.webp',
                 'content' => $row['content'],
                 'badgeImage' => $row['badge_image'],
                 'badgeUnlocked' => in_array((int) $row['id'], $unlockedBadgeRouteIds, true),

@@ -61,6 +61,7 @@
             key: "algoritmos",
             name: "Algoritmo Antiguo",
             backgroundImage: "assets/world/routes/route-01-algoritmo-antiguo.webp",
+            orbImage: "assets/world/orbs/route-01-algoritmo-antiguo-orb.webp",
             content: "Secuencia, selección, repetición y razonamiento algorítmico."
         },
         {
@@ -68,6 +69,7 @@
             key: "tipos_de_datos",
             name: "Alquimista de Tipos",
             backgroundImage: "assets/world/routes/route-02-alquimista-de-tipos.webp",
+            orbImage: "assets/world/orbs/route-02-alquimista-de-tipos-orb.webp",
             content: "Tipos primitivos, conversiones y lectura de valores."
         },
         {
@@ -75,6 +77,7 @@
             key: "expresiones",
             name: "Altar de las Expresiones",
             backgroundImage: "assets/world/routes/route-03-expresiones.webp",
+            orbImage: "assets/world/orbs/route-03-expresiones-orb.webp",
             content: "Operadores aritméticos, relacionales y lógicos."
         },
         {
@@ -82,6 +85,7 @@
             key: "condicionales",
             name: "Hechizos Condicionales",
             backgroundImage: "assets/world/routes/route-04-condicionales.webp",
+            orbImage: "assets/world/orbs/route-04-condicionales-orb.webp",
             content: "Decisiones con if, else y combinaciones de condiciones."
         },
         {
@@ -89,6 +93,7 @@
             key: "ciclos",
             name: "Círculo de Repetición Infinita",
             backgroundImage: "assets/world/routes/route-05-ciclos.webp",
+            orbImage: "assets/world/orbs/route-05-ciclos-orb.webp",
             content: "Repetición controlada con for, while, break y continue."
         },
         {
@@ -96,6 +101,7 @@
             key: "funciones",
             name: "Taller de Funciones Encantadas",
             backgroundImage: "assets/world/routes/route-06-funciones.webp",
+            orbImage: "assets/world/orbs/route-06-funciones-orb.webp",
             content: "Funciones, parámetros, retorno y reutilización."
         },
         {
@@ -103,6 +109,7 @@
             key: "estructuras_de_datos",
             name: "Biblioteca de Estructuras de Datos",
             backgroundImage: "assets/world/routes/route-07-estructuras-de-datos.webp",
+            orbImage: "assets/world/orbs/route-07-estructuras-de-datos-orb.webp",
             content: "Listas, colecciones y operaciones sobre datos agrupados."
         },
         {
@@ -110,6 +117,7 @@
             key: "archivos_de_texto_plano",
             name: "El Archivo Perdido",
             backgroundImage: "assets/world/routes/route-08-archivos-de-texto-plano.webp",
+            orbImage: "assets/world/orbs/route-08-archivos-de-texto-plano-orb.webp",
             content: "Lectura, escritura y procesamiento de archivos simples."
         }
     ];
@@ -844,6 +852,7 @@
                 name: route.name,
                 orderIndex: index + 1,
                 backgroundImage: route.backgroundImage,
+                orbImage: route.orbImage || "assets/esfera_nivel.webp",
                 content: route.content,
                 badgeImage: route.badgeImage || ("assets/badges/badge-route-" + (index + 1) + ".svg")
             };

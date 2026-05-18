@@ -37,6 +37,7 @@ function capy_db_initialize(PDO $pdo, array $config, string $projectRoot): void
             name TEXT NOT NULL,
             order_index INTEGER NOT NULL UNIQUE,
             background_image TEXT NOT NULL,
+            orb_image TEXT,
             content TEXT NOT NULL,
             badge_name TEXT,
             badge_description TEXT,
@@ -110,8 +111,12 @@ function capy_db_initialize(PDO $pdo, array $config, string $projectRoot): void
         )'
     );
 
+    capy_ensure_routes_table_columns($pdo);
+
     if ((int) $pdo->query('SELECT COUNT(*) FROM routes')->fetchColumn() === 0) {
         capy_seed_routes($pdo);
+    } else {
+        capy_sync_routes_catalog($pdo);
     }
 
     if ((int) $pdo->query('SELECT COUNT(*) FROM levels')->fetchColumn() === 0) {
@@ -126,8 +131,8 @@ function capy_db_initialize(PDO $pdo, array $config, string $projectRoot): void
 function capy_seed_routes(PDO $pdo): void
 {
     $statement = $pdo->prepare(
-        'INSERT INTO routes (id, route_key, name, order_index, background_image, content, badge_name, badge_description, badge_image)
-         VALUES (:id, :route_key, :name, :order_index, :background_image, :content, :badge_name, :badge_description, :badge_image)'
+        'INSERT INTO routes (id, route_key, name, order_index, background_image, orb_image, content, badge_name, badge_description, badge_image)
+         VALUES (:id, :route_key, :name, :order_index, :background_image, :orb_image, :content, :badge_name, :badge_description, :badge_image)'
     );
 
     foreach (capy_route_definitions() as $index => $route) {
@@ -137,10 +142,49 @@ function capy_seed_routes(PDO $pdo): void
             ':name' => $route['name'],
             ':order_index' => $index + 1,
             ':background_image' => $route['background_image'],
+            ':orb_image' => $route['orb_image'] ?? null,
             ':content' => $route['content'],
             ':badge_name' => null,
             ':badge_description' => null,
             ':badge_image' => $route['badge_image'] ?? null,
+        ]);
+    }
+}
+
+function capy_ensure_routes_table_columns(PDO $pdo): void
+{
+    $columns = $pdo->query('PRAGMA table_info(routes)')->fetchAll();
+    $columnNames = array_map(static function (array $column): string {
+        return (string) ($column['name'] ?? '');
+    }, $columns);
+
+    if (!in_array('orb_image', $columnNames, true)) {
+        $pdo->exec('ALTER TABLE routes ADD COLUMN orb_image TEXT');
+    }
+}
+
+function capy_sync_routes_catalog(PDO $pdo): void
+{
+    $statement = $pdo->prepare(
+        'UPDATE routes
+         SET name = :name,
+             order_index = :order_index,
+             background_image = :background_image,
+             orb_image = :orb_image,
+             content = :content,
+             badge_image = :badge_image
+         WHERE route_key = :route_key'
+    );
+
+    foreach (capy_route_definitions() as $index => $route) {
+        $statement->execute([
+            ':name' => $route['name'],
+            ':order_index' => $index + 1,
+            ':background_image' => $route['background_image'],
+            ':orb_image' => $route['orb_image'] ?? null,
+            ':content' => $route['content'],
+            ':badge_image' => $route['badge_image'] ?? null,
+            ':route_key' => $route['key'],
         ]);
     }
 }
