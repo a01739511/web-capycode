@@ -60,14 +60,14 @@
             id: 1,
             key: "algoritmos",
             name: "Algoritmo Antiguo",
-            backgroundImage: "assets/fondo1.png",
+            backgroundImage: "assets/world/routes/route-01-algoritmo-antiguo.png",
             content: "Secuencia, selección, repetición y razonamiento algorítmico."
         },
         {
             id: 2,
             key: "tipos_de_datos",
             name: "Alquimista de Tipos",
-            backgroundImage: "assets/fondo1.png",
+            backgroundImage: "assets/world/routes/route-02-alquimista-de-tipos.jpg",
             content: "Tipos primitivos, conversiones y lectura de valores."
         },
         {
