@@ -17,6 +17,7 @@ require_once __DIR__ . '/lib/database.php';
 require_once __DIR__ . '/lib/repositories.php';
 
 capy_set_runtime_config($config);
+capy_send_cors_headers();
 capy_start_session($config);
 
 $pdo = capy_db_connect($config);

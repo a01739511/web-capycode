@@ -9,6 +9,7 @@
     const USERS_KEY = "capycodeUsersV3";
     const SESSION_KEY = "capycodeSessionV3";
     const BACKEND_USER_KEY = "capycodeBackendUserV1";
+    const BACKEND_TOKEN_KEY = "capycodeBackendTokenV1";
     const LEGACY_SESSION_KEY = "capycodeSession";
     const LEGACY_PROFILE_PREFIX = "capycodeProfile::";
     const NEXT_USER_ID_KEY = "capycodeNextUserIdV3";
@@ -263,11 +264,17 @@
     async function request(path, options) {
         const requestOptions = options || {};
         const hasBody = requestOptions.body !== undefined;
+        const token = readBackendToken();
+        const authHeaders = token
+            ? {
+                Authorization: "Bearer " + token,
+                "X-Capy-Token": token
+            }
+            : {};
         const init = Object.assign({}, requestOptions, {
-            credentials: "include",
             headers: Object.assign({
                 Accept: "application/json"
-            }, hasBody ? { "Content-Type": "application/json" } : {}, requestOptions.headers || {})
+            }, hasBody ? { "Content-Type": "application/json" } : {}, authHeaders, requestOptions.headers || {})
         });
 
         if (hasBody && typeof requestOptions.body !== "string") {
@@ -284,6 +291,9 @@
         }
 
         if (!response.ok) {
+            if (response.status === 401) {
+                clearBackendAuth();
+            }
             const message = payload && payload.error ? payload.error : "La API no pudo completar la solicitud.";
             throw new Error(message);
         }
@@ -356,11 +366,40 @@
 
     function clearSession() {
         sessionStorage.removeItem(SESSION_KEY);
-        sessionStorage.removeItem(BACKEND_USER_KEY);
         localStorage.removeItem(LEGACY_SESSION_KEY);
+        clearBackendAuth();
+    }
+
+    function readBackendToken() {
+        try {
+            return String(localStorage.getItem(BACKEND_TOKEN_KEY) || "").trim();
+        } catch (error) {
+            return "";
+        }
+    }
+
+    function saveBackendToken(token) {
+        if (!token) {
+            localStorage.removeItem(BACKEND_TOKEN_KEY);
+            return "";
+        }
+
+        const normalized = String(token).trim();
+        localStorage.setItem(BACKEND_TOKEN_KEY, normalized);
+        return normalized;
+    }
+
+    function clearBackendAuth() {
+        sessionStorage.removeItem(BACKEND_USER_KEY);
+        localStorage.removeItem(BACKEND_TOKEN_KEY);
     }
 
     function readBackendCachedUser() {
+        if (!readBackendToken()) {
+            sessionStorage.removeItem(BACKEND_USER_KEY);
+            return null;
+        }
+
         try {
             const raw = sessionStorage.getItem(BACKEND_USER_KEY);
             if (!raw) {
@@ -405,6 +444,10 @@
     }
 
     function syncBackendPayload(payload) {
+        if (payload && payload.token) {
+            saveBackendToken(payload.token);
+        }
+
         if (payload && payload.user) {
             payload.user = saveBackendCachedUser(payload.user);
         }
@@ -742,7 +785,7 @@
             try {
                 await request("auth/logout", { method: "POST" });
             } finally {
-                clearSession();
+                clearBackendAuth();
             }
             return { ok: true };
         }

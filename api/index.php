@@ -64,9 +64,11 @@ try {
 
         $user = capy_create_user($pdo, $username, password_hash($password, PASSWORD_DEFAULT), $config);
         $_SESSION['user_id'] = (int) $user['id'];
+        $token = capy_issue_api_token($pdo, (int) $user['id']);
 
         capy_json_response([
             'ok' => true,
+            'token' => $token,
             'user' => capy_get_public_user($pdo, $user, $config),
         ], 201);
     }
@@ -87,14 +89,17 @@ try {
 
         session_regenerate_id(true);
         $_SESSION['user_id'] = (int) $user['id'];
+        $token = capy_issue_api_token($pdo, (int) $user['id']);
 
         capy_json_response([
             'ok' => true,
+            'token' => $token,
             'user' => capy_get_public_user($pdo, $user, $config),
         ]);
     }
 
     if ($path === '/auth/logout' && $method === 'POST') {
+        capy_revoke_api_token($pdo, capy_extract_api_token());
         $_SESSION = [];
         if (ini_get('session.use_cookies')) {
             $params = session_get_cookie_params();

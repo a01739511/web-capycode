@@ -16,6 +16,15 @@ class CapyHttpException extends RuntimeException
     }
 }
 
+function capy_send_cors_headers(): void
+{
+    header('Access-Control-Allow-Origin: *');
+    header('Access-Control-Allow-Methods: GET, POST, PATCH, OPTIONS');
+    header('Access-Control-Allow-Headers: Accept, Content-Type, Authorization, X-Capy-Token');
+    header('Access-Control-Expose-Headers: Content-Type');
+    header('Vary: Origin');
+}
+
 function capy_start_session(array $config): void
 {
     if (session_status() === PHP_SESSION_ACTIVE) {

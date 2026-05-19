@@ -72,6 +72,7 @@ function capy_db_initialize(PDO $pdo, array $config, string $projectRoot): void
     $outfitsTable = capy_table('outfits');
     $userOutfitsTable = capy_table('user_outfits');
     $userRouteBadgesTable = capy_table('user_route_badges');
+    $userTokensTable = capy_table('user_tokens');
 
     if (capy_db_driver() === 'mysql') {
         $pdo->exec(
@@ -167,6 +168,17 @@ function capy_db_initialize(PDO $pdo, array $config, string $projectRoot): void
                 CONSTRAINT fk_{$userRouteBadgesTable}_route FOREIGN KEY (route_id) REFERENCES {$routesTable}(id) ON DELETE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
         );
+
+        $pdo->exec(
+            "CREATE TABLE IF NOT EXISTS {$userTokensTable} (
+                token_hash CHAR(64) NOT NULL PRIMARY KEY,
+                user_id INT UNSIGNED NOT NULL,
+                created_at VARCHAR(40) NOT NULL,
+                last_used_at VARCHAR(40) NULL,
+                revoked_at VARCHAR(40) NULL,
+                CONSTRAINT fk_{$userTokensTable}_user FOREIGN KEY (user_id) REFERENCES {$usersTable}(id) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+        );
     } else {
         $pdo->exec(
             "CREATE TABLE IF NOT EXISTS {$usersTable} (
@@ -259,6 +271,17 @@ function capy_db_initialize(PDO $pdo, array $config, string $projectRoot): void
                 PRIMARY KEY (user_id, route_id),
                 FOREIGN KEY (user_id) REFERENCES {$usersTable}(id) ON DELETE CASCADE,
                 FOREIGN KEY (route_id) REFERENCES {$routesTable}(id) ON DELETE CASCADE
+            )"
+        );
+
+        $pdo->exec(
+            "CREATE TABLE IF NOT EXISTS {$userTokensTable} (
+                token_hash TEXT PRIMARY KEY,
+                user_id INTEGER NOT NULL,
+                created_at TEXT NOT NULL,
+                last_used_at TEXT NULL,
+                revoked_at TEXT NULL,
+                FOREIGN KEY (user_id) REFERENCES {$usersTable}(id) ON DELETE CASCADE
             )"
         );
     }
