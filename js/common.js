@@ -83,11 +83,11 @@
             streak: 0,
             visibleStreak: 0,
             lastCompletionAt: null,
-            currentOutfitId: "CapyBlack",
-            equippedCharacter: "CapyBlack",
-            unlockedOutfitIds: ["CapyBlack"],
-            unlockedCharacters: ["CapyBlack"],
-            discoveredOutfitIds: ["CapyBlack", "CapyExplorer"],
+            currentOutfitId: "Capibara",
+            equippedCharacter: "Capibara",
+            unlockedOutfitIds: ["Capibara"],
+            unlockedCharacters: ["Capibara"],
+            discoveredOutfitIds: ["Capibara", "CapyExplorer"],
             unlockedBadgeRouteIds: []
         };
     }

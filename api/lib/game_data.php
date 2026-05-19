@@ -82,12 +82,21 @@ function capy_outfit_definitions(): array
 {
     return [
         [
+            'id' => 'Capibara',
+            'name' => 'Capibara',
+            'description' => 'La companera base de la aventura CapyCode.',
+            'tagline' => 'Esencia capibara',
+            'cost' => 0,
+            'image' => 'assets/characters/Capibara.webp',
+        ],
+        [
             'id' => 'CapyBlack',
             'name' => 'CapyBlack',
             'description' => 'Vestuario base de la aventura CapyCode.',
             'tagline' => 'Sombra elegante',
             'cost' => 0,
             'image' => 'assets/characters/CapyBlack.webp',
+            'unlock_route_id' => 1,
         ],
         [
             'id' => 'CapyAqua',
@@ -166,7 +175,7 @@ function capy_outfit_definitions(): array
 function capy_starter_discovered_outfit_ids(): array
 {
     return [
-        'CapyBlack',
+        'Capibara',
         'CapyExplorer',
     ];
 }

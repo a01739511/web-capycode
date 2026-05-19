@@ -5,6 +5,7 @@
     const badgesRoot = document.getElementById("profile-badges");
     const api = window.CapyApi;
     const transparentImages = {
+        Capibara: "assets/characters/no_bg/Capibara.webp",
         CapyBlack: "assets/characters/no_bg/Capy_Black.webp",
         CapyAqua: "assets/characters/no_bg/Capy_Aqua..webp",
         CapyKing: "assets/characters/no_bg/Capy_King.webp",

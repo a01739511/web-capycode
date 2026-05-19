@@ -12,7 +12,8 @@
     const LEGACY_SESSION_KEY = "capycodeSession";
     const LEGACY_PROFILE_PREFIX = "capycodeProfile::";
     const NEXT_USER_ID_KEY = "capycodeNextUserIdV3";
-    const DEFAULT_OUTFIT_ID = "CapyBlack";
+    const DEFAULT_OUTFIT_ID = "Capibara";
+    const LEGACY_STARTER_OUTFIT_ID = "CapyBlack";
     const TOTAL_LEVELS_PER_ROUTE = 7;
     const EXERCISES_PER_LEVEL = 5;
     const MEXICO_TIMEZONE = "America/Mexico_City";
@@ -123,6 +124,7 @@
     ];
 
     const OUTFIT_COSTS = {
+        Capibara: 0,
         CapyBlack: 0,
         CapyAqua: 300,
         CapyKing: 750,
@@ -135,6 +137,7 @@
     };
 
     const OUTFIT_ORDER = [
+        "Capibara",
         "CapyBlack",
         "CapyAqua",
         "CapyKing",
@@ -147,6 +150,7 @@
     ];
 
     const OUTFIT_ROUTE_REQUIREMENTS = {
+        CapyBlack: 1,
         CapyAqua: 3,
         CapyKing: 6,
         CapyRuna: 2,
@@ -163,11 +167,19 @@
 
     const DEFAULT_OUTFITS = [
         {
+            id: "Capibara",
+            name: "Capibara",
+            description: "La companera base de la aventura CapyCode.",
+            tagline: "Esencia capibara",
+            image: "assets/characters/Capibara.webp"
+        },
+        {
             id: "CapyBlack",
             name: "CapyBlack",
             description: "Vestuario base de la aventura CapyCode.",
             tagline: "Sombra elegante",
-            image: "assets/characters/CapyBlack.webp"
+            image: "assets/characters/CapyBlack.webp",
+            unlockRouteId: 1
         },
         {
             id: "CapyAqua",
@@ -475,6 +487,36 @@
         return uniqueList(discovered);
     }
 
+    function migrateLegacyStarterState(unlockedOutfitIds, currentOutfitId, unlockedBadgeRouteIds) {
+        let migratedUnlockedOutfitIds = uniqueList(arrayCopy(unlockedOutfitIds));
+        let migratedCurrentOutfitId = currentOutfitId;
+        const hasRouteOneBadge = arrayCopy(unlockedBadgeRouteIds).includes(1);
+
+        if (!hasRouteOneBadge) {
+            migratedUnlockedOutfitIds = migratedUnlockedOutfitIds.filter(function (outfitId) {
+                return outfitId !== LEGACY_STARTER_OUTFIT_ID;
+            });
+
+            if (!migratedUnlockedOutfitIds.includes(DEFAULT_OUTFIT_ID)) {
+                migratedUnlockedOutfitIds.unshift(DEFAULT_OUTFIT_ID);
+            }
+
+            if (migratedCurrentOutfitId === LEGACY_STARTER_OUTFIT_ID ||
+                !migratedUnlockedOutfitIds.includes(migratedCurrentOutfitId)) {
+                migratedCurrentOutfitId = DEFAULT_OUTFIT_ID;
+            }
+        }
+
+        if (!migratedUnlockedOutfitIds.includes(DEFAULT_OUTFIT_ID)) {
+            migratedUnlockedOutfitIds.unshift(DEFAULT_OUTFIT_ID);
+        }
+
+        return {
+            unlockedOutfitIds: uniqueList(migratedUnlockedOutfitIds),
+            currentOutfitId: migratedCurrentOutfitId || DEFAULT_OUTFIT_ID
+        };
+    }
+
     function normalizeUser(user, fallbackUsername) {
         const legacy = user || {};
         const username = String(legacy.username || fallbackUsername || "Aprendiz").trim() || "Aprendiz";
@@ -517,13 +559,20 @@
         const unlockedBadgeRouteIds = explicitUnlockedBadgeRouteIds.length
             ? explicitUnlockedBadgeRouteIds
             : getInferredUnlockedBadgeRouteIds(currentLevelId);
+        const migratedStarterState = migrateLegacyStarterState(
+            unlockedOutfitIds,
+            currentOutfitId,
+            unlockedBadgeRouteIds
+        );
+        const normalizedCurrentOutfitId = migratedStarterState.currentOutfitId;
+        const normalizedUnlockedOutfitIds = migratedStarterState.unlockedOutfitIds;
 
-        if (!unlockedOutfitIds.includes(DEFAULT_OUTFIT_ID)) {
-            unlockedOutfitIds.unshift(DEFAULT_OUTFIT_ID);
+        if (!normalizedUnlockedOutfitIds.includes(DEFAULT_OUTFIT_ID)) {
+            normalizedUnlockedOutfitIds.unshift(DEFAULT_OUTFIT_ID);
         }
 
-        if (!unlockedOutfitIds.includes(currentOutfitId)) {
-            unlockedOutfitIds.push(currentOutfitId);
+        if (!normalizedUnlockedOutfitIds.includes(normalizedCurrentOutfitId)) {
+            normalizedUnlockedOutfitIds.push(normalizedCurrentOutfitId);
         }
 
         const discoveredOutfitIds = getDiscoveredOutfitIdsFromState(
@@ -531,7 +580,7 @@
             (Array.isArray(legacy.availableOutfitIds) ? legacy.availableOutfitIds : null) ||
             (Array.isArray(legacyProfile.discoveredOutfitIds) ? legacyProfile.discoveredOutfitIds : null) ||
             [],
-            unlockedOutfitIds,
+            normalizedUnlockedOutfitIds,
             unlockedBadgeRouteIds
         );
 
@@ -543,8 +592,8 @@
             streak: Math.max(0, readNumber(legacy.streak !== undefined ? legacy.streak : legacyProfile.streak, 0)),
             xp: Math.max(0, readNumber(legacy.xp !== undefined ? legacy.xp : legacyProfile.xp, 0)),
             lastCompletionAt: legacy.lastCompletionAt || legacy.lastCompletedAt || null,
-            currentOutfitId: currentOutfitId,
-            unlockedOutfitIds: unlockedOutfitIds,
+            currentOutfitId: normalizedCurrentOutfitId,
+            unlockedOutfitIds: normalizedUnlockedOutfitIds,
             unlockedBadgeRouteIds: unlockedBadgeRouteIds,
             discoveredOutfitIds: discoveredOutfitIds
         };

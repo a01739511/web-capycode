@@ -125,7 +125,11 @@ function capy_db_initialize(PDO $pdo, array $config, string $projectRoot): void
 
     if ((int) $pdo->query('SELECT COUNT(*) FROM outfits')->fetchColumn() === 0) {
         capy_seed_outfits($pdo);
+    } else {
+        capy_sync_outfits_catalog($pdo);
     }
+
+    capy_migrate_default_outfit_state($pdo, $config);
 }
 
 function capy_seed_routes(PDO $pdo): void
@@ -271,4 +275,82 @@ function capy_seed_outfits(PDO $pdo): void
             ':image' => $outfit['image'],
         ]);
     }
+}
+
+function capy_sync_outfits_catalog(PDO $pdo): void
+{
+    $statement = $pdo->prepare(
+        'INSERT INTO outfits (id, name, description, tagline, cost, image)
+         VALUES (:id, :name, :description, :tagline, :cost, :image)
+         ON CONFLICT(id) DO UPDATE SET
+            name = excluded.name,
+            description = excluded.description,
+            tagline = excluded.tagline,
+            cost = excluded.cost,
+            image = excluded.image'
+    );
+
+    foreach (capy_outfit_definitions() as $outfit) {
+        $statement->execute([
+            ':id' => $outfit['id'],
+            ':name' => $outfit['name'],
+            ':description' => $outfit['description'],
+            ':tagline' => $outfit['tagline'],
+            ':cost' => $outfit['cost'],
+            ':image' => $outfit['image'],
+        ]);
+    }
+}
+
+function capy_migrate_default_outfit_state(PDO $pdo, array $config): void
+{
+    $defaultOutfitId = (string) ($config['default_outfit_id'] ?? 'Capibara');
+    $legacyStarterOutfitId = 'CapyBlack';
+    $now = capy_now_iso();
+
+    $ensureDefaultStatement = $pdo->prepare(
+        'INSERT OR IGNORE INTO user_outfits (user_id, outfit_id, unlocked_at)
+         SELECT id, :outfit_id, :unlocked_at FROM users'
+    );
+    $ensureDefaultStatement->execute([
+        ':outfit_id' => $defaultOutfitId,
+        ':unlocked_at' => $now,
+    ]);
+
+    $setMissingCurrentStatement = $pdo->prepare(
+        'UPDATE users
+         SET current_outfit_id = :default_outfit_id
+         WHERE current_outfit_id IS NULL OR TRIM(current_outfit_id) = ""'
+    );
+    $setMissingCurrentStatement->execute([
+        ':default_outfit_id' => $defaultOutfitId,
+    ]);
+
+    $replaceLegacyStarterStatement = $pdo->prepare(
+        'UPDATE users
+         SET current_outfit_id = :default_outfit_id
+         WHERE current_outfit_id = :legacy_outfit_id
+           AND id NOT IN (
+                SELECT user_id
+                FROM user_route_badges
+                WHERE route_id = 1
+           )'
+    );
+    $replaceLegacyStarterStatement->execute([
+        ':default_outfit_id' => $defaultOutfitId,
+        ':legacy_outfit_id' => $legacyStarterOutfitId,
+    ]);
+
+    $removeLegacyStarterUnlockStatement = $pdo->prepare(
+        'DELETE FROM user_outfits
+         WHERE outfit_id = :legacy_outfit_id
+           AND user_id NOT IN (
+                SELECT user_id
+                FROM user_route_badges
+                WHERE route_id = 1
+           )'
+    );
+    $removeLegacyStarterUnlockStatement->execute([
+        ':legacy_outfit_id' => $legacyStarterOutfitId,
+    ]);
 }

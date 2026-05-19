@@ -412,6 +412,20 @@ window.CAPYCODE_APP_DATA = {
     ],
     shopItems: [
         {
+            id: "Capibara",
+            name: "Capibara",
+            nombre: "Capibara",
+            description: "La capibara base que acompana el inicio de la aventura CapyCode.",
+            descripcion: "La capibara base que acompana el inicio de la aventura CapyCode.",
+            frase: "esencia-capibara",
+            slogan: "Esencia capibara",
+            perk: "Esencia capibara",
+            price: 0,
+            costo: 0,
+            image: "assets/characters/Capibara.webp",
+            badge: "En uso"
+        },
+        {
             id: "CapyBlack",
             name: "CapyBlack",
             nombre: "CapyBlack",
@@ -423,7 +437,7 @@ window.CAPYCODE_APP_DATA = {
             price: 0,
             costo: 0,
             image: "assets/characters/CapyBlack.webp",
-            badge: "En uso"
+            unlockRouteId: 1
         },
         {
             id: "CapyAqua",
