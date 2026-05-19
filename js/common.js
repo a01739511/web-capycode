@@ -348,6 +348,17 @@
             };
         }
 
+        if (tiltType === "sidebar-card") {
+            return {
+                max: 4,
+                speed: 420,
+                scale: 1.01,
+                perspective: 1600,
+                glare: false,
+                gyroscope: false
+            };
+        }
+
         if (tiltType === "shop-card") {
             return {
                 max: 6,

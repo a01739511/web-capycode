@@ -2310,18 +2310,12 @@ body.sidebar-collapsed .sidebar-panel > * {
     background: rgba(255, 255, 255, 0.05);
     display: grid;
     gap: 0.55rem;
-    transform-style: preserve-3d;
 }
 
 .sidebar-skin-link {
     display: grid;
     gap: 0.55rem;
     color: inherit;
-    transform-style: preserve-3d;
-}
-
-.sidebar-skin-link > * {
-    transform: translateZ(14px);
 }
 
 .sidebar-skin-link:hover .sidebar-skin-art,
@@ -2334,15 +2328,20 @@ body.sidebar-collapsed .sidebar-panel > * {
     min-height: 116px;
     display: grid;
     place-items: center;
+    padding: 0.75rem;
     border-radius: 18px;
     background: linear-gradient(180deg, rgba(255, 241, 213, 0.98), rgba(252, 245, 231, 0.92));
+    overflow: hidden;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .sidebar-skin-art img {
+    display: block;
     width: 100%;
-    max-height: 138px;
+    max-width: 100%;
+    max-height: 100px;
     object-fit: contain;
+    object-position: center center;
 }
 
 .sidebar-skin-copy {
