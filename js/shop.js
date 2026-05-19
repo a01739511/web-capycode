@@ -3,7 +3,7 @@
     const modalRoot = document.getElementById("shop-modal");
     const modalContentRoot = document.getElementById("shop-modal-content");
     const api = window.CapyApi;
-    const LOCK_ICON_PATH = "assets/lock-icon.svg";
+    const LOCK_ICON_PATH = "assets/shop-lock-icon.svg";
     let activeItemId = "";
 
     if (!gridRoot || !modalRoot || !modalContentRoot || !api || !window.CapyCore) {
