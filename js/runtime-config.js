@@ -1,4 +1,21 @@
 (function () {
+    const PAGE_ALIASES = {
+        "": "index.html",
+        index: "index.html",
+        mapa: "mapa.html",
+        tienda: "tienda.html",
+        perfil: "perfil.html",
+        tutorial: "tutorial.html",
+        nivel: "nivel.html",
+        iniciar_sesion: "iniciar_sesion.html",
+        registro: "registro.html",
+        p_opcionMultiple: "p_opcionMultiple.html",
+        p_ordenarLineas: "p_ordenarLineas.html",
+        p_respuestaNumerica: "p_respuestaNumerica.html",
+        p_seleccionarLineas: "p_seleccionarLineas.html",
+        p_completarPlantilla: "p_completarPlantilla.html"
+    };
+
     const existing = window.CAPYCODE_CONFIG || {};
     const protocol = String(window.location.protocol || "").toLowerCase();
     const hostname = String(window.location.hostname || "").toLowerCase();
@@ -19,7 +36,9 @@
     const isCanonicalApp = sameCanonicalHost && sameCanonicalPath;
 
     if (protocol === "https:" && !isCanonicalApp) {
-        const currentFile = String(window.location.pathname || "").split("/").pop() || "index.html";
+        const currentPathPart = String(window.location.pathname || "").split("/").pop() || "";
+        const currentFile = PAGE_ALIASES[currentPathPart] ||
+            (/\.[a-z0-9]+$/i.test(currentPathPart) ? currentPathPart : (currentPathPart ? currentPathPart + ".html" : "index.html"));
         window.location.replace(
             canonicalAppBase.replace(/\/+$/, "") + "/" + currentFile + window.location.search + window.location.hash
         );
