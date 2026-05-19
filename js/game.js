@@ -23,6 +23,9 @@
     const UNLOCK_ALL_LEVELS_FOR_PREVIEW = Boolean(
         window.CAPYCODE_CONFIG && window.CAPYCODE_CONFIG.UNLOCK_ALL_LEVELS_FOR_PREVIEW
     );
+    const SHOW_ROUTE_OUTFIT_PREVIEW_ON_EVERY_LEVEL = Boolean(
+        window.CAPYCODE_CONFIG && window.CAPYCODE_CONFIG.SHOW_ROUTE_OUTFIT_PREVIEW_ON_EVERY_LEVEL
+    );
 
     const elements = {
         shell: app,
@@ -731,7 +734,7 @@
 
         const practice = outcome && outcome.practice;
         const reward = outcome && outcome.reward ? Number(outcome.reward) : 0;
-        const newlyDiscoveredOutfits = getNewlyDiscoveredOutfits(outcome);
+        const celebrationOutfits = getCelebrationOutfits(outcome);
         const nextHref = getNextLevelHref(outcome);
         const title = outcome && outcome.gameCompleted
             ? "Juego completado"
@@ -755,7 +758,7 @@
             "<h2>", escapeHtml(title), "</h2>",
             "<p class=\"completion-lead\">", escapeHtml(copy), "</p>",
             reward ? "<p class=\"level-reward-pill\">+" + window.CapyCore.formatNumber(reward) + " XP</p>" : "",
-            buildOutfitDiscoveryShowcase(newlyDiscoveredOutfits),
+            buildOutfitDiscoveryShowcase(celebrationOutfits),
             "<div class=\"completion-actions is-three-actions\">",
             "<button class=\"scene-button ghost\" type=\"button\" data-retry-level>Repetir</button>",
             "<a class=\"scene-button primary\" href=\"mapa.html\">Volver al mapa</a>",
@@ -900,6 +903,75 @@
                     "<p class=\"unlock-reward-kicker\">Personaje encontrado</p>",
                     "<strong>", escapeHtml(item.name), "</strong>",
                     "<span>", escapeHtml(item.unlockRouteName ? "Ya puedes comprarlo en la tienda." : "Ya estÃ¡ disponible en la tienda."), "</span>",
+                    "<span class=\"unlock-reward-cost\">Costo: XP ", window.CapyCore.formatNumber(item.cost || 0), "</span>",
+                    "</div>",
+                    "</article>"
+                ].join("");
+            }).join(""),
+            "</div>"
+        ].join("");
+    }
+
+    function getCelebrationOutfits(outcome) {
+        const discoveredOutfits = getNewlyDiscoveredOutfits(outcome);
+        if (discoveredOutfits.length) {
+            return discoveredOutfits;
+        }
+
+        if (!SHOW_ROUTE_OUTFIT_PREVIEW_ON_EVERY_LEVEL) {
+            return [];
+        }
+
+        const previewOutfit = getRoutePreviewOutfit();
+        return previewOutfit ? [previewOutfit] : [];
+    }
+
+    function getRoutePreviewOutfit() {
+        if (!level || !Number.isFinite(Number(level.routeId))) {
+            return null;
+        }
+
+        const previewOutfit = api.getOutfitsSync().find(function (item) {
+            return item && Number(item.unlockRouteId) === Number(level.routeId) && item.id && item.image;
+        });
+
+        if (!previewOutfit) {
+            return null;
+        }
+
+        return Object.assign({}, previewOutfit, {
+            isPreviewOnly: true
+        });
+    }
+
+    function getOutfitDiscoveryCopy(item) {
+        if (item && item.isPreviewOnly) {
+            return "Vista previa temporal del personaje de esta ruta.";
+        }
+
+        return item && item.unlockRouteName
+            ? "Ya puedes comprarlo en la tienda."
+            : "Ya esta disponible en la tienda.";
+    }
+
+    function buildOutfitDiscoveryShowcase(outfits) {
+        if (!outfits.length) {
+            return "";
+        }
+
+        return [
+            "<div class=\"completion-unlock-showcase\">",
+            outfits.map(function (item) {
+                return [
+                    "<article class=\"unlock-reward-card\">",
+                    "<span class=\"unlock-reward-burst\" aria-hidden=\"true\"></span>",
+                    "<div class=\"unlock-reward-art\">",
+                    "<img src=\"", escapeAttribute(item.image), "\" alt=\"", escapeAttribute(item.name), "\">",
+                    "</div>",
+                    "<div class=\"unlock-reward-copy\">",
+                    "<p class=\"unlock-reward-kicker\">Personaje encontrado</p>",
+                    "<strong>", escapeHtml(item.name), "</strong>",
+                    "<span>", escapeHtml(getOutfitDiscoveryCopy(item)), "</span>",
                     "<span class=\"unlock-reward-cost\">Costo: XP ", window.CapyCore.formatNumber(item.cost || 0), "</span>",
                     "</div>",
                     "</article>"

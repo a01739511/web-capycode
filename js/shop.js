@@ -334,8 +334,14 @@
     function buildLockedArtMarkup(state) {
         return [
             "<span class=\"shop-art-lock\" aria-hidden=\"true\">",
+            "<span class=\"shop-art-lock-badge\">",
             "<span class=\"shop-art-lock-icon\"><img src=\"", LOCK_ICON_PATH, "\" alt=\"\"></span>",
-            "<span class=\"shop-art-lock-copy\">", escapeHtml(state.unlockRouteLabel || "Ruta pendiente"), "</span>",
+            "<span class=\"shop-art-lock-label\">Sellado</span>",
+            "</span>",
+            "<span class=\"shop-art-lock-copy\">",
+            "<strong>", escapeHtml(state.unlockRouteLabel || "Ruta pendiente"), "</strong>",
+            "<span>Completa esta ruta para habilitar la compra.</span>",
+            "</span>",
             "</span>"
         ].join("");
     }
