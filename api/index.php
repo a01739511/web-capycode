@@ -39,7 +39,8 @@ try {
         capy_json_response([
             'ok' => true,
             'status' => 'healthy',
-            'database' => basename($config['db_path']),
+            'database' => capy_db_label($config),
+            'driver' => strtolower((string) ($config['db_driver'] ?? 'sqlite')),
             'sessionActive' => isset($_SESSION['user_id']),
         ]);
     }

@@ -12,7 +12,7 @@
         || /^172\.(1[6-9]|2\d|3[0-1])\./.test(hostname);
     const inferredBase = existing.API_BASE_URL !== undefined
         ? existing.API_BASE_URL
-        : (isHttp && isLocalNetworkHost ? "api" : "");
+        : (isHttp && isLocalNetworkHost ? "api/index.php" : "");
 
     window.CAPYCODE_CONFIG = Object.assign({
         API_BASE_URL: inferredBase,

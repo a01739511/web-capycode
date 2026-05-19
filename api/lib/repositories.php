@@ -2,7 +2,7 @@
 
 function capy_find_user_by_id(PDO $pdo, int $userId): ?array
 {
-    $statement = $pdo->prepare('SELECT * FROM users WHERE id = :id LIMIT 1');
+    $statement = $pdo->prepare('SELECT * FROM ' . capy_table('users') . ' WHERE id = :id LIMIT 1');
     $statement->execute([':id' => $userId]);
     $user = $statement->fetch();
     return $user ?: null;
@@ -10,7 +10,7 @@ function capy_find_user_by_id(PDO $pdo, int $userId): ?array
 
 function capy_find_user_by_username(PDO $pdo, string $username): ?array
 {
-    $statement = $pdo->prepare('SELECT * FROM users WHERE username = :username LIMIT 1');
+    $statement = $pdo->prepare('SELECT * FROM ' . capy_table('users') . ' WHERE username = :username LIMIT 1');
     $statement->execute([':username' => trim($username)]);
     $user = $statement->fetch();
     return $user ?: null;
@@ -19,7 +19,7 @@ function capy_find_user_by_username(PDO $pdo, string $username): ?array
 function capy_create_user(PDO $pdo, string $username, string $passwordHash, array $config): array
 {
     $statement = $pdo->prepare(
-        'INSERT INTO users (username, password_hash, current_level_id, streak, last_completion_at, xp, current_outfit_id)
+        'INSERT INTO ' . capy_table('users') . ' (username, password_hash, current_level_id, streak, last_completion_at, xp, current_outfit_id)
          VALUES (:username, :password_hash, 1, 0, NULL, 0, :current_outfit_id)'
     );
     $statement->execute([
@@ -30,7 +30,7 @@ function capy_create_user(PDO $pdo, string $username, string $passwordHash, arra
 
     $userId = (int) $pdo->lastInsertId();
     $unlockStatement = $pdo->prepare(
-        'INSERT INTO user_outfits (user_id, outfit_id, unlocked_at) VALUES (:user_id, :outfit_id, :unlocked_at)'
+        'INSERT INTO ' . capy_table('user_outfits') . ' (user_id, outfit_id, unlocked_at) VALUES (:user_id, :outfit_id, :unlocked_at)'
     );
     $unlockStatement->execute([
         ':user_id' => $userId,
@@ -43,7 +43,7 @@ function capy_create_user(PDO $pdo, string $username, string $passwordHash, arra
 
 function capy_update_username(PDO $pdo, int $userId, string $username): void
 {
-    $statement = $pdo->prepare('UPDATE users SET username = :username WHERE id = :id');
+    $statement = $pdo->prepare('UPDATE ' . capy_table('users') . ' SET username = :username WHERE id = :id');
     $statement->execute([
         ':username' => trim($username),
         ':id' => $userId,
@@ -52,7 +52,7 @@ function capy_update_username(PDO $pdo, int $userId, string $username): void
 
 function capy_update_password(PDO $pdo, int $userId, string $passwordHash): void
 {
-    $statement = $pdo->prepare('UPDATE users SET password_hash = :password_hash WHERE id = :id');
+    $statement = $pdo->prepare('UPDATE ' . capy_table('users') . ' SET password_hash = :password_hash WHERE id = :id');
     $statement->execute([
         ':password_hash' => $passwordHash,
         ':id' => $userId,
@@ -115,7 +115,7 @@ function capy_get_visible_streak(array $user, array $config): int
 
 function capy_get_unlocked_outfit_ids(PDO $pdo, int $userId, array $config): array
 {
-    $statement = $pdo->prepare('SELECT outfit_id FROM user_outfits WHERE user_id = :user_id ORDER BY unlocked_at ASC');
+    $statement = $pdo->prepare('SELECT outfit_id FROM ' . capy_table('user_outfits') . ' WHERE user_id = :user_id ORDER BY unlocked_at ASC');
     $statement->execute([':user_id' => $userId]);
     $items = array_map(static function ($row) {
         return (string) $row['outfit_id'];
@@ -130,7 +130,7 @@ function capy_get_unlocked_outfit_ids(PDO $pdo, int $userId, array $config): arr
 
 function capy_get_unlocked_badge_route_ids(PDO $pdo, int $userId): array
 {
-    $statement = $pdo->prepare('SELECT route_id FROM user_route_badges WHERE user_id = :user_id ORDER BY route_id ASC');
+    $statement = $pdo->prepare('SELECT route_id FROM ' . capy_table('user_route_badges') . ' WHERE user_id = :user_id ORDER BY route_id ASC');
     $statement->execute([':user_id' => $userId]);
     return array_map(static function ($row) {
         return (int) $row['route_id'];
@@ -189,7 +189,7 @@ function capy_get_discovered_outfit_ids(array $unlockedOutfitIds, array $unlocke
 
 function capy_get_routes(PDO $pdo, ?int $userId = null): array
 {
-    $rows = $pdo->query('SELECT * FROM routes ORDER BY order_index ASC')->fetchAll();
+    $rows = $pdo->query('SELECT * FROM ' . capy_table('routes') . ' ORDER BY order_index ASC')->fetchAll();
     $unlockedBadgeRouteIds = $userId ? capy_get_unlocked_badge_route_ids($pdo, $userId) : [];
 
     return array_map(
@@ -212,14 +212,14 @@ function capy_get_routes(PDO $pdo, ?int $userId = null): array
 
 function capy_get_levels_by_route(PDO $pdo, $routeId): array
 {
-    $statement = $pdo->prepare('SELECT * FROM levels WHERE route_id = :route_id ORDER BY route_order ASC');
+    $statement = $pdo->prepare('SELECT * FROM ' . capy_table('levels') . ' WHERE route_id = :route_id ORDER BY route_order ASC');
     $statement->execute([':route_id' => $routeId]);
     return array_map('capy_map_level_row', $statement->fetchAll());
 }
 
 function capy_get_level(PDO $pdo, int $levelId): ?array
 {
-    $statement = $pdo->prepare('SELECT * FROM levels WHERE id = :id LIMIT 1');
+    $statement = $pdo->prepare('SELECT * FROM ' . capy_table('levels') . ' WHERE id = :id LIMIT 1');
     $statement->execute([':id' => $levelId]);
     $row = $statement->fetch();
     return $row ? capy_map_level_row($row) : null;
@@ -246,7 +246,7 @@ function capy_map_level_row(array $row): array
 
 function capy_get_exercises_by_level(PDO $pdo, int $levelId): array
 {
-    $statement = $pdo->prepare('SELECT * FROM exercises WHERE level_id = :level_id ORDER BY order_index ASC');
+    $statement = $pdo->prepare('SELECT * FROM ' . capy_table('exercises') . ' WHERE level_id = :level_id ORDER BY order_index ASC');
     $statement->execute([':level_id' => $levelId]);
     $rows = $statement->fetchAll();
 
@@ -269,7 +269,7 @@ function capy_get_exercises_by_level(PDO $pdo, int $levelId): array
 
 function capy_get_outfits(PDO $pdo): array
 {
-    $rows = $pdo->query('SELECT * FROM outfits ORDER BY cost ASC, name ASC')->fetchAll();
+    $rows = $pdo->query('SELECT * FROM ' . capy_table('outfits') . ' ORDER BY cost ASC, name ASC')->fetchAll();
     $definitionMap = capy_get_outfit_definition_map();
     $routeNameById = [];
 
@@ -298,7 +298,7 @@ function capy_get_outfits(PDO $pdo): array
 
 function capy_get_outfit(PDO $pdo, string $outfitId): ?array
 {
-    $statement = $pdo->prepare('SELECT * FROM outfits WHERE id = :id LIMIT 1');
+    $statement = $pdo->prepare('SELECT * FROM ' . capy_table('outfits') . ' WHERE id = :id LIMIT 1');
     $statement->execute([':id' => $outfitId]);
     $row = $statement->fetch();
 
@@ -350,14 +350,14 @@ function capy_unlock_outfit(PDO $pdo, array $user, array $outfit, array $config)
 
     $pdo->beginTransaction();
     try {
-        $updateUser = $pdo->prepare('UPDATE users SET xp = :xp WHERE id = :id');
+        $updateUser = $pdo->prepare('UPDATE ' . capy_table('users') . ' SET xp = :xp WHERE id = :id');
         $updateUser->execute([
             ':xp' => (int) $user['xp'] - (int) $outfit['cost'],
             ':id' => (int) $user['id'],
         ]);
 
         $insertUnlock = $pdo->prepare(
-            'INSERT INTO user_outfits (user_id, outfit_id, unlocked_at) VALUES (:user_id, :outfit_id, :unlocked_at)'
+            'INSERT INTO ' . capy_table('user_outfits') . ' (user_id, outfit_id, unlocked_at) VALUES (:user_id, :outfit_id, :unlocked_at)'
         );
         $insertUnlock->execute([
             ':user_id' => (int) $user['id'],
@@ -379,7 +379,7 @@ function capy_unlock_outfit(PDO $pdo, array $user, array $outfit, array $config)
 
 function capy_equip_outfit(PDO $pdo, array $user, array $outfit): array
 {
-    $statement = $pdo->prepare('SELECT 1 FROM user_outfits WHERE user_id = :user_id AND outfit_id = :outfit_id LIMIT 1');
+    $statement = $pdo->prepare('SELECT 1 FROM ' . capy_table('user_outfits') . ' WHERE user_id = :user_id AND outfit_id = :outfit_id LIMIT 1');
     $statement->execute([
         ':user_id' => (int) $user['id'],
         ':outfit_id' => $outfit['id'],
@@ -389,7 +389,7 @@ function capy_equip_outfit(PDO $pdo, array $user, array $outfit): array
         throw new CapyHttpException(422, 'Primero desbloquea este vestuario.');
     }
 
-    $update = $pdo->prepare('UPDATE users SET current_outfit_id = :current_outfit_id WHERE id = :id');
+    $update = $pdo->prepare('UPDATE ' . capy_table('users') . ' SET current_outfit_id = :current_outfit_id WHERE id = :id');
     $update->execute([
         ':current_outfit_id' => $outfit['id'],
         ':id' => (int) $user['id'],
@@ -450,7 +450,7 @@ function capy_complete_level(PDO $pdo, array $user, int $levelId, $answers, arra
         $pdo->beginTransaction();
         try {
             $updateUser = $pdo->prepare(
-                'UPDATE users
+                'UPDATE ' . capy_table('users') . '
                  SET xp = :xp, streak = :streak, last_completion_at = :last_completion_at, current_level_id = :current_level_id
                  WHERE id = :id'
             );
@@ -463,8 +463,9 @@ function capy_complete_level(PDO $pdo, array $user, int $levelId, $answers, arra
             ]);
 
             if ($routeCompleted) {
+                $insertIgnore = capy_db_driver() === 'mysql' ? 'INSERT IGNORE' : 'INSERT OR IGNORE';
                 $badgeInsert = $pdo->prepare(
-                    'INSERT OR IGNORE INTO user_route_badges (user_id, route_id, unlocked_at)
+                    $insertIgnore . ' INTO ' . capy_table('user_route_badges') . ' (user_id, route_id, unlocked_at)
                      VALUES (:user_id, :route_id, :unlocked_at)'
                 );
                 $badgeInsert->execute([
