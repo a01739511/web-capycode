@@ -31,18 +31,22 @@
 
         const formData = new FormData(form);
         const username = String(formData.get("username") || "").trim();
-        const password = String(formData.get("password") || "").trim();
+        const password = String(formData.get("password") || "");
         const isRegister = document.body.dataset.authMode === "register";
-        const minimumPasswordLength = isRegister ? 8 : 3;
 
         if (!username || !password) {
             showMessage("Completa usuario y contraseña para entrar.", "error");
             return;
         }
 
-        if (password.length < minimumPasswordLength) {
-            showMessage("Usa al menos " + minimumPasswordLength + " caracteres.", "error");
-            return;
+        if (isRegister) {
+            try {
+                api.validateUsername(username);
+                api.validatePassword(password);
+            } catch (error) {
+                showMessage(error.message || "Revisa los datos de tu cuenta.", "error");
+                return;
+            }
         }
 
         setFormBusy(true);

@@ -47,16 +47,8 @@ try {
 
     if ($path === '/auth/register' && $method === 'POST') {
         $body = capy_read_json_body();
-        $username = trim((string) ($body['username'] ?? ''));
-        $password = (string) ($body['password'] ?? '');
-
-        if ($username === '' || $password === '') {
-            throw new CapyHttpException(422, 'Completa usuario y contraseña.');
-        }
-
-        if (strlen($password) < 8) {
-            throw new CapyHttpException(422, 'Usa al menos 8 caracteres.');
-        }
+        $username = capy_validate_username_or_fail((string) ($body['username'] ?? ''));
+        $password = capy_validate_password_or_fail((string) ($body['password'] ?? ''));
 
         if (capy_find_user_by_username($pdo, $username)) {
             throw new CapyHttpException(409, 'Ese usuario ya existe.');
@@ -120,11 +112,7 @@ try {
     if ($path === '/me/username' && $method === 'PATCH') {
         $user = capy_require_current_user($pdo);
         $body = capy_read_json_body();
-        $username = trim((string) ($body['username'] ?? ''));
-
-        if ($username === '') {
-            throw new CapyHttpException(422, 'Escribe un nombre de usuario.');
-        }
+        $username = capy_validate_username_or_fail((string) ($body['username'] ?? ''));
 
         $existing = capy_find_user_by_username($pdo, $username);
         if ($existing && (int) $existing['id'] !== (int) $user['id']) {
@@ -140,18 +128,14 @@ try {
         ]);
     }
 
-    if ($path === '/me/password' && $method === 'PATCH') {
-        $user = capy_require_current_user($pdo);
-        $body = capy_read_json_body();
-        $currentPassword = (string) ($body['currentPassword'] ?? '');
-        $newPassword = (string) ($body['newPassword'] ?? '');
+        if ($path === '/me/password' && $method === 'PATCH') {
+            $user = capy_require_current_user($pdo);
+            $body = capy_read_json_body();
+            $currentPassword = capy_validate_password_or_fail((string) ($body['currentPassword'] ?? ''));
+            $newPassword = capy_validate_password_or_fail((string) ($body['newPassword'] ?? ''));
 
         if (!password_verify($currentPassword, (string) $user['password_hash'])) {
             throw new CapyHttpException(422, 'La contraseña actual no coincide.');
-        }
-
-        if (strlen($newPassword) < 8) {
-            throw new CapyHttpException(422, 'Usa al menos 8 caracteres.');
         }
 
         capy_update_password($pdo, (int) $user['id'], password_hash($newPassword, PASSWORD_DEFAULT));
@@ -199,6 +183,8 @@ try {
             'gameCompleted' => $result['gameCompleted'],
             'badgeUnlocked' => $result['badgeUnlocked'],
             'newlyDiscoveredOutfits' => $result['newlyDiscoveredOutfits'],
+            'streakCelebration' => $result['streakCelebration'],
+            'storyBeat' => $result['storyBeat'],
             'user' => capy_get_public_user($pdo, $result['user'], $config),
         ]);
     }

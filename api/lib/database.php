@@ -73,6 +73,7 @@ function capy_db_initialize(PDO $pdo, array $config, string $projectRoot): void
     $userOutfitsTable = capy_table('user_outfits');
     $userRouteBadgesTable = capy_table('user_route_badges');
     $userTokensTable = capy_table('user_tokens');
+    $metaTable = capy_table('app_meta');
 
     if (capy_db_driver() === 'mysql') {
         $pdo->exec(
@@ -118,8 +119,12 @@ function capy_db_initialize(PDO $pdo, array $config, string $projectRoot): void
                 href VARCHAR(255) NOT NULL,
                 anchor_x VARCHAR(32) NOT NULL,
                 anchor_y VARCHAR(32) NOT NULL,
+                story_title VARCHAR(255) NULL,
+                story_message TEXT NULL,
+                story_character_name VARCHAR(120) NULL,
+                story_character_image TEXT NULL,
                 CONSTRAINT fk_{$levelsTable}_route FOREIGN KEY (route_id) REFERENCES {$routesTable}(id) ON DELETE CASCADE
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
         );
 
         $pdo->exec(
@@ -177,7 +182,14 @@ function capy_db_initialize(PDO $pdo, array $config, string $projectRoot): void
                 last_used_at VARCHAR(40) NULL,
                 revoked_at VARCHAR(40) NULL,
                 CONSTRAINT fk_{$userTokensTable}_user FOREIGN KEY (user_id) REFERENCES {$usersTable}(id) ON DELETE CASCADE
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+        );
+
+        $pdo->exec(
+            "CREATE TABLE IF NOT EXISTS {$metaTable} (
+                meta_key VARCHAR(120) NOT NULL PRIMARY KEY,
+                meta_value LONGTEXT NULL
+             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
         );
     } else {
         $pdo->exec(
@@ -223,8 +235,12 @@ function capy_db_initialize(PDO $pdo, array $config, string $projectRoot): void
                 href TEXT NOT NULL,
                 anchor_x TEXT NOT NULL,
                 anchor_y TEXT NOT NULL,
+                story_title TEXT NULL,
+                story_message TEXT NULL,
+                story_character_name TEXT NULL,
+                story_character_image TEXT NULL,
                 FOREIGN KEY (route_id) REFERENCES {$routesTable}(id) ON DELETE CASCADE
-            )"
+             )"
         );
 
         $pdo->exec(
@@ -282,11 +298,19 @@ function capy_db_initialize(PDO $pdo, array $config, string $projectRoot): void
                 last_used_at TEXT NULL,
                 revoked_at TEXT NULL,
                 FOREIGN KEY (user_id) REFERENCES {$usersTable}(id) ON DELETE CASCADE
-            )"
+             )"
+        );
+
+        $pdo->exec(
+            "CREATE TABLE IF NOT EXISTS {$metaTable} (
+                meta_key TEXT PRIMARY KEY,
+                meta_value TEXT NULL
+             )"
         );
     }
 
     capy_ensure_routes_table_columns($pdo);
+    capy_ensure_levels_table_columns($pdo);
 
     if ((int) $pdo->query("SELECT COUNT(*) FROM {$routesTable}")->fetchColumn() === 0) {
         capy_seed_routes($pdo);
@@ -294,9 +318,7 @@ function capy_db_initialize(PDO $pdo, array $config, string $projectRoot): void
         capy_sync_routes_catalog($pdo);
     }
 
-    if ((int) $pdo->query("SELECT COUNT(*) FROM {$levelsTable}")->fetchColumn() === 0) {
-        capy_seed_levels_and_exercises($pdo, $config, $projectRoot);
-    }
+    capy_sync_levels_and_exercises_if_needed($pdo, $config, $projectRoot);
 
     if ((int) $pdo->query("SELECT COUNT(*) FROM {$outfitsTable}")->fetchColumn() === 0) {
         capy_seed_outfits($pdo);
@@ -393,10 +415,10 @@ function capy_seed_levels_and_exercises(PDO $pdo, array $config, string $project
         $levelStatement = $pdo->prepare(
             "INSERT INTO {$levelsTable} (
                 id, route_id, route_key, route_order, name, title, difficulty, difficulty_label,
-                content, background_image, href, anchor_x, anchor_y
+                content, background_image, href, anchor_x, anchor_y, story_title, story_message, story_character_name, story_character_image
              ) VALUES (
                 :id, :route_id, :route_key, :route_order, :name, :title, :difficulty, :difficulty_label,
-                :content, :background_image, :href, :anchor_x, :anchor_y
+                :content, :background_image, :href, :anchor_x, :anchor_y, :story_title, :story_message, :story_character_name, :story_character_image
              )"
         );
 
@@ -423,6 +445,10 @@ function capy_seed_levels_and_exercises(PDO $pdo, array $config, string $project
                 ':href' => $level['href'],
                 ':anchor_x' => $level['anchor_x'],
                 ':anchor_y' => $level['anchor_y'],
+                ':story_title' => $level['story_title'] ?? null,
+                ':story_message' => $level['story_message'] ?? null,
+                ':story_character_name' => $level['story_character_name'] ?? null,
+                ':story_character_image' => $level['story_character_image'] ?? null,
             ]);
 
             $questions = capy_resolve_questions_for_level($datasets, $level, $config);
@@ -445,6 +471,122 @@ function capy_seed_levels_and_exercises(PDO $pdo, array $config, string $project
     } catch (Throwable $exception) {
         $pdo->rollBack();
         throw $exception;
+    }
+}
+
+function capy_sync_levels_and_exercises(PDO $pdo, array $config, string $projectRoot): void
+{
+    $levelsTable = capy_table('levels');
+    $exercisesTable = capy_table('exercises');
+
+    $pdo->beginTransaction();
+    try {
+        $pdo->exec("DELETE FROM {$exercisesTable}");
+        $pdo->exec("DELETE FROM {$levelsTable}");
+        $pdo->commit();
+    } catch (Throwable $exception) {
+        $pdo->rollBack();
+        throw $exception;
+    }
+
+    capy_seed_levels_and_exercises($pdo, $config, $projectRoot);
+}
+
+function capy_sync_levels_and_exercises_if_needed(PDO $pdo, array $config, string $projectRoot): void
+{
+    $levelsTable = capy_table('levels');
+    $fingerprint = capy_catalog_fingerprint($config, $projectRoot);
+    $storedFingerprint = capy_get_meta_value($pdo, 'catalog_fingerprint');
+    $levelCount = (int) $pdo->query("SELECT COUNT(*) FROM {$levelsTable}")->fetchColumn();
+
+    if ($levelCount > 0 && $storedFingerprint === $fingerprint) {
+        return;
+    }
+
+    capy_sync_levels_and_exercises($pdo, $config, $projectRoot);
+    capy_set_meta_value($pdo, 'catalog_fingerprint', $fingerprint);
+}
+
+function capy_catalog_fingerprint(array $config, string $projectRoot): string
+{
+    $parts = [
+        json_encode(capy_route_definitions(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+        json_encode(capy_story_messages(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+        json_encode(capy_build_levels($config), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+    ];
+
+    foreach (['questions.json', 'levels.json', 'levels_algoritmos_complementado.json'] as $relativePath) {
+        $fullPath = $projectRoot . DIRECTORY_SEPARATOR . $relativePath;
+        if (is_file($fullPath)) {
+            $parts[] = (string) file_get_contents($fullPath);
+        }
+    }
+
+    return hash('sha256', implode("\n---\n", $parts));
+}
+
+function capy_get_meta_value(PDO $pdo, string $key): ?string
+{
+    $statement = $pdo->prepare('SELECT meta_value FROM ' . capy_table('app_meta') . ' WHERE meta_key = :meta_key LIMIT 1');
+    $statement->execute([':meta_key' => $key]);
+    $value = $statement->fetchColumn();
+    return $value === false ? null : (string) $value;
+}
+
+function capy_set_meta_value(PDO $pdo, string $key, string $value): void
+{
+    $table = capy_table('app_meta');
+    if (capy_db_driver() === 'mysql') {
+        $statement = $pdo->prepare(
+            "INSERT INTO {$table} (meta_key, meta_value)
+             VALUES (:meta_key, :meta_value)
+             ON DUPLICATE KEY UPDATE meta_value = VALUES(meta_value)"
+        );
+        $statement->execute([
+            ':meta_key' => $key,
+            ':meta_value' => $value,
+        ]);
+        return;
+    }
+
+    $statement = $pdo->prepare(
+        "INSERT INTO {$table} (meta_key, meta_value)
+         VALUES (:meta_key, :meta_value)
+         ON CONFLICT(meta_key) DO UPDATE SET meta_value = excluded.meta_value"
+    );
+    $statement->execute([
+        ':meta_key' => $key,
+        ':meta_value' => $value,
+    ]);
+}
+
+function capy_ensure_levels_table_columns(PDO $pdo): void
+{
+    $levelsTable = capy_table('levels');
+    $columns = [
+        'story_title' => capy_db_driver() === 'mysql' ? 'VARCHAR(255) NULL' : 'TEXT NULL',
+        'story_message' => capy_db_driver() === 'mysql' ? 'TEXT NULL' : 'TEXT NULL',
+        'story_character_name' => capy_db_driver() === 'mysql' ? 'VARCHAR(120) NULL' : 'TEXT NULL',
+        'story_character_image' => capy_db_driver() === 'mysql' ? 'TEXT NULL' : 'TEXT NULL',
+    ];
+
+    foreach ($columns as $columnName => $definition) {
+        if (capy_db_driver() === 'mysql') {
+            $statement = $pdo->prepare("SHOW COLUMNS FROM {$levelsTable} LIKE :column_name");
+            $statement->execute([':column_name' => $columnName]);
+            if (!$statement->fetch()) {
+                $pdo->exec("ALTER TABLE {$levelsTable} ADD COLUMN {$columnName} {$definition}");
+            }
+            continue;
+        }
+
+        $statement = $pdo->query("PRAGMA table_info({$levelsTable})");
+        $existing = array_map(static function (array $row): string {
+            return (string) ($row['name'] ?? '');
+        }, $statement ? $statement->fetchAll() : []);
+        if (!in_array($columnName, $existing, true)) {
+            $pdo->exec("ALTER TABLE {$levelsTable} ADD COLUMN {$columnName} {$definition}");
+        }
     }
 }
 

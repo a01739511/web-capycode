@@ -15,9 +15,25 @@
     const NEXT_USER_ID_KEY = "capycodeNextUserIdV3";
     const DEFAULT_OUTFIT_ID = "Capibara";
     const LEGACY_STARTER_OUTFIT_ID = "CapyBlack";
+    const USERNAME_MIN_LENGTH = 3;
+    const USERNAME_MAX_LENGTH = 20;
+    const PASSWORD_MIN_LENGTH = 8;
+    const PASSWORD_MAX_LENGTH = 64;
     const TOTAL_LEVELS_PER_ROUTE = 7;
     const EXERCISES_PER_LEVEL = 5;
     const MEXICO_TIMEZONE = "America/Mexico_City";
+    const OUTFIT_TRANSPARENT_IMAGES = {
+        Capibara: "assets/characters/no_bg/Capibara.webp",
+        CapyBlack: "assets/characters/no_bg/Capy_Black.webp",
+        CapyAqua: "assets/characters/no_bg/Capy_Aqua..webp",
+        CapyKing: "assets/characters/no_bg/Capy_King.webp",
+        CapyExplorer: "assets/characters/no_bg/Capy_Explorer.webp",
+        CapyCandy: "assets/characters/no_bg/Capy_Candy.webp",
+        CapyRuna: "assets/characters/no_bg/Capy_Runa.webp",
+        CapySun: "assets/characters/no_bg/Capy_Sun.webp",
+        CapyEarth: "assets/characters/no_bg/Capy_Earth.webp",
+        CapyConstelation: "assets/characters/no_bg/Capy_Constelation.webp"
+    };
 
     const DIFFICULTY_BY_ROUTE_ORDER = {
         1: "easy",
@@ -57,6 +73,81 @@
         integrative: 550
     };
 
+    const STORY_MESSAGES = {
+        algoritmos: [
+            "CapyBlack te muestra un sendero de piedras antiguas: cada paso importa, y el bosque solo responde cuando el orden del viaje es claro.",
+            "La neblina se aparta cuando sigues una secuencia sin dudar; por primera vez, el bosque parece obedecer tu ritmo.",
+            "Una puerta de tinta viva se abre apenas lo justo: CapyBlack sonríe al ver que ya distingues cuándo avanzar y cuándo esperar.",
+            "Los libros flotantes cambian de lugar, pero tú ya reconoces los patrones. El caos empieza a parecer una coreografía secreta.",
+            "Las luciérnagas del archivo antiguo giran en rondas precisas. Cada repetición las vuelve menos salvajes y más tuyas.",
+            "CapyBlack guarda silencio mientras observas el mapa entero. Ya no resuelves pasos sueltos: empiezas a leer la intención del camino.",
+            "Al final del grimorio, una ruta dormida se ilumina. El bosque acepta que ya puedes sostener un hechizo completo sin perderte."
+        ],
+        tipos_de_datos: [
+            "CapyRuna destapa frascos brillantes y te advierte: no toda esencia puede ocupar cualquier recipiente.",
+            "Los cristales del laboratorio reaccionan distinto a cada forma. Comprendes que nombrar algo bien también es una forma de protegerlo.",
+            "Una mezcla inestable chisporrotea frente a ti; CapyRuna te enseña a cambiar su naturaleza sin romper su memoria.",
+            "Las burbujas del caldero forman símbolos distintos según lo que contienen. Por fin lees esas diferencias como un alquimista.",
+            "Un elixir se espesa demasiado y luego se aclara. Convertirlo sin perder su propósito se vuelve parte de tu oficio.",
+            "CapyRuna te deja trabajar a solas por unos segundos. El laboratorio ya no parece extraño: responde a tu criterio.",
+            "Las estanterías de cristal reflejan frascos, números y nombres en perfecta armonía. La caverna reconoce que ya sabes darles forma."
+        ],
+        expresiones: [
+            "CapyAqua hace flotar runas sobre un estanque. Cada símbolo altera la corriente como si el agua entendiera tus decisiones.",
+            "Una chispa rebota entre dos pilares y descubres que comparar también transforma: no todo hechizo busca cantidad, algunos buscan verdad.",
+            "Las ondas del santuario cambian de color cuando unes condiciones. El altar ya no responde al azar, sino a tus vínculos invisibles.",
+            "CapyAqua deja caer una gota sobre la piedra y tú ves cómo una sola operación puede inclinar todo el ritual.",
+            "Las runas más intensas exigen precisión. Una resta fuera de lugar y la marea cambia, pero ya empiezas a sentir el equilibrio.",
+            "El agua del altar refleja relaciones que antes parecían ocultas. Lo que comparas revela tanto como lo que calculas.",
+            "Un círculo de símbolos se cierra sobre sí mismo y el santuario se aquieta. Ahora las expresiones suenan a lenguaje, no a ruido."
+        ],
+        condicionales: [
+            "CapyConstelation te espera ante puertas gemelas. Ninguna se abre por fuerza: solo ceden cuando eliges con intención.",
+            "Una torre viva cambia de forma frente a ti. Descubres que cada respuesta crea un mundo distinto y descarta otros.",
+            "Las estrellas del techo parpadean en secuencia cuando eliges entre varios caminos. Ya no dudas tanto antes de decidir.",
+            "CapyConstelation te observa desde la sombra correcta. Aprendes que una condición bien puesta evita perderte en puertas falsas.",
+            "La torre te obliga a pensar antes de actuar. Cada ramificación tiene un precio, y tú ya sabes leerlo.",
+            "Los pasillos cambian cuando pronuncias el criterio exacto. Elegir deja de ser un impulso y se vuelve una estrategia.",
+            "La última cámara solo responde a quien puede juzgar sin titubeos. Al salir, las puertas se alinean detrás de ti como un juramento."
+        ],
+        ciclos: [
+            "CapyEarth marca un ritmo con su bastón. En este círculo, repetir no es estancarse: es aprender a sostener el pulso.",
+            "Las piedras antiguas giran bajo tus pies y comprendes que algunos caminos se dominan solo al insistir con calma.",
+            "Una vuelta más, otra más, hasta que el eco de tus pasos se vuelve familiar. CapyEarth asiente cuando reconoces el momento de romper.",
+            "La espiral encantada quiere arrastrarte para siempre, pero tú ya sabes omitir lo que distrae sin salirte del camino.",
+            "Los anillos del claro responden mejor a cada repetición. Lo que antes parecía cansancio ahora parece disciplina.",
+            "CapyEarth te deja avanzar sin guía. Sabes continuar cuando conviene y detenerte cuando el bosque ya entregó lo necesario.",
+            "En el centro del círculo, el suelo deja de girar. Has demostrado que puedes repetir sin perder el propósito de la travesía."
+        ],
+        funciones: [
+            "CapyKing abre el taller como si levantara un telón. Aquí cada hechizo puede volver a llamarse cuando la historia lo necesita.",
+            "Las herramientas encantadas repiten formas con elegancia. Descubres que una buena forja permite reutilizar la misma chispa muchas veces.",
+            "CapyKing insiste en que todo hechizo debe saber qué recibe y qué devuelve. La forja premia la claridad.",
+            "Una pieza incompleta queda suspendida en el aire hasta que decides qué debe retornar. Entonces cae en su sitio exacto.",
+            "Reusar un encantamiento deja de parecer trampa y empieza a sentirse como artesanía refinada.",
+            "El taller resuena con ecos de tus propias creaciones. Ya no copias rituales: empiezas a diseñarlos.",
+            "Cuando la última pieza encaja, CapyKing inclina la corona. Has probado que puedes construir magia reutilizable, no solo improvisarla."
+        ],
+        estructuras_de_datos: [
+            "CapySun te recibe entre estantes vivientes. Las listas se mueven como constelaciones pequeñas buscando una mano firme.",
+            "Un conjunto de criaturas de papel se ordena al tocarlas. Comprendes que guardar muchas cosas también exige un mapa.",
+            "CapySun señala serpientes de palabras que se enrollan unas dentro de otras. Ya no te intimidan las colecciones complejas.",
+            "La biblioteca cambia cuando accedes al lugar exacto. Cada índice correcto enciende una lámpara distinta.",
+            "Las estanterías susurran nombres, grupos y subgrupos. Lo importante ya no es solo guardar, sino saber cómo volver a encontrar.",
+            "CapySun te deja reorganizar una sala completa. El desorden empieza a obedecer una estructura visible para ti.",
+            "Desde el balcón más alto ves la biblioteca como una red luminosa. Has aprendido a moverte dentro de muchas piezas sin perderte."
+        ],
+        archivos_de_texto_plano: [
+            "CapyCandy te guía bajo tierra hasta un archivo que respira polvo y memoria. Aquí nada quiere olvidarse.",
+            "Los pergaminos flotan alrededor de tu lámpara. Aprendes que leer también es escuchar lo que el pasado quiso conservar.",
+            "Una bóveda se abre apenas cuando dejas una marca nueva. Escribir en el archivo se siente como conversar con generaciones antiguas.",
+            "CapyCandy ordena cintas y etiquetas mientras tú distingues entre añadir, reemplazar y preservar. La memoria tiene reglas.",
+            "Cada línea guardada parece una voz distinta. Empiezas a notar que un archivo no solo contiene datos, también conserva intenciones.",
+            "El archivo perdido deja de parecer ruina y empieza a sentirse como un taller de memoria. Ya puedes tocarlo sin romperlo.",
+            "En la cámara final, varios registros se unen en un mismo relato. CapyCandy sonríe: ahora sabes leer, guardar y reconstruir historia."
+        ]
+    };
+
     const ROUTE_DEFINITIONS = [
         {
             id: 1,
@@ -64,7 +155,9 @@
             name: "Algoritmo Antiguo",
             backgroundImage: "assets/world/routes/route-01-algoritmo-antiguo.webp",
             orbImage: "assets/world/orbs/route-01-algoritmo-antiguo-orb.webp",
-            content: "Secuencia, selección, repetición y razonamiento algorítmico."
+            content: "Secuencia, selección, repetición y razonamiento algorítmico.",
+            storyCharacterName: "CapyBlack",
+            storyCharacterImage: "assets/characters/no_bg/Capy_Black.webp"
         },
         {
             id: 2,
@@ -72,7 +165,9 @@
             name: "Alquimista de Tipos",
             backgroundImage: "assets/world/routes/route-02-alquimista-de-tipos.webp",
             orbImage: "assets/world/orbs/route-02-alquimista-de-tipos-orb.webp",
-            content: "Tipos primitivos, conversiones y lectura de valores."
+            content: "Tipos primitivos, conversiones y lectura de valores.",
+            storyCharacterName: "CapyRuna",
+            storyCharacterImage: "assets/characters/no_bg/Capy_Runa.webp"
         },
         {
             id: 3,
@@ -80,7 +175,9 @@
             name: "Altar de las Expresiones",
             backgroundImage: "assets/world/routes/route-03-expresiones.webp",
             orbImage: "assets/world/orbs/route-03-expresiones-orb.webp",
-            content: "Operadores aritméticos, relacionales y lógicos."
+            content: "Operadores aritméticos, relacionales y lógicos.",
+            storyCharacterName: "CapyAqua",
+            storyCharacterImage: "assets/characters/no_bg/Capy_Aqua..webp"
         },
         {
             id: 4,
@@ -88,7 +185,9 @@
             name: "Hechizos Condicionales",
             backgroundImage: "assets/world/routes/route-04-condicionales.webp",
             orbImage: "assets/world/orbs/route-04-condicionales-orb.webp",
-            content: "Decisiones con if, else y combinaciones de condiciones."
+            content: "Decisiones con if, else y combinaciones de condiciones.",
+            storyCharacterName: "CapyConstelation",
+            storyCharacterImage: "assets/characters/no_bg/Capy_Constelation.webp"
         },
         {
             id: 5,
@@ -96,7 +195,9 @@
             name: "Círculo de Repetición Infinita",
             backgroundImage: "assets/world/routes/route-05-ciclos.webp",
             orbImage: "assets/world/orbs/route-05-ciclos-orb.webp",
-            content: "Repetición controlada con for, while, break y continue."
+            content: "Repetición controlada con for, while, break y continue.",
+            storyCharacterName: "CapyEarth",
+            storyCharacterImage: "assets/characters/no_bg/Capy_Earth.webp"
         },
         {
             id: 6,
@@ -104,7 +205,9 @@
             name: "Taller de Funciones Encantadas",
             backgroundImage: "assets/world/routes/route-06-funciones.webp",
             orbImage: "assets/world/orbs/route-06-funciones-orb.webp",
-            content: "Funciones, parámetros, retorno y reutilización."
+            content: "Funciones, parámetros, retorno y reutilización.",
+            storyCharacterName: "CapyKing",
+            storyCharacterImage: "assets/characters/no_bg/Capy_King.webp"
         },
         {
             id: 7,
@@ -112,7 +215,9 @@
             name: "Biblioteca de Estructuras de Datos",
             backgroundImage: "assets/world/routes/route-07-estructuras-de-datos.webp",
             orbImage: "assets/world/orbs/route-07-estructuras-de-datos-orb.webp",
-            content: "Listas, colecciones y operaciones sobre datos agrupados."
+            content: "Listas, colecciones y operaciones sobre datos agrupados.",
+            storyCharacterName: "CapySun",
+            storyCharacterImage: "assets/characters/no_bg/Capy_Sun.webp"
         },
         {
             id: 8,
@@ -120,7 +225,9 @@
             name: "El Archivo Perdido",
             backgroundImage: "assets/world/routes/route-08-archivos-de-texto-plano.webp",
             orbImage: "assets/world/orbs/route-08-archivos-de-texto-plano-orb.webp",
-            content: "Lectura, escritura y procesamiento de archivos simples."
+            content: "Lectura, escritura y procesamiento de archivos simples.",
+            storyCharacterName: "CapyCandy",
+            storyCharacterImage: "assets/characters/no_bg/Capy_Candy.webp"
         }
     ];
 
@@ -724,6 +831,34 @@
         return publicUser;
     }
 
+    function validateUsername(username) {
+        const cleanUsername = String(username || "").trim();
+
+        if (!cleanUsername) {
+            throw new Error("Escribe un nombre de usuario.");
+        }
+
+        if (cleanUsername.length < USERNAME_MIN_LENGTH || cleanUsername.length > USERNAME_MAX_LENGTH) {
+            throw new Error("El usuario debe tener entre " + USERNAME_MIN_LENGTH + " y " + USERNAME_MAX_LENGTH + " caracteres.");
+        }
+
+        return cleanUsername;
+    }
+
+    function validatePassword(password) {
+        const cleanPassword = String(password || "");
+
+        if (!cleanPassword) {
+            throw new Error("Escribe una contrasena.");
+        }
+
+        if (cleanPassword.length < PASSWORD_MIN_LENGTH || cleanPassword.length > PASSWORD_MAX_LENGTH) {
+            throw new Error("La contrasena debe tener entre " + PASSWORD_MIN_LENGTH + " y " + PASSWORD_MAX_LENGTH + " caracteres.");
+        }
+
+        return cleanPassword;
+    }
+
     async function registerUser(username, password) {
         if (isBackendMode()) {
             return syncBackendPayload(await request("auth/register", {
@@ -732,19 +867,16 @@
             }));
         }
 
-        const cleanUsername = String(username || "").trim();
+        const cleanUsername = validateUsername(username);
+        const cleanPassword = validatePassword(password);
         const users = getUsers();
         const key = normalizeUsernameKey(cleanUsername);
-
-        if (!cleanUsername || !password) {
-            throw new Error("Completa usuario y contraseña.");
-        }
 
         if (users[key]) {
             throw new Error("Ese usuario ya existe.");
         }
 
-        users[key] = normalizeUser(buildDefaultUser(cleanUsername, password), cleanUsername);
+        users[key] = normalizeUser(buildDefaultUser(cleanUsername, cleanPassword), cleanUsername);
         saveUsers(users);
         saveSession(cleanUsername);
 
@@ -762,16 +894,14 @@
         const cleanUsername = String(username || "").trim();
         const users = getUsers();
         const key = normalizeUsernameKey(cleanUsername);
-        let user = users[key];
+        const user = users[key];
 
         if (!cleanUsername || !password) {
-            throw new Error("Completa usuario y contraseña.");
+            throw new Error("Completa usuario y contrasena.");
         }
 
-        if (!user) {
-            user = normalizeUser(buildDefaultUser(cleanUsername, password), cleanUsername);
-        } else if (!user.passwordMock) {
-            user.passwordMock = password;
+        if (!user || !user.passwordMock || user.passwordMock !== password) {
+            throw new Error("Usuario o contrasena incorrectos.");
         }
 
         users[key] = normalizeUser(user, cleanUsername);
@@ -810,15 +940,11 @@
             }));
         }
 
-        const cleanUsername = String(username || "").trim();
+        const cleanUsername = validateUsername(username);
         const record = getUserRecordBySession();
 
         if (!record) {
-            throw new Error("Inicia sesión para cambiar usuario.");
-        }
-
-        if (!cleanUsername) {
-            throw new Error("Escribe un nombre de usuario.");
+            throw new Error("Inicia sesion para cambiar usuario.");
         }
 
         const nextKey = normalizeUsernameKey(cleanUsername);
@@ -848,18 +974,15 @@
 
         const record = getUserRecordBySession();
         if (!record) {
-            throw new Error("Inicia sesión para cambiar contraseña.");
+            throw new Error("Inicia sesion para cambiar contrasena.");
         }
 
+        validatePassword(currentPassword);
         if (record.user.passwordMock && record.user.passwordMock !== currentPassword) {
-            throw new Error("La contraseña actual no coincide.");
+            throw new Error("La contrasena actual no coincide.");
         }
 
-        if (!newPassword || String(newPassword).length < 8) {
-            throw new Error("Usa al menos 8 caracteres.");
-        }
-
-        record.user.passwordMock = String(newPassword);
+        record.user.passwordMock = validatePassword(newPassword);
         record.users[record.key] = normalizeUser(record.user, record.user.username);
         saveUsers(record.users);
 
@@ -941,12 +1064,20 @@
             : record.user.currentLevelId;
         let badgeUnlocked = false;
         let newlyDiscoveredOutfits = [];
+        let streakCelebration = null;
+        let storyBeat = null;
 
         if (!isPractice) {
             reward = XP_REWARD[level.difficulty] || 0;
             record.user.xp += reward;
-            updateStreakOnCompletion(record.user, new Date());
+            streakCelebration = updateStreakOnCompletion(record.user, new Date());
             nextLevelId = Math.min(numericLevelId + 1, totalLevels + 1);
+            storyBeat = {
+                title: level.storyTitle || "",
+                message: level.storyMessage || "",
+                characterName: level.storyCharacterName || "",
+                characterImage: level.storyCharacterImage || ""
+            };
 
             if (!previewAllLevels) {
                 record.user.currentLevelId = nextLevelId;
@@ -991,7 +1122,9 @@
             routeCompleted: !isPractice && level.routeOrder === TOTAL_LEVELS_PER_ROUTE,
             gameCompleted: !previewAllLevels && !isPractice && nextLevelId === totalLevels + 1,
             badgeUnlocked: badgeUnlocked,
-            newlyDiscoveredOutfits: newlyDiscoveredOutfits
+            newlyDiscoveredOutfits: newlyDiscoveredOutfits,
+            streakCelebration: streakCelebration,
+            storyBeat: storyBeat
         };
     }
 
@@ -1104,7 +1237,11 @@
                     backgroundImage: route.backgroundImage,
                     href: "nivel.html?levelId=" + globalId,
                     x: anchor.x || "50%",
-                    y: anchor.y || "50%"
+                    y: anchor.y || "50%",
+                    storyTitle: "Eco del nivel " + routeOrder,
+                    storyMessage: buildLevelStory(route, routeOrder),
+                    storyCharacterName: route.storyCharacterName || "",
+                    storyCharacterImage: route.storyCharacterImage || ""
                 });
             }
         });
@@ -1186,6 +1323,7 @@
                 tagline: item.tagline || item.slogan || item.perk || item.frase || "",
                 cost: OUTFIT_COSTS[outfitId],
                 image: item.image || ("assets/characters/" + outfitId + ".webp"),
+                transparentImage: OUTFIT_TRANSPARENT_IMAGES[outfitId] || item.transparentImage || item.image || ("assets/characters/" + outfitId + ".webp"),
                 unlockRouteId: readNumber(item.unlockRouteId, getUnlockRouteIdForOutfit(outfitId) || 0) || null,
                 unlockRouteName: (function () {
                     const routeId = readNumber(item.unlockRouteId, getUnlockRouteIdForOutfit(outfitId) || 0);
@@ -1462,6 +1600,7 @@
         const nowIso = date.toISOString();
         const todayKey = getMexicoDateKey(nowIso);
         const lastKey = user.lastCompletionAt ? getMexicoDateKey(user.lastCompletionAt) : "";
+        const shouldCelebrate = lastKey !== todayKey;
 
         if (!lastKey) {
             user.streak = 1;
@@ -1474,6 +1613,14 @@
         }
 
         user.lastCompletionAt = nowIso;
+        return {
+            show: shouldCelebrate,
+            streak: readNumber(user.streak, 0),
+            title: "Racha activa x" + readNumber(user.streak, 0),
+            description: shouldCelebrate
+                ? "Tu primera actividad correcta de hoy quedo registrada."
+                : ""
+        };
     }
 
     function getVisibleStreak(user) {
@@ -1518,6 +1665,11 @@
         }
 
         return route.content + " Enfoque " + DIFFICULTY_LABELS[difficulty].toLowerCase() + ".";
+    }
+
+    function buildLevelStory(route, routeOrder) {
+        const routeMessages = STORY_MESSAGES[route.key] || [];
+        return routeMessages[routeOrder - 1] || ("Una nueva parte del sendero se revela en " + route.name + ".");
     }
 
     function getLevelAnchors() {
@@ -1604,6 +1756,8 @@
         getCurrentUser: getCurrentUser,
         updateUsername: updateUsername,
         updatePassword: updatePassword,
+        validateUsername: validateUsername,
+        validatePassword: validatePassword,
         getRoutes: getRoutes,
         getLevelsByRoute: getLevelsByRoute,
         getExercisesByLevel: getExercisesByLevel,
@@ -1622,6 +1776,10 @@
         getTotalLevelCountSync: getTotalLevelCountSync,
         getOutfitsSync: getOutfitsSync,
         getOutfitByIdSync: getOutfitByIdSync,
+        USERNAME_MIN_LENGTH: USERNAME_MIN_LENGTH,
+        USERNAME_MAX_LENGTH: USERNAME_MAX_LENGTH,
+        PASSWORD_MIN_LENGTH: PASSWORD_MIN_LENGTH,
+        PASSWORD_MAX_LENGTH: PASSWORD_MAX_LENGTH,
         getVisibleStreak: getVisibleStreak,
         getDifficultyLabel: function (difficulty) {
             return DIFFICULTY_LABELS[difficulty] || difficulty || "";

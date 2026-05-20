@@ -4,18 +4,6 @@
     const collectionCountRoot = document.getElementById("profile-collection-count");
     const badgesRoot = document.getElementById("profile-badges");
     const api = window.CapyApi;
-    const transparentImages = {
-        Capibara: "assets/characters/no_bg/Capibara.webp",
-        CapyBlack: "assets/characters/no_bg/Capy_Black.webp",
-        CapyAqua: "assets/characters/no_bg/Capy_Aqua..webp",
-        CapyKing: "assets/characters/no_bg/Capy_King.webp",
-        CapyExplorer: "assets/characters/no_bg/Capy_Explorer.webp",
-        CapyCandy: "assets/characters/no_bg/Capy_Candy.webp",
-        CapyRuna: "assets/characters/no_bg/Capy_Runa.webp",
-        CapySun: "assets/characters/no_bg/Capy_Sun.webp",
-        CapyEarth: "assets/characters/no_bg/Capy_Earth.webp",
-        CapyConstelation: "assets/characters/no_bg/Capy_Constelation.webp"
-    };
     let activeCollectionId = "";
 
     if (!heroRoot || !collectionRoot || !collectionCountRoot || !badgesRoot || !api || !window.CapyCore) {
@@ -286,10 +274,10 @@
             "<button class=\"profile-dialog-close\" type=\"button\" aria-label=\"Cerrar\" data-profile-close>&times;</button>",
             "<p class=\"panel-kicker\">Cuenta</p>",
             "<h2 id=\"profile-dialog-title\">Cambiar usuario</h2>",
-            "<p class=\"profile-dialog-copy\">Actualiza el nombre que aparece en el perfil y en el HUD.</p>",
+            "<p class=\"profile-dialog-copy\">Usa un nombre unico de entre " + api.USERNAME_MIN_LENGTH + " y " + api.USERNAME_MAX_LENGTH + " caracteres.</p>",
             "<form class=\"profile-dialog-form\" data-profile-form=\"username\">",
             "<label>Nuevo usuario",
-            "<input class=\"magic-input\" name=\"username\" value=\"", escapeAttribute(profile.username), "\" autocomplete=\"username\">",
+            "<input class=\"magic-input\" name=\"username\" value=\"", escapeAttribute(profile.username), "\" autocomplete=\"username\" minlength=\"", api.USERNAME_MIN_LENGTH, "\" maxlength=\"", api.USERNAME_MAX_LENGTH, "\">",
             "</label>",
             "<p class=\"profile-form-message\" data-profile-message></p>",
             "<div class=\"profile-dialog-actions\">",
@@ -307,13 +295,13 @@
             "<button class=\"profile-dialog-close\" type=\"button\" aria-label=\"Cerrar\" data-profile-close>&times;</button>",
             "<p class=\"panel-kicker\">Seguridad</p>",
             "<h2 id=\"profile-dialog-title\">Cambiar contrase&ntilde;a</h2>",
-            "<p class=\"profile-dialog-copy\">Confirma tu contrase&ntilde;a actual y escribe una nueva de al menos 8 caracteres.</p>",
+            "<p class=\"profile-dialog-copy\">Confirma tu contrasena actual y escribe una nueva de entre " + api.PASSWORD_MIN_LENGTH + " y " + api.PASSWORD_MAX_LENGTH + " caracteres.</p>",
             "<form class=\"profile-dialog-form\" data-profile-form=\"password\">",
             "<label>Contrase&ntilde;a actual",
-            "<input class=\"magic-input\" name=\"currentPassword\" type=\"password\" autocomplete=\"current-password\">",
+            "<input class=\"magic-input\" name=\"currentPassword\" type=\"password\" autocomplete=\"current-password\" minlength=\"", api.PASSWORD_MIN_LENGTH, "\" maxlength=\"", api.PASSWORD_MAX_LENGTH, "\">",
             "</label>",
             "<label>Nueva contrase&ntilde;a",
-            "<input class=\"magic-input\" name=\"newPassword\" type=\"password\" autocomplete=\"new-password\">",
+            "<input class=\"magic-input\" name=\"newPassword\" type=\"password\" autocomplete=\"new-password\" minlength=\"", api.PASSWORD_MIN_LENGTH, "\" maxlength=\"", api.PASSWORD_MAX_LENGTH, "\">",
             "</label>",
             "<p class=\"profile-form-message\" data-profile-message></p>",
             "<div class=\"profile-dialog-actions\">",
@@ -330,6 +318,7 @@
         const username = String(formData.get("username") || "").trim();
 
         try {
+            api.validateUsername(username);
             setFormBusy(form, true);
             await api.updateUsername(username);
             closeProfileDialog();
@@ -348,6 +337,8 @@
         const newPassword = String(formData.get("newPassword") || "");
 
         try {
+            api.validatePassword(currentPassword);
+            api.validatePassword(newPassword);
             setFormBusy(form, true);
             await api.updatePassword(currentPassword, newPassword);
             closeProfileDialog();
@@ -422,7 +413,7 @@
     }
 
     function getTransparentImage(item) {
-        return transparentImages[item.id] || item.image;
+        return item.transparentImage || item.image;
     }
 
     function escapeHtml(value) {

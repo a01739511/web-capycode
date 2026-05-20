@@ -1,4 +1,4 @@
-(function () {
+﻿(function () {
     const app = document.querySelector("[data-level-runner=\"true\"]");
     const api = window.CapyApi;
     const PYTHON_KEYWORDS = new Set([
@@ -23,9 +23,11 @@
     const UNLOCK_ALL_LEVELS_FOR_PREVIEW = Boolean(
         window.CAPYCODE_CONFIG && window.CAPYCODE_CONFIG.UNLOCK_ALL_LEVELS_FOR_PREVIEW
     );
-    const SHOW_ROUTE_OUTFIT_PREVIEW_ON_EVERY_LEVEL = Boolean(
-        window.CAPYCODE_CONFIG && window.CAPYCODE_CONFIG.SHOW_ROUTE_OUTFIT_PREVIEW_ON_EVERY_LEVEL
-    );
+    const LEVEL_MUSIC_TRACKS = Array.isArray(window.CAPYCODE_LEVEL_MUSIC)
+        ? window.CAPYCODE_LEVEL_MUSIC.filter(function (track) {
+            return track && track.src;
+        })
+        : [];
 
     const elements = {
         shell: app,
@@ -51,6 +53,7 @@
         blankAnswers: {},
         activeBlankKey: "",
         orderItems: [],
+        orderBankItems: [],
         numericValue: "",
         remainingSeconds: timerSeconds,
         timerId: 0,
@@ -77,6 +80,7 @@
             onPrimaryAction();
         }
     });
+    window.addEventListener("beforeunload", audio.stopMusic);
 
     start();
 
@@ -151,7 +155,7 @@
             route ? route.name : "Ruta",
             " - ",
             level.name,
-            isPractice ? " (Práctica)" : ""
+            isPractice ? " (PrÃ¡ctica)" : ""
         ].join("");
     }
 
@@ -197,11 +201,12 @@
         state.blankAnswers = {};
         state.activeBlankKey = "";
         state.orderItems = [];
+        state.orderBankItems = [];
         state.numericValue = "";
         state.remainingSeconds = timerSeconds;
 
         if (exercise.type === "LineOrderingExercise") {
-            state.orderItems = (exercise.contentData.lines || []).map(function (line) {
+            state.orderBankItems = (exercise.contentData.lines || []).map(function (line) {
                 return { id: line.id, text: line.text };
             });
         }
@@ -282,7 +287,7 @@
         input.className = "magic-input";
         input.type = "number";
         input.inputMode = "decimal";
-        input.placeholder = "Respuesta numérica";
+        input.placeholder = "Respuesta numÃ©rica";
         input.addEventListener("input", function () {
             state.numericValue = input.value;
         });
@@ -319,35 +324,64 @@
         elements.questionContent.appendChild(stack);
     }
 
-    function renderOrderLines() {
-        const list = document.createElement("div");
-        list.className = "sortable-list";
-        list.id = "sortable-list";
-        elements.questionContent.appendChild(list);
-        paintSortable();
+        function renderOrderLines(exercise) {
+        const layout = document.createElement("section");
+        layout.className = "sortable-layout";
+        layout.innerHTML = [
+            "<article class=\"sortable-panel\">",
+            "<div class=\"sortable-panel-head\">",
+            "<p class=\"panel-kicker\">Bloques disponibles</p>",
+            "<p>Arrastra cada linea desde aqui.</p>",
+            "</div>",
+            "<div class=\"sortable-list\" id=\"sortable-bank\" data-order-zone=\"bank\" aria-label=\"Bloques disponibles\"></div>",
+            "</article>",
+            "<article class=\"sortable-panel is-builder\">",
+            "<div class=\"sortable-panel-head\">",
+            "<p class=\"panel-kicker\">Area de construccion</p>",
+            "<p>Forma el codigo correcto aqui.</p>",
+            "</div>",
+            "<div class=\"sortable-list is-builder\" id=\"sortable-build\" data-order-zone=\"build\" aria-label=\"Area de construccion\"></div>",
+            "</article>"
+        ].join("");
+        elements.questionContent.appendChild(layout);
+        paintSortable(exercise);
     }
 
-    function paintSortable() {
-        const list = document.getElementById("sortable-list");
-        if (!list) {
+    function paintSortable(exercise) {
+        const bank = document.getElementById("sortable-bank");
+        const build = document.getElementById("sortable-build");
+        if (!bank || !build) {
             return;
         }
 
-        list.innerHTML = "";
+        bank.innerHTML = "";
+        build.innerHTML = "";
 
-        state.orderItems.forEach(function (item, index) {
+        paintSortableZone(bank, state.orderBankItems, "bank");
+        paintSortableZone(build, state.orderItems, "build");
+
+        renderSortableBuildPlaceholder(build);
+
+        bindOrderZone(bank);
+        bindOrderZone(build);
+        syncOrderItemsFromDom(exercise);
+    }
+
+    function paintSortableZone(zoneElement, items, zoneName) {
+        items.forEach(function (item, index) {
             const article = document.createElement("article");
             article.className = "sortable-row";
             article.dataset.index = String(index);
+            article.dataset.lineId = item.id;
+            article.dataset.orderZone = zoneName;
             article.innerHTML = [
-                "<button class=\"drag-pill\" type=\"button\" draggable=\"true\" aria-label=\"Arrastrar línea ", index + 1, "\"><img src=\"assets/menu-icon.svg\" alt=\"\"></button>",
+                "<button class=\"drag-pill\" type=\"button\" draggable=\"true\" aria-label=\"Arrastrar linea ", index + 1, "\"><img src=\"assets/menu-icon.svg\" alt=\"\"></button>",
                 "<div class=\"sortable-row-code\">",
-                buildCodeLineMarkup(item.text, index + 1, state.orderItems.length),
+                buildCodeLineMarkup(item.text, index + 1, items.length),
                 "</div>"
             ].join("");
-            article.dataset.lineId = item.id;
             bindDragHandle(article);
-            list.appendChild(article);
+            zoneElement.appendChild(article);
         });
     }
 
@@ -367,7 +401,7 @@
 
         handle.addEventListener("dragend", function () {
             article.classList.remove("is-dragging");
-            updateOrderItemsFromDom();
+            syncOrderItemsFromDom(getCurrentExercise());
             state.draggedLineId = "";
         });
 
@@ -391,11 +425,40 @@
 
         article.addEventListener("drop", function (event) {
             event.preventDefault();
-            updateOrderItemsFromDom();
+            syncOrderItemsFromDom(getCurrentExercise());
         });
 
         handle.addEventListener("pointerdown", function (event) {
             beginPointerDrag(event, article);
+        });
+    }
+
+    function bindOrderZone(zoneElement) {
+        zoneElement.addEventListener("dragover", function (event) {
+            const draggedRow = getDraggedRow();
+            if (!draggedRow) {
+                return;
+            }
+
+            event.preventDefault();
+            if (!event.target.closest(".sortable-row")) {
+                removeSortableBuildPlaceholder(zoneElement);
+                zoneElement.appendChild(draggedRow);
+            }
+        });
+
+        zoneElement.addEventListener("drop", function (event) {
+            const draggedRow = getDraggedRow();
+            if (!draggedRow) {
+                return;
+            }
+
+            event.preventDefault();
+            if (!event.target.closest(".sortable-row")) {
+                removeSortableBuildPlaceholder(zoneElement);
+                zoneElement.appendChild(draggedRow);
+            }
+            syncOrderItemsFromDom(getCurrentExercise());
         });
     }
 
@@ -421,22 +484,28 @@
         event.preventDefault();
         const target = document.elementFromPoint(event.clientX, event.clientY);
         const targetRow = target ? target.closest(".sortable-row") : null;
+        const targetZone = target ? target.closest("[data-order-zone]") : null;
 
-        if (!targetRow || targetRow === draggedRow) {
+        if (targetRow && targetRow !== draggedRow) {
+            const list = targetRow.parentElement;
+            const rect = targetRow.getBoundingClientRect();
+            const shouldPlaceAfter = event.clientY > rect.top + rect.height / 2;
+
+            if (shouldPlaceAfter) {
+                list.insertBefore(draggedRow, targetRow.nextSibling);
+            } else {
+                list.insertBefore(draggedRow, targetRow);
+            }
+
+            syncOrderItemsFromDom(getCurrentExercise());
             return;
         }
 
-        const list = targetRow.parentElement;
-        const rect = targetRow.getBoundingClientRect();
-        const shouldPlaceAfter = event.clientY > rect.top + rect.height / 2;
-
-        if (shouldPlaceAfter) {
-            list.insertBefore(draggedRow, targetRow.nextSibling);
-        } else {
-            list.insertBefore(draggedRow, targetRow);
+        if (targetZone) {
+            removeSortableBuildPlaceholder(targetZone);
+            targetZone.appendChild(draggedRow);
+            syncOrderItemsFromDom(getCurrentExercise());
         }
-
-        updateOrderItemsFromDom();
     }
 
     function endPointerDrag() {
@@ -445,7 +514,7 @@
             draggedRow.classList.remove("is-dragging");
         }
 
-        updateOrderItemsFromDom();
+        syncOrderItemsFromDom(getCurrentExercise());
         state.pointerDragLineId = "";
         document.removeEventListener("pointermove", handlePointerDragMove);
         document.removeEventListener("pointerup", endPointerDrag);
@@ -472,20 +541,55 @@
         }) || null;
     }
 
-    function updateOrderItemsFromDom() {
-        const list = document.getElementById("sortable-list");
-        if (!list) {
+    function syncOrderItemsFromDom(exercise) {
+        const bank = document.getElementById("sortable-bank");
+        const build = document.getElementById("sortable-build");
+        if (!bank || !build || !exercise) {
             return;
         }
 
-        const itemsById = new Map(state.orderItems.map(function (item) {
+        const sourceLines = (exercise.contentData.lines || []).map(function (line) {
+            return { id: line.id, text: line.text };
+        });
+        const itemsById = new Map(sourceLines.map(function (item) {
             return [String(item.id), item];
         }));
-        state.orderItems = Array.from(list.querySelectorAll("[data-line-id]")).map(function (row) {
+        state.orderBankItems = Array.from(bank.querySelectorAll("[data-line-id]")).map(function (row) {
             return itemsById.get(String(row.dataset.lineId));
         }).filter(Boolean);
+        state.orderItems = Array.from(build.querySelectorAll("[data-line-id]")).map(function (row) {
+            return itemsById.get(String(row.dataset.lineId));
+        }).filter(Boolean);
+        renderSortableBuildPlaceholder(build);
     }
 
+    function renderSortableBuildPlaceholder(build) {
+        if (!build) {
+            return;
+        }
+
+        removeSortableBuildPlaceholder(build);
+        if (state.orderItems.length) {
+            return;
+        }
+
+        build.insertAdjacentHTML("beforeend", [
+            "<div class=\"sortable-empty-state\">",
+            "<strong>Construye tu respuesta aqui</strong>",
+            "<span>Suelta las lineas en esta zona para ordenarlas.</span>",
+            "</div>"
+        ].join(""));
+    }
+
+    function removeSortableBuildPlaceholder(zoneElement) {
+        if (!zoneElement || zoneElement.id !== "sortable-build") {
+            return;
+        }
+
+        zoneElement.querySelectorAll(".sortable-empty-state").forEach(function (emptyState) {
+            emptyState.remove();
+        });
+    }
     function renderFillBlanks(exercise) {
         elements.questionContent.classList.add("has-internal-scroll");
 
@@ -631,7 +735,9 @@
         }
 
         if (exercise.type === "LineOrderingExercise") {
-            return { lineIds: state.orderItems.map(function (item) { return item.id; }) };
+            return state.orderItems.length === (exercise.contentData.lines || []).length
+                ? { lineIds: state.orderItems.map(function (item) { return item.id; }) }
+                : null;
         }
 
         if (exercise.type === "FillBlanksExercise") {
@@ -700,7 +806,7 @@
     function renderLockedState() {
         stopTimer();
         elements.missionLabel.textContent = "Nivel bloqueado";
-        elements.questionTitle.textContent = "Este nivel aún no está disponible";
+        elements.questionTitle.textContent = "Este nivel aÃºn no estÃ¡ disponible";
         elements.questionContent.innerHTML = [
             "<div class=\"completion-card\">",
             "<p>Completa primero el nivel actual para desbloquearlo.</p>",
@@ -736,12 +842,14 @@
         const reward = outcome && outcome.reward ? Number(outcome.reward) : 0;
         const celebrationOutfits = getCelebrationOutfits(outcome);
         const nextHref = getNextLevelHref(outcome);
+        const streakCelebration = outcome && outcome.streakCelebration;
+        const storyBeat = outcome && outcome.storyBeat;
         const title = outcome && outcome.gameCompleted
             ? "Juego completado"
-            : (outcome && outcome.routeCompleted ? "Ruta completada" : (practice ? "Práctica completada" : "Nivel completado"));
+            : (outcome && outcome.routeCompleted ? "Ruta completada" : (practice ? "PrÃ¡ctica completada" : "Nivel completado"));
         const copy = outcome && outcome.gameCompleted
-            ? "Terminaste todos los niveles disponibles. Desde ahora puedes repetirlos como práctica."
-            : (outcome && outcome.routeCompleted ? "Se desbloqueó la siguiente ruta. Puedes continuar desde el mapa." : (practice ? "Este intento fue de práctica, por eso no modifica XP ni racha." : "Ganaste XP y avanzaste al siguiente nivel."));
+            ? "Terminaste todos los niveles disponibles. Desde ahora puedes repetirlos como prÃ¡ctica."
+            : (outcome && outcome.routeCompleted ? "Se desbloqueÃ³ la siguiente ruta. Puedes continuar desde el mapa." : (practice ? "Este intento fue de prÃ¡ctica, por eso no modifica XP ni racha." : "Ganaste XP y avanzaste al siguiente nivel."));
 
         const overlay = document.createElement("div");
         overlay.className = "completion-overlay";
@@ -750,14 +858,14 @@
             buildCompletionRadiance(),
             "<section class=\"completion-screen", practice ? " is-practice" : "", "\" role=\"dialog\" aria-modal=\"true\">",
             buildConfetti(),
-            "<div class=\"completion-screen-art\">",
-            "<img src=\"assets/characters/Capythilda.webp\" alt=\"Capythilda\">",
-            "</div>",
+            storyBeat && storyBeat.message ? "" : "<div class=\"completion-screen-art\"><img src=\"assets/characters/Capythilda.webp\" alt=\"Capythilda\"></div>",
             "<div class=\"completion-screen-copy\">",
-            "<p class=\"panel-kicker\">", practice ? "Práctica" : "Progreso guardado", "</p>",
+            "<p class=\"panel-kicker\">", practice ? "PrÃ¡ctica" : "Progreso guardado", "</p>",
             "<h2>", escapeHtml(title), "</h2>",
             "<p class=\"completion-lead\">", escapeHtml(copy), "</p>",
             reward ? "<p class=\"level-reward-pill\">+" + window.CapyCore.formatNumber(reward) + " XP</p>" : "",
+            buildStoryBeatMarkup(storyBeat),
+            buildStreakCelebrationMarkup(streakCelebration),
             buildOutfitDiscoveryShowcase(celebrationOutfits),
             "<div class=\"completion-actions is-three-actions\">",
             "<button class=\"scene-button ghost\" type=\"button\" data-retry-level>Repetir</button>",
@@ -793,7 +901,7 @@
             "<div class=\"completion-screen-copy\">",
             "<p class=\"panel-kicker\">Tiempo agotado</p>",
             "<h2>Game Over</h2>",
-            "<p class=\"completion-lead\">El intento terminó porque se agotó el tiempo del ejercicio. Puedes reiniciar el nivel o volver al mapa.</p>",
+            "<p class=\"completion-lead\">El intento terminÃ³ porque se agotÃ³ el tiempo del ejercicio. Puedes reiniciar el nivel o volver al mapa.</p>",
             "<div class=\"completion-actions\">",
             "<a class=\"scene-button ghost\" href=\"mapa.html\">Salir al mapa</a>",
             "<button class=\"scene-button primary\" type=\"button\" data-retry-level>Reiniciar nivel</button>",
@@ -885,73 +993,54 @@
         });
     }
 
-    function buildOutfitDiscoveryShowcase(outfits) {
-        if (!outfits.length) {
+    function getCelebrationOutfits(outcome) {
+        return getNewlyDiscoveredOutfits(outcome);
+    }
+
+    function getOutfitDiscoveryCopy(item) {
+        return item && item.unlockRouteName
+            ? "Ya puedes comprarlo en la tienda."
+            : "Ya esta disponible en la tienda.";
+    }
+
+    function buildStreakCelebrationMarkup(streakCelebration) {
+        if (!streakCelebration || !streakCelebration.show) {
             return "";
         }
 
         return [
-            "<div class=\"completion-unlock-showcase\">",
-            outfits.map(function (item) {
-                return [
-                    "<article class=\"unlock-reward-card\">",
-                    "<span class=\"unlock-reward-burst\" aria-hidden=\"true\"></span>",
-                    "<div class=\"unlock-reward-art\">",
-                    "<img src=\"", escapeAttribute(item.image), "\" alt=\"", escapeAttribute(item.name), "\">",
-                    "</div>",
-                    "<div class=\"unlock-reward-copy\">",
-                    "<p class=\"unlock-reward-kicker\">Personaje encontrado</p>",
-                    "<strong>", escapeHtml(item.name), "</strong>",
-                    "<span>", escapeHtml(item.unlockRouteName ? "Ya puedes comprarlo en la tienda." : "Ya estÃ¡ disponible en la tienda."), "</span>",
-                    "<span class=\"unlock-reward-cost\">Costo: XP ", window.CapyCore.formatNumber(item.cost || 0), "</span>",
-                    "</div>",
-                    "</article>"
-                ].join("");
-            }).join(""),
-            "</div>"
+            "<article class=\"streak-celebration-card\">",
+            "<div class=\"streak-celebration-icon\">",
+            "<img src=\"assets/hud-streak.svg\" alt=\"\">",
+            "</div>",
+            "<div class=\"streak-celebration-copy\">",
+            "<p class=\"unlock-reward-kicker\">Racha del dia</p>",
+            "<strong>", escapeHtml(streakCelebration.title || "Racha actualizada"), "</strong>",
+            "<span>", escapeHtml(streakCelebration.description || ""), "</span>",
+            "</div>",
+            "</article>"
         ].join("");
     }
 
-    function getCelebrationOutfits(outcome) {
-        const discoveredOutfits = getNewlyDiscoveredOutfits(outcome);
-        if (discoveredOutfits.length) {
-            return discoveredOutfits;
+    function buildStoryBeatMarkup(storyBeat) {
+        if (!storyBeat || !storyBeat.message) {
+            return "";
         }
 
-        if (!SHOW_ROUTE_OUTFIT_PREVIEW_ON_EVERY_LEVEL) {
-            return [];
-        }
-
-        const previewOutfit = getRoutePreviewOutfit();
-        return previewOutfit ? [previewOutfit] : [];
-    }
-
-    function getRoutePreviewOutfit() {
-        if (!level || !Number.isFinite(Number(level.routeId))) {
-            return null;
-        }
-
-        const previewOutfit = api.getOutfitsSync().find(function (item) {
-            return item && Number(item.unlockRouteId) === Number(level.routeId) && item.id && item.image;
-        });
-
-        if (!previewOutfit) {
-            return null;
-        }
-
-        return Object.assign({}, previewOutfit, {
-            isPreviewOnly: true
-        });
-    }
-
-    function getOutfitDiscoveryCopy(item) {
-        if (item && item.isPreviewOnly) {
-            return "Vista previa temporal del personaje de esta ruta.";
-        }
-
-        return item && item.unlockRouteName
-            ? "Ya puedes comprarlo en la tienda."
-            : "Ya esta disponible en la tienda.";
+        return [
+            "<article class=\"completion-story-card\">",
+            "<div class=\"completion-story-art\">",
+            storyBeat.characterImage
+                ? "<img src=\"" + escapeAttribute(storyBeat.characterImage) + "\" alt=\"" + escapeAttribute(storyBeat.characterName || "Guia de la ruta") + "\">"
+                : "<img src=\"assets/characters/Capythilda.webp\" alt=\"Capythilda\">",
+            "</div>",
+            "<div class=\"completion-story-copy\">",
+            "<p class=\"unlock-reward-kicker\">", escapeHtml(storyBeat.characterName || "Cronica del bosque"), "</p>",
+            "<strong>", escapeHtml(storyBeat.title || "Eco del sendero"), "</strong>",
+            "<span>", escapeHtml(storyBeat.message), "</span>",
+            "</div>",
+            "</article>"
+        ].join("");
     }
 
     function buildOutfitDiscoveryShowcase(outfits) {
@@ -1173,14 +1262,12 @@
 
     function createAudioSystem() {
         let context = null;
-        let musicOscillator = null;
-        let musicGain = null;
-        let musicInterval = 0;
-        let musicStep = 0;
+        let backgroundPlayer = null;
+        let musicStarted = false;
+        let shuffledTracks = [];
+        let activeTrackSrc = "";
         const volumeMultiplier = 5;
-        const musicTimeScale = 0.85;
-        const melody = [392, 440, 523.25, 587.33, 523.25, 440, 349.23, 392];
-        const harmony = [196, 220, 261.63, 293.66];
+        const backgroundVolume = 0.42;
 
         function ensureContext() {
             if (!context) {
@@ -1216,62 +1303,91 @@
             oscillator.stop(ctx.currentTime + duration);
         }
 
-        function playMusicNote(frequency, startDelay, duration, gainValue, type) {
-            const ctx = ensureContext();
-            if (!ctx || !musicGain) {
+        function createBackgroundPlayer() {
+            if (backgroundPlayer || !LEVEL_MUSIC_TRACKS.length) {
+                return backgroundPlayer;
+            }
+
+            backgroundPlayer = new Audio();
+            backgroundPlayer.preload = "metadata";
+            backgroundPlayer.volume = backgroundVolume;
+            backgroundPlayer.addEventListener("ended", playNextRandomTrack);
+            backgroundPlayer.addEventListener("error", playNextRandomTrack);
+            return backgroundPlayer;
+        }
+
+        function buildShuffledTracks() {
+            const pool = LEVEL_MUSIC_TRACKS.slice();
+
+            for (let index = pool.length - 1; index > 0; index -= 1) {
+                const randomIndex = Math.floor(Math.random() * (index + 1));
+                const temp = pool[index];
+                pool[index] = pool[randomIndex];
+                pool[randomIndex] = temp;
+            }
+
+            if (pool.length > 1 && pool[0].src === activeTrackSrc) {
+                pool.push(pool.shift());
+            }
+
+            return pool;
+        }
+
+        function playNextRandomTrack() {
+            if (!musicStarted || !LEVEL_MUSIC_TRACKS.length) {
                 return;
             }
 
-            const oscillator = ctx.createOscillator();
-            const gain = ctx.createGain();
-            const scaledDelay = startDelay * musicTimeScale;
-            const scaledDuration = duration * musicTimeScale;
-            const startAt = ctx.currentTime + scaledDelay;
-            oscillator.type = type || "sine";
-            oscillator.frequency.setValueAtTime(frequency, startAt);
-            gain.gain.setValueAtTime(0.001, startAt);
-            gain.gain.linearRampToValueAtTime(gainValue * volumeMultiplier, startAt + 0.04);
-            gain.gain.exponentialRampToValueAtTime(0.001, startAt + scaledDuration);
-            oscillator.connect(gain);
-            gain.connect(musicGain);
-            oscillator.start(startAt);
-            oscillator.stop(startAt + scaledDuration + 0.05);
-        }
+            if (!shuffledTracks.length) {
+                shuffledTracks = buildShuffledTracks();
+            }
 
-        function scheduleMusicPhrase() {
-            const melodyNote = melody[musicStep % melody.length];
-            const harmonyNote = harmony[Math.floor(musicStep / 2) % harmony.length];
+            const nextTrack = shuffledTracks.shift();
+            const player = createBackgroundPlayer();
+            if (!nextTrack || !player) {
+                return;
+            }
 
-            playMusicNote(harmonyNote, 0, 1.55, 0.075, "triangle");
-            playMusicNote(melodyNote, 0.02, 0.34, 0.105, "sine");
-            playMusicNote(melody[(musicStep + 2) % melody.length], 0.42, 0.32, 0.085, "sine");
-            playMusicNote(melody[(musicStep + 4) % melody.length], 0.82, 0.38, 0.07, "triangle");
-            musicStep += 1;
+            activeTrackSrc = nextTrack.src;
+            if (player.src !== new URL(nextTrack.src, window.location.href).href) {
+                player.src = nextTrack.src;
+            }
+
+            const playPromise = player.play();
+            if (playPromise && typeof playPromise.catch === "function") {
+                playPromise.catch(function () {
+                    // Ignore autoplay rejections; the next interaction retries playback.
+                });
+            }
         }
 
         function startMusic() {
-            const ctx = ensureContext();
-            if (!ctx || musicOscillator) {
+            ensureContext();
+            if (musicStarted) {
+                if (backgroundPlayer && backgroundPlayer.paused) {
+                    playNextRandomTrack();
+                }
                 return;
             }
 
-            musicOscillator = ctx.createOscillator();
-            musicGain = ctx.createGain();
-            const droneGain = ctx.createGain();
-            musicOscillator.type = "sine";
-            musicOscillator.frequency.value = 130.81;
-            droneGain.gain.value = 0.028 * volumeMultiplier;
-            musicGain.gain.value = 1.15;
-            musicOscillator.connect(droneGain);
-            droneGain.connect(musicGain);
-            musicGain.connect(ctx.destination);
-            musicOscillator.start();
-            scheduleMusicPhrase();
-            musicInterval = window.setInterval(scheduleMusicPhrase, 1600 * musicTimeScale);
+            musicStarted = true;
+            playNextRandomTrack();
+        }
+
+        function stopMusic() {
+            musicStarted = false;
+            shuffledTracks = [];
+            activeTrackSrc = "";
+
+            if (backgroundPlayer) {
+                backgroundPlayer.pause();
+                backgroundPlayer.currentTime = 0;
+            }
         }
 
         return {
             startMusic: startMusic,
+            stopMusic: stopMusic,
             playCorrect: function () {
                 playTone(660, 0.13, "sine", 0.14);
                 window.setTimeout(function () { playTone(880, 0.13, "sine", 0.12); }, 90);
@@ -1287,3 +1403,4 @@
         };
     }
 }());
+

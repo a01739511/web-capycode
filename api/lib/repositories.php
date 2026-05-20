@@ -1,5 +1,61 @@
 <?php
 
+function capy_username_min_length(): int
+{
+    return 3;
+}
+
+function capy_username_max_length(): int
+{
+    return 20;
+}
+
+function capy_password_min_length(): int
+{
+    return 8;
+}
+
+function capy_password_max_length(): int
+{
+    return 64;
+}
+
+function capy_string_length(string $value): int
+{
+    return function_exists('mb_strlen') ? mb_strlen($value) : strlen($value);
+}
+
+function capy_validate_username_or_fail(string $username): string
+{
+    $cleanUsername = trim($username);
+    $length = capy_string_length($cleanUsername);
+
+    if ($cleanUsername === '') {
+        throw new CapyHttpException(422, 'Escribe un nombre de usuario.');
+    }
+
+    if ($length < capy_username_min_length() || $length > capy_username_max_length()) {
+        throw new CapyHttpException(422, 'El usuario debe tener entre ' . capy_username_min_length() . ' y ' . capy_username_max_length() . ' caracteres.');
+    }
+
+    return $cleanUsername;
+}
+
+function capy_validate_password_or_fail(string $password): string
+{
+    $length = capy_string_length($password);
+
+    if ($password === '') {
+        throw new CapyHttpException(422, 'Escribe una contrasena.');
+    }
+
+    if ($length < capy_password_min_length() || $length > capy_password_max_length()) {
+        throw new CapyHttpException(422, 'La contrasena debe tener entre ' . capy_password_min_length() . ' y ' . capy_password_max_length() . ' caracteres.');
+    }
+
+    return $password;
+}
+
 function capy_find_user_by_id(PDO $pdo, int $userId): ?array
 {
     $statement = $pdo->prepare('SELECT * FROM ' . capy_table('users') . ' WHERE id = :id LIMIT 1');
@@ -355,6 +411,10 @@ function capy_map_level_row(array $row): array
         'href' => $row['href'],
         'x' => $row['anchor_x'],
         'y' => $row['anchor_y'],
+        'storyTitle' => $row['story_title'] ?? '',
+        'storyMessage' => $row['story_message'] ?? '',
+        'storyCharacterName' => $row['story_character_name'] ?? '',
+        'storyCharacterImage' => $row['story_character_image'] ?? '',
     ];
 }
 
@@ -553,12 +613,21 @@ function capy_complete_level(PDO $pdo, array $user, int $levelId, $answers, arra
     $gameCompleted = false;
     $badgeUnlocked = false;
     $newlyDiscoveredOutfits = [];
+    $streakCelebration = null;
+    $streakState = null;
+    $storyBeat = null;
 
     if (!$practice) {
         $reward = capy_xp_rewards()[$level['difficulty']] ?? 0;
         $nextLevelId = min($levelId + 1, $totalLevels + 1);
         $routeCompleted = (int) $level['routeOrder'] === (int) $config['levels_per_route'];
         $gameCompleted = $nextLevelId === $totalLevels + 1;
+        $storyBeat = [
+            'title' => (string) ($level['storyTitle'] ?? ''),
+            'message' => (string) ($level['storyMessage'] ?? ''),
+            'characterName' => (string) ($level['storyCharacterName'] ?? ''),
+            'characterImage' => (string) ($level['storyCharacterImage'] ?? ''),
+        ];
         $streakState = capy_next_streak_state($user, $config);
 
         $pdo->beginTransaction();
@@ -623,6 +692,8 @@ function capy_complete_level(PDO $pdo, array $user, int $levelId, $answers, arra
         'gameCompleted' => $gameCompleted,
         'badgeUnlocked' => $badgeUnlocked,
         'newlyDiscoveredOutfits' => $newlyDiscoveredOutfits,
+        'streakCelebration' => is_array($streakState) ? ($streakState['celebration'] ?? null) : $streakCelebration,
+        'storyBeat' => $storyBeat,
         'user' => capy_find_user_by_id($pdo, (int) $user['id']),
     ];
 }
@@ -646,6 +717,14 @@ function capy_next_streak_state(array $user, array $config): array
     return [
         'streak' => $streak,
         'lastCompletionAt' => $nowIso,
+        'celebration' => [
+            'show' => $lastKey !== $todayKey,
+            'streak' => $streak,
+            'title' => 'Racha activa x' . $streak,
+            'description' => $lastKey !== $todayKey
+                ? 'Tu primera actividad correcta de hoy quedo registrada.'
+                : '',
+        ],
     ];
 }
 

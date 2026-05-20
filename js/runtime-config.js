@@ -55,15 +55,6 @@
             ? existing.DATA_SOURCE
             : "backend",
         CANONICAL_APP_BASE_URL: canonicalAppBase,
-        CANONICAL_API_BASE_URL: canonicalApiBase,
-        UNLOCK_ALL_ROUTES_FOR_PREVIEW: existing.UNLOCK_ALL_ROUTES_FOR_PREVIEW !== undefined
-            ? existing.UNLOCK_ALL_ROUTES_FOR_PREVIEW
-            : false,
-        UNLOCK_ALL_LEVELS_FOR_PREVIEW: existing.UNLOCK_ALL_LEVELS_FOR_PREVIEW !== undefined
-            ? existing.UNLOCK_ALL_LEVELS_FOR_PREVIEW
-            : false,
-        SHOW_ROUTE_OUTFIT_PREVIEW_ON_EVERY_LEVEL: existing.SHOW_ROUTE_OUTFIT_PREVIEW_ON_EVERY_LEVEL !== undefined
-            ? existing.SHOW_ROUTE_OUTFIT_PREVIEW_ON_EVERY_LEVEL
-            : false
+        CANONICAL_API_BASE_URL: canonicalApiBase
     }, existing);
 }());

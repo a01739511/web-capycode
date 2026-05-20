@@ -143,10 +143,10 @@
             element.innerHTML = [
                 "<a class=\"sidebar-skin-link\" data-interactive-tilt=\"sidebar-card\" href=\"perfil.html#profile-collection-section\">",
                 "<p class=\"panel-kicker\">Vestuario activo</p>",
-                "<div class=\"sidebar-skin-art\"><img src=\"", escapeAttribute(equipped.image), "\" alt=\"", escapeAttribute(equipped.name), "\"></div>",
+                "<div class=\"sidebar-skin-art\"><img src=\"", escapeAttribute(equipped.transparentImage || equipped.image), "\" alt=\"", escapeAttribute(equipped.name), "\"></div>",
                 "<div class=\"sidebar-skin-copy\">",
-                "<strong>", escapeHtml(equipped.name), "</strong>",
-                "<span>", escapeHtml(equipped.tagline), "</span>",
+                "<strong>", escapeHtml(profile.username || "Aprendiz"), "</strong>",
+                "<span>", escapeHtml(equipped.name), "</span>",
                 "</div>",
                 "</a>"
             ].join("");

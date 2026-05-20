@@ -194,6 +194,13 @@
             if (isUnlocked(item.id, profile)) {
                 await api.equipOutfit(item.id);
             } else {
+                const confirmed = window.confirm(
+                    "Vas a comprar " + item.name + " por " + getPriceLabel(item.cost) + ".\n\nEsta accion gastara tu XP actual."
+                );
+                if (!confirmed) {
+                    showStoreMessage("Compra cancelada.");
+                    return;
+                }
                 await api.unlockOutfit(item.id);
             }
 

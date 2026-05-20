@@ -11,6 +11,8 @@ function capy_route_definitions(): array
             'orb_image' => 'assets/world/orbs/route-01-algoritmo-antiguo-orb.webp',
             'content' => 'Secuencia, selección, repetición y razonamiento algorítmico.',
             'badge_image' => 'assets/badges/badge-route-1.svg',
+            'story_character_name' => 'CapyBlack',
+            'story_character_image' => 'assets/characters/no_bg/Capy_Black.webp',
         ],
         [
             'id' => 2,
@@ -20,6 +22,8 @@ function capy_route_definitions(): array
             'orb_image' => 'assets/world/orbs/route-02-alquimista-de-tipos-orb.webp',
             'content' => 'Tipos primitivos, conversiones y lectura de valores.',
             'badge_image' => 'assets/badges/badge-route-2.svg',
+            'story_character_name' => 'CapyRuna',
+            'story_character_image' => 'assets/characters/no_bg/Capy_Runa.webp',
         ],
         [
             'id' => 3,
@@ -29,6 +33,8 @@ function capy_route_definitions(): array
             'orb_image' => 'assets/world/orbs/route-03-expresiones-orb.webp',
             'content' => 'Operadores aritméticos, relacionales y lógicos.',
             'badge_image' => 'assets/badges/badge-route-3.svg',
+            'story_character_name' => 'CapyAqua',
+            'story_character_image' => 'assets/characters/no_bg/Capy_Aqua..webp',
         ],
         [
             'id' => 4,
@@ -38,6 +44,8 @@ function capy_route_definitions(): array
             'orb_image' => 'assets/world/orbs/route-04-condicionales-orb.webp',
             'content' => 'Decisiones con if, else y combinaciones de condiciones.',
             'badge_image' => 'assets/badges/badge-route-4.svg',
+            'story_character_name' => 'CapyConstelation',
+            'story_character_image' => 'assets/characters/no_bg/Capy_Constelation.webp',
         ],
         [
             'id' => 5,
@@ -47,6 +55,8 @@ function capy_route_definitions(): array
             'orb_image' => 'assets/world/orbs/route-05-ciclos-orb.webp',
             'content' => 'Repetición controlada con for, while, break y continue.',
             'badge_image' => 'assets/badges/badge-route-5.svg',
+            'story_character_name' => 'CapyEarth',
+            'story_character_image' => 'assets/characters/no_bg/Capy_Earth.webp',
         ],
         [
             'id' => 6,
@@ -56,6 +66,8 @@ function capy_route_definitions(): array
             'orb_image' => 'assets/world/orbs/route-06-funciones-orb.webp',
             'content' => 'Funciones, parámetros, retorno y reutilización.',
             'badge_image' => 'assets/badges/badge-route-6.svg',
+            'story_character_name' => 'CapyKing',
+            'story_character_image' => 'assets/characters/no_bg/Capy_King.webp',
         ],
         [
             'id' => 7,
@@ -65,6 +77,8 @@ function capy_route_definitions(): array
             'orb_image' => 'assets/world/orbs/route-07-estructuras-de-datos-orb.webp',
             'content' => 'Listas, colecciones y operaciones sobre datos agrupados.',
             'badge_image' => 'assets/badges/badge-route-7.svg',
+            'story_character_name' => 'CapySun',
+            'story_character_image' => 'assets/characters/no_bg/Capy_Sun.webp',
         ],
         [
             'id' => 8,
@@ -74,6 +88,86 @@ function capy_route_definitions(): array
             'orb_image' => 'assets/world/orbs/route-08-archivos-de-texto-plano-orb.webp',
             'content' => 'Lectura, escritura y procesamiento de archivos simples.',
             'badge_image' => 'assets/badges/badge-route-8.svg',
+            'story_character_name' => 'CapyCandy',
+            'story_character_image' => 'assets/characters/no_bg/Capy_Candy.webp',
+        ],
+    ];
+}
+
+function capy_story_messages(): array
+{
+    return [
+        'algoritmos' => [
+            'CapyBlack te muestra un sendero de piedras antiguas: cada paso importa, y el bosque solo responde cuando el orden del viaje es claro.',
+            'La neblina se aparta cuando sigues una secuencia sin dudar; por primera vez, el bosque parece obedecer tu ritmo.',
+            'Una puerta de tinta viva se abre apenas lo justo: CapyBlack sonríe al ver que ya distingues cuándo avanzar y cuándo esperar.',
+            'Los libros flotantes cambian de lugar, pero tú ya reconoces los patrones. El caos empieza a parecer una coreografía secreta.',
+            'Las luciérnagas del archivo antiguo giran en rondas precisas. Cada repetición las vuelve menos salvajes y más tuyas.',
+            'CapyBlack guarda silencio mientras observas el mapa entero. Ya no resuelves pasos sueltos: empiezas a leer la intención del camino.',
+            'Al final del grimorio, una ruta dormida se ilumina. El bosque acepta que ya puedes sostener un hechizo completo sin perderte.',
+        ],
+        'tipos_de_datos' => [
+            'CapyRuna destapa frascos brillantes y te advierte: no toda esencia puede ocupar cualquier recipiente.',
+            'Los cristales del laboratorio reaccionan distinto a cada forma. Comprendes que nombrar algo bien también es una forma de protegerlo.',
+            'Una mezcla inestable chisporrotea frente a ti; CapyRuna te enseña a cambiar su naturaleza sin romper su memoria.',
+            'Las burbujas del caldero forman símbolos distintos según lo que contienen. Por fin lees esas diferencias como un alquimista.',
+            'Un elixir se espesa demasiado y luego se aclara. Convertirlo sin perder su propósito se vuelve parte de tu oficio.',
+            'CapyRuna te deja trabajar a solas por unos segundos. El laboratorio ya no parece extraño: responde a tu criterio.',
+            'Las estanterías de cristal reflejan frascos, números y nombres en perfecta armonía. La caverna reconoce que ya sabes darles forma.',
+        ],
+        'expresiones' => [
+            'CapyAqua hace flotar runas sobre un estanque. Cada símbolo altera la corriente como si el agua entendiera tus decisiones.',
+            'Una chispa rebota entre dos pilares y descubres que comparar también transforma: no todo hechizo busca cantidad, algunos buscan verdad.',
+            'Las ondas del santuario cambian de color cuando unes condiciones. El altar ya no responde al azar, sino a tus vínculos invisibles.',
+            'CapyAqua deja caer una gota sobre la piedra y tú ves cómo una sola operación puede inclinar todo el ritual.',
+            'Las runas más intensas exigen precisión. Una resta fuera de lugar y la marea cambia, pero ya empiezas a sentir el equilibrio.',
+            'El agua del altar refleja relaciones que antes parecían ocultas. Lo que comparas revela tanto como lo que calculas.',
+            'Un círculo de símbolos se cierra sobre sí mismo y el santuario se aquieta. Ahora las expresiones suenan a lenguaje, no a ruido.',
+        ],
+        'condicionales' => [
+            'CapyConstelation te espera ante puertas gemelas. Ninguna se abre por fuerza: solo ceden cuando eliges con intención.',
+            'Una torre viva cambia de forma frente a ti. Descubres que cada respuesta crea un mundo distinto y descarta otros.',
+            'Las estrellas del techo parpadean en secuencia cuando eliges entre varios caminos. Ya no dudas tanto antes de decidir.',
+            'CapyConstelation te observa desde la sombra correcta. Aprendes que una condición bien puesta evita perderte en puertas falsas.',
+            'La torre te obliga a pensar antes de actuar. Cada ramificación tiene un precio, y tú ya sabes leerlo.',
+            'Los pasillos cambian cuando pronuncias el criterio exacto. Elegir deja de ser un impulso y se vuelve una estrategia.',
+            'La última cámara solo responde a quien puede juzgar sin titubeos. Al salir, las puertas se alinean detrás de ti como un juramento.',
+        ],
+        'ciclos' => [
+            'CapyEarth marca un ritmo con su bastón. En este círculo, repetir no es estancarse: es aprender a sostener el pulso.',
+            'Las piedras antiguas giran bajo tus pies y comprendes que algunos caminos se dominan solo al insistir con calma.',
+            'Una vuelta más, otra más, hasta que el eco de tus pasos se vuelve familiar. CapyEarth asiente cuando reconoces el momento de romper.',
+            'La espiral encantada quiere arrastrarte para siempre, pero tú ya sabes omitir lo que distrae sin salirte del camino.',
+            'Los anillos del claro responden mejor a cada repetición. Lo que antes parecía cansancio ahora parece disciplina.',
+            'CapyEarth te deja avanzar sin guía. Sabes continuar cuando conviene y detenerte cuando el bosque ya entregó lo necesario.',
+            'En el centro del círculo, el suelo deja de girar. Has demostrado que puedes repetir sin perder el propósito de la travesía.',
+        ],
+        'funciones' => [
+            'CapyKing abre el taller como si levantara un telón. Aquí cada hechizo puede volver a llamarse cuando la historia lo necesita.',
+            'Las herramientas encantadas repiten formas con elegancia. Descubres que una buena forja permite reutilizar la misma chispa muchas veces.',
+            'CapyKing insiste en que todo hechizo debe saber qué recibe y qué devuelve. La forja premia la claridad.',
+            'Una pieza incompleta queda suspendida en el aire hasta que decides qué debe retornar. Entonces cae en su sitio exacto.',
+            'Reusar un encantamiento deja de parecer trampa y empieza a sentirse como artesanía refinada.',
+            'El taller resuena con ecos de tus propias creaciones. Ya no copias rituales: empiezas a diseñarlos.',
+            'Cuando la última pieza encaja, CapyKing inclina la corona. Has probado que puedes construir magia reutilizable, no solo improvisarla.',
+        ],
+        'estructuras_de_datos' => [
+            'CapySun te recibe entre estantes vivientes. Las listas se mueven como constelaciones pequeñas buscando una mano firme.',
+            'Un conjunto de criaturas de papel se ordena al tocarlas. Comprendes que guardar muchas cosas también exige un mapa.',
+            'CapySun señala serpientes de palabras que se enrollan unas dentro de otras. Ya no te intimidan las colecciones complejas.',
+            'La biblioteca cambia cuando accedes al lugar exacto. Cada índice correcto enciende una lámpara distinta.',
+            'Las estanterías susurran nombres, grupos y subgrupos. Lo importante ya no es solo guardar, sino saber cómo volver a encontrar.',
+            'CapySun te deja reorganizar una sala completa. El desorden empieza a obedecer una estructura visible para ti.',
+            'Desde el balcón más alto ves la biblioteca como una red luminosa. Has aprendido a moverte dentro de muchas piezas sin perderte.',
+        ],
+        'archivos_de_texto_plano' => [
+            'CapyCandy te guía bajo tierra hasta un archivo que respira polvo y memoria. Aquí nada quiere olvidarse.',
+            'Los pergaminos flotan alrededor de tu lámpara. Aprendes que leer también es escuchar lo que el pasado quiso conservar.',
+            'Una bóveda se abre apenas cuando dejas una marca nueva. Escribir en el archivo se siente como conversar con generaciones antiguas.',
+            'CapyCandy ordena cintas y etiquetas mientras tú distingues entre añadir, reemplazar y preservar. La memoria tiene reglas.',
+            'Cada línea guardada parece una voz distinta. Empiezas a notar que un archivo no solo contiene datos, también conserva intenciones.',
+            'El archivo perdido deja de parecer ruina y empieza a sentirse como un taller de memoria. Ya puedes tocarlo sin romperlo.',
+            'En la cámara final, varios registros se unen en un mismo relato. CapyCandy sonríe: ahora sabes leer, guardar y reconstruir historia.',
         ],
     ];
 }
@@ -268,6 +362,10 @@ function capy_build_levels(array $config): array
                 'href' => 'nivel.html?levelId=' . $globalId,
                 'anchor_x' => $anchor['x'],
                 'anchor_y' => $anchor['y'],
+                'story_title' => 'Eco del nivel ' . $routeOrder,
+                'story_message' => capy_build_level_story($route, $routeOrder),
+                'story_character_name' => $route['story_character_name'] ?? '',
+                'story_character_image' => $route['story_character_image'] ?? '',
             ];
         }
     }
@@ -283,6 +381,13 @@ function capy_build_level_content(array $route, string $difficulty): string
 
     $labels = capy_difficulty_labels();
     return $route['content'] . ' Enfoque ' . strtolower($labels[$difficulty]) . '.';
+}
+
+function capy_build_level_story(array $route, int $routeOrder): string
+{
+    $messages = capy_story_messages();
+    $routeMessages = $messages[$route['key']] ?? [];
+    return $routeMessages[$routeOrder - 1] ?? ('Una nueva parte del sendero se revela en ' . $route['name'] . '.');
 }
 
 function capy_load_question_datasets(string $projectRoot): array
