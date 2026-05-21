@@ -277,7 +277,7 @@
         {
             id: "Capibara",
             name: "Capibara",
-            description: "La companera base de la aventura CapyCode.",
+            description: "La compañera base de la aventura CapyCode.",
             tagline: "Esencia capibara",
             image: "assets/characters/Capibara.webp"
         },
@@ -849,11 +849,11 @@
         const cleanPassword = String(password || "");
 
         if (!cleanPassword) {
-            throw new Error("Escribe una contrasena.");
+            throw new Error("Escribe una contraseña.");
         }
 
         if (cleanPassword.length < PASSWORD_MIN_LENGTH || cleanPassword.length > PASSWORD_MAX_LENGTH) {
-            throw new Error("La contrasena debe tener entre " + PASSWORD_MIN_LENGTH + " y " + PASSWORD_MAX_LENGTH + " caracteres.");
+            throw new Error("La contraseña debe tener entre " + PASSWORD_MIN_LENGTH + " y " + PASSWORD_MAX_LENGTH + " caracteres.");
         }
 
         return cleanPassword;
@@ -897,11 +897,11 @@
         const user = users[key];
 
         if (!cleanUsername || !password) {
-            throw new Error("Completa usuario y contrasena.");
+            throw new Error("Completa usuario y contraseña.");
         }
 
         if (!user || !user.passwordMock || user.passwordMock !== password) {
-            throw new Error("Usuario o contrasena incorrectos.");
+            throw new Error("Usuario o contraseña incorrectos.");
         }
 
         users[key] = normalizeUser(user, cleanUsername);
@@ -944,7 +944,7 @@
         const record = getUserRecordBySession();
 
         if (!record) {
-            throw new Error("Inicia sesion para cambiar usuario.");
+            throw new Error("Inicia sesión para cambiar usuario.");
         }
 
         const nextKey = normalizeUsernameKey(cleanUsername);
@@ -974,12 +974,12 @@
 
         const record = getUserRecordBySession();
         if (!record) {
-            throw new Error("Inicia sesion para cambiar contrasena.");
+            throw new Error("Inicia sesión para cambiar contraseña.");
         }
 
         validatePassword(currentPassword);
         if (record.user.passwordMock && record.user.passwordMock !== currentPassword) {
-            throw new Error("La contrasena actual no coincide.");
+            throw new Error("La contraseña actual no coincide.");
         }
 
         record.user.passwordMock = validatePassword(newPassword);
@@ -1275,7 +1275,7 @@
 
     function getOutfitUnlockMessage(outfit) {
         if (!outfit || !outfit.unlockRouteId) {
-            return "Este vestuario todavÃ­a no estÃ¡ disponible.";
+            return "Este vestuario todavía no está disponible.";
         }
 
         const route = getRouteByIdSync(outfit.unlockRouteId);

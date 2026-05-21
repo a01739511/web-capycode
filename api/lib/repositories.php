@@ -46,11 +46,11 @@ function capy_validate_password_or_fail(string $password): string
     $length = capy_string_length($password);
 
     if ($password === '') {
-        throw new CapyHttpException(422, 'Escribe una contrasena.');
+        throw new CapyHttpException(422, 'Escribe una contraseña.');
     }
 
     if ($length < capy_password_min_length() || $length > capy_password_max_length()) {
-        throw new CapyHttpException(422, 'La contrasena debe tener entre ' . capy_password_min_length() . ' y ' . capy_password_max_length() . ' caracteres.');
+        throw new CapyHttpException(422, 'La contraseña debe tener entre ' . capy_password_min_length() . ' y ' . capy_password_max_length() . ' caracteres.');
     }
 
     return $password;
@@ -508,7 +508,7 @@ function capy_unlock_outfit(PDO $pdo, array $user, array $outfit, array $config)
             throw new CapyHttpException(422, 'Completa la ruta ' . (int) $outfit['unlockRouteId'] . ' para habilitar este vestuario.');
         }
 
-        throw new CapyHttpException(422, 'Este vestuario todavÃ­a no estÃ¡ disponible.');
+        throw new CapyHttpException(422, 'Este vestuario todavía no está disponible.');
     }
 
     if (in_array($outfit['id'], $unlockedIds, true)) {

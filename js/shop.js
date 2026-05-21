@@ -4,6 +4,7 @@
     const modalContentRoot = document.getElementById("shop-modal-content");
     const api = window.CapyApi;
     const LOCK_ICON_PATH = "assets/shop-lock-icon.svg";
+    const uiAudio = createShopAudioSystem();
     let activeItemId = "";
 
     if (!gridRoot || !modalRoot || !modalContentRoot || !api || !window.CapyCore) {
@@ -193,20 +194,22 @@
 
             if (isUnlocked(item.id, profile)) {
                 await api.equipOutfit(item.id);
+                uiAudio.playEquip();
             } else {
                 const confirmed = window.confirm(
-                    "Vas a comprar " + item.name + " por " + getPriceLabel(item.cost) + ".\n\nEsta accion gastara tu XP actual."
+                    "Vas a comprar " + item.name + " por " + getPriceLabel(item.cost) + ".\n\nEsta acción gastará tu XP actual."
                 );
                 if (!confirmed) {
                     showStoreMessage("Compra cancelada.");
                     return;
                 }
                 await api.unlockOutfit(item.id);
+                uiAudio.playPurchase();
             }
 
             renderStore();
         } catch (error) {
-            showStoreMessage(error.message || "No se pudo completar la accion.");
+            showStoreMessage(error.message || "No se pudo completar la acción.");
         }
     }
 
@@ -322,12 +325,12 @@
 
         if (state.blockedByRoute) {
             return state.unlockRouteLabel
-                ? "Completa " + state.unlockRouteLabel + " para habilitarlo en la tienda. Despues aun deberas pagar su costo en XP."
-                : "Todavia no has encontrado este vestuario dentro del recorrido.";
+                ? "Completa " + state.unlockRouteLabel + " para habilitarlo en la tienda. Después aún deberás pagar su costo en XP."
+                : "Todavía no has encontrado este vestuario dentro del recorrido.";
         }
 
         if (state.affordable) {
-            return "Tienes XP suficiente para desbloquearlo. No se equipara automaticamente.";
+            return "Tienes XP suficiente para desbloquearlo. No se equipará automáticamente.";
         }
 
         return "Te faltan XP " + window.CapyCore.formatNumber(state.lockedPoints) + " para comprar este vestuario.";
@@ -372,7 +375,7 @@
         const unlockRouteLabel = getUnlockRouteLabel(item);
         return unlockRouteLabel
             ? "Completa " + unlockRouteLabel + " para habilitar este vestuario."
-            : "Este vestuario todavia no esta disponible.";
+            : "Este vestuario todavía no está disponible.";
     }
 
     function showStoreMessage(text) {
@@ -393,4 +396,56 @@
     function escapeAttribute(value) {
         return window.CapyCore.escapeAttribute(value);
     }
+    function createShopAudioSystem() {
+        let context = null;
+
+        function ensureContext() {
+            if (!context) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) {
+                    return null;
+                }
+                context = new AudioContext();
+            }
+
+            if (context.state === "suspended") {
+                context.resume();
+            }
+
+            return context;
+        }
+
+        function playTone(frequency, duration, type, gainValue, delayMs) {
+            const ctx = ensureContext();
+            if (!ctx) {
+                return;
+            }
+
+            window.setTimeout(function () {
+                const oscillator = ctx.createOscillator();
+                const gain = ctx.createGain();
+                oscillator.type = type || "sine";
+                oscillator.frequency.value = frequency;
+                gain.gain.setValueAtTime((gainValue || 0.08) * 5, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+                oscillator.connect(gain);
+                gain.connect(ctx.destination);
+                oscillator.start();
+                oscillator.stop(ctx.currentTime + duration);
+            }, delayMs || 0);
+        }
+
+        return {
+            playPurchase: function () {
+                playTone(392, 0.12, "triangle", 0.08, 0);
+                playTone(523, 0.14, "triangle", 0.08, 90);
+                playTone(659, 0.18, "sine", 0.09, 180);
+            },
+            playEquip: function () {
+                playTone(523, 0.1, "sine", 0.07, 0);
+                playTone(659, 0.16, "sine", 0.08, 80);
+            }
+        };
+    }
 }());
+

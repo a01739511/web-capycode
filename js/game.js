@@ -1,4 +1,4 @@
-﻿(function () {
+(function () {
     const app = document.querySelector("[data-level-runner=\"true\"]");
     const api = window.CapyApi;
     const PYTHON_KEYWORDS = new Set([
@@ -155,7 +155,7 @@
             route ? route.name : "Ruta",
             " - ",
             level.name,
-            isPractice ? " (PrÃ¡ctica)" : ""
+            isPractice ? " (Práctica)" : ""
         ].join("");
     }
 
@@ -287,7 +287,7 @@
         input.className = "magic-input";
         input.type = "number";
         input.inputMode = "decimal";
-        input.placeholder = "Respuesta numÃ©rica";
+        input.placeholder = "Respuesta numérica";
         input.addEventListener("input", function () {
             state.numericValue = input.value;
         });
@@ -331,16 +331,16 @@
             "<article class=\"sortable-panel\">",
             "<div class=\"sortable-panel-head\">",
             "<p class=\"panel-kicker\">Bloques disponibles</p>",
-            "<p>Arrastra cada linea desde aqui.</p>",
+            "<p>Arrastra cada línea desde aquí.</p>",
             "</div>",
             "<div class=\"sortable-list\" id=\"sortable-bank\" data-order-zone=\"bank\" aria-label=\"Bloques disponibles\"></div>",
             "</article>",
             "<article class=\"sortable-panel is-builder\">",
             "<div class=\"sortable-panel-head\">",
-            "<p class=\"panel-kicker\">Area de construccion</p>",
-            "<p>Forma el codigo correcto aqui.</p>",
+            "<p class=\"panel-kicker\">Área de construcción</p>",
+            "<p>Forma el código correcto aquí.</p>",
             "</div>",
-            "<div class=\"sortable-list is-builder\" id=\"sortable-build\" data-order-zone=\"build\" aria-label=\"Area de construccion\"></div>",
+            "<div class=\"sortable-list is-builder\" id=\"sortable-build\" data-order-zone=\"build\" aria-label=\"Área de construcción\"></div>",
             "</article>"
         ].join("");
         elements.questionContent.appendChild(layout);
@@ -777,7 +777,6 @@
             if (state.remainingSeconds <= 0) {
                 stopTimer();
                 state.locked = true;
-                audio.playIncorrect();
                 showGameOverOverlay();
             }
         }, 1000);
@@ -806,7 +805,7 @@
     function renderLockedState() {
         stopTimer();
         elements.missionLabel.textContent = "Nivel bloqueado";
-        elements.questionTitle.textContent = "Este nivel aÃºn no estÃ¡ disponible";
+        elements.questionTitle.textContent = "Este nivel aún no está disponible";
         elements.questionContent.innerHTML = [
             "<div class=\"completion-card\">",
             "<p>Completa primero el nivel actual para desbloquearlo.</p>",
@@ -846,31 +845,36 @@
         const storyBeat = outcome && outcome.storyBeat;
         const title = outcome && outcome.gameCompleted
             ? "Juego completado"
-            : (outcome && outcome.routeCompleted ? "Ruta completada" : (practice ? "PrÃ¡ctica completada" : "Nivel completado"));
+            : (outcome && outcome.routeCompleted ? "Ruta completada" : (practice ? "Práctica completada" : "Nivel completado"));
         const copy = outcome && outcome.gameCompleted
-            ? "Terminaste todos los niveles disponibles. Desde ahora puedes repetirlos como prÃ¡ctica."
-            : (outcome && outcome.routeCompleted ? "Se desbloqueÃ³ la siguiente ruta. Puedes continuar desde el mapa." : (practice ? "Este intento fue de prÃ¡ctica, por eso no modifica XP ni racha." : "Ganaste XP y avanzaste al siguiente nivel."));
+            ? "Terminaste todos los niveles disponibles. Desde ahora puedes repetirlos como práctica."
+            : (outcome && outcome.routeCompleted ? "Se desbloqueó la siguiente ruta. Puedes continuar desde el mapa." : (practice ? "Este intento fue de práctica, por eso no modifica XP ni racha." : "Ganaste XP y avanzaste al siguiente nivel."));
+        const hasStoryBeat = Boolean(storyBeat && storyBeat.message);
+        const leadMarkup = buildCompletionLeadMarkup({
+            practice: practice,
+            outcome: outcome,
+            copy: copy
+        });
 
         const overlay = document.createElement("div");
         overlay.className = "completion-overlay";
         overlay.innerHTML = [
             "<span class=\"completion-spotlight\" aria-hidden=\"true\"></span>",
             buildCompletionRadiance(),
-            "<section class=\"completion-screen", practice ? " is-practice" : "", "\" role=\"dialog\" aria-modal=\"true\">",
+            "<section class=\"completion-screen", practice ? " is-practice" : "", hasStoryBeat ? " has-story-beat" : "", "\" role=\"dialog\" aria-modal=\"true\">",
             buildConfetti(),
             storyBeat && storyBeat.message ? "" : "<div class=\"completion-screen-art\"><img src=\"assets/characters/Capythilda.webp\" alt=\"Capythilda\"></div>",
             "<div class=\"completion-screen-copy\">",
-            "<p class=\"panel-kicker\">", practice ? "PrÃ¡ctica" : "Progreso guardado", "</p>",
+            "<p class=\"panel-kicker\">", practice ? "Práctica" : "Progreso guardado", "</p>",
             "<h2>", escapeHtml(title), "</h2>",
-            "<p class=\"completion-lead\">", escapeHtml(copy), "</p>",
             reward ? "<p class=\"level-reward-pill\">+" + window.CapyCore.formatNumber(reward) + " XP</p>" : "",
+            leadMarkup,
             buildStoryBeatMarkup(storyBeat),
             buildStreakCelebrationMarkup(streakCelebration),
             buildOutfitDiscoveryShowcase(celebrationOutfits),
-            "<div class=\"completion-actions is-three-actions\">",
-            "<button class=\"scene-button ghost\" type=\"button\" data-retry-level>Repetir</button>",
-            "<a class=\"scene-button primary\" href=\"mapa.html\">Volver al mapa</a>",
-            "<a class=\"scene-button primary\" href=\"", escapeAttribute(nextHref), "\">Siguiente</a>",
+            "<div class=\"completion-actions is-two-actions\">",
+            "<a class=\"scene-button completion-map-button\" href=\"mapa.html\">Volver al mapa</a>",
+            "<a class=\"scene-button completion-next-button\" href=\"", escapeAttribute(nextHref), "\">Siguiente</a>",
             "</div>",
             "</div>",
             "</section>"
@@ -878,11 +882,10 @@
 
         document.body.appendChild(overlay);
         document.body.classList.add("quiz-complete");
-        overlay.querySelector("[data-retry-level]").addEventListener("click", function () {
-            document.body.classList.remove("quiz-complete");
-            overlay.remove();
-            startAttempt("manual");
-        });
+        if (celebrationOutfits.length) {
+            audio.playUnlock();
+        }
+        bindRetryButtons(overlay);
     }
 
     function showGameOverOverlay() {
@@ -901,7 +904,7 @@
             "<div class=\"completion-screen-copy\">",
             "<p class=\"panel-kicker\">Tiempo agotado</p>",
             "<h2>Game Over</h2>",
-            "<p class=\"completion-lead\">El intento terminÃ³ porque se agotÃ³ el tiempo del ejercicio. Puedes reiniciar el nivel o volver al mapa.</p>",
+            "<p class=\"completion-lead\">El intento terminó porque se agotó el tiempo del ejercicio. Puedes reiniciar el nivel o volver al mapa.</p>",
             "<div class=\"completion-actions\">",
             "<a class=\"scene-button ghost\" href=\"mapa.html\">Salir al mapa</a>",
             "<button class=\"scene-button primary\" type=\"button\" data-retry-level>Reiniciar nivel</button>",
@@ -912,11 +915,8 @@
 
         document.body.appendChild(overlay);
         document.body.classList.add("quiz-complete");
-        overlay.querySelector("[data-retry-level]").addEventListener("click", function () {
-            document.body.classList.remove("quiz-complete");
-            overlay.remove();
-            startAttempt("manual");
-        });
+        audio.playGameOver();
+        bindRetryButtons(overlay);
     }
 
     function getNextLevelHref(outcome) {
@@ -1014,7 +1014,7 @@
             "<img src=\"assets/hud-streak.svg\" alt=\"\">",
             "</div>",
             "<div class=\"streak-celebration-copy\">",
-            "<p class=\"unlock-reward-kicker\">Racha del dia</p>",
+            "<p class=\"unlock-reward-kicker\">Racha del día</p>",
             "<strong>", escapeHtml(streakCelebration.title || "Racha actualizada"), "</strong>",
             "<span>", escapeHtml(streakCelebration.description || ""), "</span>",
             "</div>",
@@ -1031,12 +1031,10 @@
             "<article class=\"completion-story-card\">",
             "<div class=\"completion-story-art\">",
             storyBeat.characterImage
-                ? "<img src=\"" + escapeAttribute(storyBeat.characterImage) + "\" alt=\"" + escapeAttribute(storyBeat.characterName || "Guia de la ruta") + "\">"
+                ? "<img src=\"" + escapeAttribute(storyBeat.characterImage) + "\" alt=\"" + escapeAttribute(storyBeat.characterName || "Guía de la ruta") + "\">"
                 : "<img src=\"assets/characters/Capythilda.webp\" alt=\"Capythilda\">",
             "</div>",
             "<div class=\"completion-story-copy\">",
-            "<p class=\"unlock-reward-kicker\">", escapeHtml(storyBeat.characterName || "Cronica del bosque"), "</p>",
-            "<strong>", escapeHtml(storyBeat.title || "Eco del sendero"), "</strong>",
             "<span>", escapeHtml(storyBeat.message), "</span>",
             "</div>",
             "</article>"
@@ -1137,10 +1135,50 @@
                 value ? " is-filled" : " is-empty",
                 isActive ? " is-active" : "",
                 "\" type=\"button\" data-blank-key=\"", escapeAttribute(key), "\">",
-                value ? escapeHtml(value) : escapeHtml(key),
+                value ? escapeHtml(value) : escapeHtml(getBlankPlaceholderLabel(key)),
                 "</button>"
             ].join("");
         }).join("");
+    }
+
+    function getBlankPlaceholderLabel(key) {
+        return "";
+    }
+
+    function buildRetryActionMarkup(label) {
+        return [
+            "<button class=\"scene-button ghost icon-only-action\" type=\"button\" data-retry-level aria-label=\"", escapeAttribute(label), "\" title=\"", escapeAttribute(label), "\">",
+            "<img src=\"assets/icons/retry-level.svg\" alt=\"\" aria-hidden=\"true\">",
+            "<span class=\"sr-only\">", escapeHtml(label), "</span>",
+            "</button>"
+        ].join("");
+    }
+
+    function buildCompletionLeadMarkup(context) {
+        const practice = Boolean(context && context.practice);
+        const outcome = context && context.outcome;
+        const copy = String((context && context.copy) || "");
+        const needsRetryIcon = !practice && !(outcome && outcome.routeCompleted) && !(outcome && outcome.gameCompleted);
+
+        if (needsRetryIcon) {
+            return [
+                "<div class=\"completion-inline-retry\">",
+                buildRetryActionMarkup("Repetir nivel"),
+                "</div>"
+            ].join("");
+        }
+
+        return "<p class=\"completion-lead\">" + escapeHtml(copy) + "</p>";
+    }
+
+    function bindRetryButtons(overlay) {
+        overlay.querySelectorAll("[data-retry-level]").forEach(function (button) {
+            button.addEventListener("click", function () {
+                document.body.classList.remove("quiz-complete");
+                overlay.remove();
+                startAttempt("manual");
+            });
+        });
     }
 
     function createCodeStage(lines) {
@@ -1162,56 +1200,57 @@
     }
 
     function highlightPython(line) {
-        const escaped = escapeHtml(line);
-        const tokens = escaped.match(/(&quot;.*?&quot;|&#039;.*?&#039;|#[^\n]*|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|==|!=|<=|>=|[-+*/%=<>()[\]{},.:]|[^\sA-Za-z0-9_]+)/g);
+        const source = String(line === undefined || line === null ? "" : line);
+        const tokens = source.match(/(".*?"|'.*?'|#[^\n]*|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|==|!=|<=|>=|[-+*/%=<>()[\]{},.:]|[^\sA-Za-z0-9_]+)/g);
 
         if (!tokens) {
-            return escaped;
+            return escapeHtml(source);
         }
 
         let output = "";
         let cursor = 0;
 
         tokens.forEach(function (token) {
-            const index = escaped.indexOf(token, cursor);
+            const index = source.indexOf(token, cursor);
             if (index > cursor) {
-                output += escaped.slice(cursor, index);
+                output += escapeHtml(source.slice(cursor, index));
             }
 
             output += wrapToken(token);
             cursor = index + token.length;
         });
 
-        output += escaped.slice(cursor);
+        output += escapeHtml(source.slice(cursor));
         return output;
     }
 
     function wrapToken(token) {
+        const safeToken = escapeHtml(token);
         if (/^#/.test(token)) {
-            return "<span class=\"code-token-comment\">" + token + "</span>";
+            return "<span class=\"code-token-comment\">" + safeToken + "</span>";
         }
-        if (/^(&quot;|&#039;)/.test(token)) {
-            return "<span class=\"code-token-string\">" + token + "</span>";
+        if (/^("|')/.test(token)) {
+            return "<span class=\"code-token-string\">" + safeToken + "</span>";
         }
         if (/^\d/.test(token)) {
-            return "<span class=\"code-token-number\">" + token + "</span>";
+            return "<span class=\"code-token-number\">" + safeToken + "</span>";
         }
         if (PYTHON_KEYWORDS.has(token)) {
-            return "<span class=\"code-token-keyword\">" + token + "</span>";
+            return "<span class=\"code-token-keyword\">" + safeToken + "</span>";
         }
         if (PYTHON_BUILTINS.has(token)) {
-            return "<span class=\"code-token-builtin\">" + token + "</span>";
+            return "<span class=\"code-token-builtin\">" + safeToken + "</span>";
         }
         if (/^[A-Za-z_][A-Za-z0-9_]*$/.test(token)) {
-            return "<span class=\"code-token-variable\">" + token + "</span>";
+            return "<span class=\"code-token-variable\">" + safeToken + "</span>";
         }
         if (/^[-+*/%=<>!]+$/.test(token)) {
-            return "<span class=\"code-token-operator\">" + token + "</span>";
+            return "<span class=\"code-token-operator\">" + safeToken + "</span>";
         }
         if (/^[()[\]{},.:]$/.test(token)) {
-            return "<span class=\"code-token-punctuation\">" + token + "</span>";
+            return "<span class=\"code-token-punctuation\">" + safeToken + "</span>";
         }
-        return token;
+        return safeToken;
     }
 
     function toggleListValue(list, value) {
@@ -1266,6 +1305,7 @@
         let musicStarted = false;
         let shuffledTracks = [];
         let activeTrackSrc = "";
+        let lastGameOverPattern = -1;
         const volumeMultiplier = 5;
         const backgroundVolume = 0.42;
 
@@ -1301,6 +1341,26 @@
             gain.connect(ctx.destination);
             oscillator.start();
             oscillator.stop(ctx.currentTime + duration);
+        }
+
+        function playSequence(notes, options) {
+            const ctx = ensureContext();
+            if (!ctx || !Array.isArray(notes)) {
+                return;
+            }
+
+            const baseDelay = (options && options.stepDelay) || 120;
+            notes.forEach(function (note, index) {
+                const tone = Array.isArray(note) ? note : [note];
+                window.setTimeout(function () {
+                    playTone(
+                        tone[0],
+                        tone[1] || 0.16,
+                        tone[2] || "sine",
+                        (tone[3] || 0.1) * 5
+                    );
+                }, baseDelay * index);
+            });
         }
 
         function createBackgroundPlayer() {
@@ -1361,6 +1421,20 @@
             }
         }
 
+        function pickNextGameOverPattern() {
+            const patterns = [
+                [[220, 0.18, "triangle", 0.22], [165, 0.26, "sawtooth", 0.2], [131, 0.44, "sine", 0.18]],
+                [[196, 0.2, "square", 0.22], [147, 0.24, "triangle", 0.2], [123, 0.42, "sawtooth", 0.18]],
+                [[233, 0.16, "triangle", 0.22], [185, 0.26, "triangle", 0.2], [139, 0.46, "sine", 0.18]]
+            ];
+            let nextIndex = Math.floor(Math.random() * patterns.length);
+            if (patterns.length > 1 && nextIndex === lastGameOverPattern) {
+                nextIndex = (nextIndex + 1) % patterns.length;
+            }
+            lastGameOverPattern = nextIndex;
+            return patterns[nextIndex];
+        }
+
         function startMusic() {
             ensureContext();
             if (musicStarted) {
@@ -1399,6 +1473,17 @@
                 playTone(523, 0.16, "sine", 0.13);
                 window.setTimeout(function () { playTone(659, 0.16, "sine", 0.13); }, 110);
                 window.setTimeout(function () { playTone(784, 0.24, "sine", 0.13); }, 220);
+            },
+            playUnlock: function () {
+                playSequence([
+                    [523, 0.12, "triangle", 0.1],
+                    [659, 0.14, "triangle", 0.11],
+                    [784, 0.16, "triangle", 0.12],
+                    [1047, 0.28, "sine", 0.13]
+                ], { stepDelay: 105 });
+            },
+            playGameOver: function () {
+                playSequence(pickNextGameOverPattern(), { stepDelay: 120 });
             }
         };
     }
