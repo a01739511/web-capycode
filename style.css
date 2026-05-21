@@ -1902,7 +1902,7 @@ body.quiz-complete .sidebar-layout {
 
 .completion-screen {
     position: relative;
-    width: min(540px, calc(100vw - 2rem));
+    width: min(620px, calc(100vw - 2rem));
     max-height: calc(100svh - 2rem);
     overflow: hidden;
     display: grid;
@@ -1937,7 +1937,7 @@ body.quiz-complete .sidebar-layout {
 
 .completion-screen-copy {
     display: grid;
-    gap: 0.75rem;
+    gap: 0.62rem;
     justify-items: center;
     text-align: center;
 }
@@ -1965,6 +1965,14 @@ body.quiz-complete .sidebar-layout {
 .completion-screen.is-practice .scene-button.primary {
     background: linear-gradient(135deg, #55bfd7 0%, #8ad9b6 100%);
     box-shadow: 0 0 22px rgba(85, 191, 215, 0.34);
+}
+
+.completion-subtitle {
+    max-width: 34ch;
+    margin-top: -0.18rem;
+    color: rgba(246, 242, 255, 0.88);
+    font-size: 0.95rem;
+    line-height: 1.32;
 }
 
 .completion-unlock-showcase {
@@ -2046,6 +2054,125 @@ body.quiz-complete .sidebar-layout {
     font-weight: 500;
     line-height: 1.58;
     letter-spacing: 0.01em;
+}
+
+.completion-dialog-card {
+    --dialog-art-size: clamp(132px, 24vw, 176px);
+    width: 100%;
+    min-height: 178px;
+    display: grid;
+    grid-template-columns: minmax(112px, 0.48fr) minmax(0, 1fr);
+    align-items: end;
+    gap: 0;
+    position: relative;
+    padding: 0.3rem 0.25rem 0.1rem;
+}
+
+.completion-dialog-card::before {
+    content: "";
+    position: absolute;
+    left: 6%;
+    right: 5%;
+    bottom: 2px;
+    height: 54%;
+    border-radius: 999px;
+    background: radial-gradient(circle, rgba(172, 112, 255, 0.26) 0%, rgba(126, 77, 219, 0.1) 46%, transparent 72%);
+    filter: blur(2px);
+    pointer-events: none;
+}
+
+.completion-dialog-art,
+.completion-dialog-bubble {
+    position: relative;
+    z-index: 1;
+}
+
+.completion-dialog-art {
+    align-self: end;
+    justify-self: center;
+    width: var(--dialog-art-size);
+    height: var(--dialog-art-size);
+    display: grid;
+    place-items: end center;
+    margin-right: -1.1rem;
+}
+
+.completion-dialog-art img {
+    width: 118%;
+    height: 118%;
+    object-fit: contain;
+    object-position: center bottom;
+    filter: drop-shadow(0 18px 22px rgba(7, 3, 18, 0.34));
+    animation: completion-float 3.2s ease-in-out infinite;
+}
+
+.completion-dialog-bubble {
+    align-self: center;
+    min-height: 118px;
+    display: grid;
+    align-items: center;
+    padding: 1rem 1.15rem 1.05rem;
+    border-radius: 34px 34px 34px 18px;
+    background:
+        radial-gradient(circle at top left, rgba(255, 255, 255, 0.26), transparent 30%),
+        linear-gradient(180deg, rgba(243, 220, 176, 0.98), rgba(223, 191, 140, 0.96));
+    border: 1px solid rgba(115, 71, 25, 0.3);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 249, 236, 0.72),
+        inset 0 -1px 0 rgba(145, 90, 28, 0.16),
+        0 0 26px rgba(171, 105, 255, 0.24),
+        0 18px 34px rgba(8, 6, 16, 0.24);
+    color: #4d2f13;
+}
+
+.completion-dialog-bubble::before {
+    content: "";
+    position: absolute;
+    left: -34px;
+    bottom: 24px;
+    width: 56px;
+    height: 48px;
+    background: linear-gradient(180deg, rgba(243, 220, 176, 0.98), rgba(223, 191, 140, 0.96));
+    clip-path: ellipse(58% 42% at 63% 56%);
+    filter: drop-shadow(-5px 6px 8px rgba(8, 6, 16, 0.14));
+}
+
+.completion-dialog-bubble::after {
+    content: "";
+    position: absolute;
+    inset: 9px;
+    border-radius: 26px 26px 26px 12px;
+    border: 1px solid rgba(255, 249, 236, 0.36);
+    pointer-events: none;
+}
+
+.completion-dialog-bubble span {
+    position: relative;
+    z-index: 1;
+    color: rgba(83, 49, 18, 0.92);
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-size: clamp(1.04rem, 2vw, 1.22rem);
+    font-style: italic;
+    font-weight: 600;
+    line-height: 1.38;
+    text-align: left;
+}
+
+.completion-dialog-card.is-route-completed .completion-dialog-bubble {
+    box-shadow:
+        inset 0 1px 0 rgba(255, 249, 236, 0.72),
+        inset 0 -1px 0 rgba(145, 90, 28, 0.16),
+        0 0 28px rgba(143, 238, 255, 0.22),
+        0 18px 34px rgba(8, 6, 16, 0.24);
+}
+
+.completion-dialog-card.is-game-completed .completion-dialog-bubble {
+    border-color: rgba(255, 230, 177, 0.42);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 249, 236, 0.72),
+        inset 0 -1px 0 rgba(145, 90, 28, 0.16),
+        0 0 32px rgba(255, 217, 143, 0.24),
+        0 18px 34px rgba(8, 6, 16, 0.24);
 }
 
 .streak-celebration-card {
@@ -2252,7 +2379,7 @@ body.quiz-complete .sidebar-layout {
     background: transparent;
     border: 0;
     box-shadow: none;
-    color: rgba(248, 243, 255, 0.92);
+    color: #ffffff;
 }
 
 .completion-actions .scene-button.icon-only-action:hover,
@@ -2266,11 +2393,12 @@ body.quiz-complete .sidebar-layout {
     width: 22px;
     height: 22px;
     display: block;
-    filter: brightness(0) invert(1);
+    filter: brightness(0) invert(1) drop-shadow(0 0 8px rgba(255, 255, 255, 0.24));
 }
 
 .completion-inline-retry {
     display: grid;
+    align-items: center;
     justify-items: center;
     margin-top: 0.05rem;
     margin-bottom: -0.12rem;
@@ -2278,6 +2406,12 @@ body.quiz-complete .sidebar-layout {
 
 .completion-inline-retry .icon-only-action {
     margin-inline: auto;
+    align-self: center;
+    justify-self: center;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    color: #ffffff;
 }
 
 .completion-map-button {
@@ -4016,6 +4150,52 @@ body.map-page .map-stage {
     align-items: center;
 }
 
+.shop-confirm-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 150;
+    display: grid;
+    place-items: center;
+    padding: 1rem;
+    background: rgba(8, 5, 18, 0.46);
+    backdrop-filter: blur(16px);
+}
+
+.shop-confirm-card {
+    width: min(440px, 100%);
+    display: grid;
+    gap: 0.85rem;
+    padding: 1.25rem;
+    border-radius: 24px;
+    text-align: center;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.22),
+        0 28px 70px rgba(3, 1, 10, 0.44);
+}
+
+.shop-confirm-card h2 {
+    font-family: var(--font-display);
+    font-size: clamp(1.5rem, 4vw, 2rem);
+    line-height: 1.05;
+}
+
+.shop-confirm-copy {
+    color: rgba(246, 242, 255, 0.9);
+    line-height: 1.45;
+}
+
+.shop-confirm-copy strong {
+    color: #9ee7ff;
+    font-weight: 900;
+}
+
+.shop-confirm-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.7rem;
+    margin-top: 0.2rem;
+}
+
 body.is-modal-open {
     overflow: hidden;
 }
@@ -5608,6 +5788,21 @@ body.is-modal-open {
         text-align: center;
     }
 
+    .completion-dialog-card {
+        --dialog-art-size: clamp(118px, 34vw, 150px);
+        min-height: 0;
+        grid-template-columns: 0.78fr 1fr;
+    }
+
+    .completion-dialog-art {
+        margin-right: -0.8rem;
+    }
+
+    .completion-dialog-bubble {
+        min-height: 108px;
+        padding: 0.88rem 0.95rem;
+    }
+
     .story-hero-stats,
     .story-beat-grid,
     .story-lore-mini-grid,
@@ -5879,6 +6074,43 @@ body.is-modal-open {
         padding: 1rem;
     }
 
+    .completion-subtitle {
+        font-size: 0.86rem;
+    }
+
+    .completion-dialog-card {
+        --dialog-art-size: 116px;
+        grid-template-columns: 1fr;
+        justify-items: center;
+        padding-top: 0;
+    }
+
+    .completion-dialog-art {
+        margin-right: 0;
+        margin-bottom: -1.3rem;
+        z-index: 2;
+    }
+
+    .completion-dialog-bubble {
+        width: 100%;
+        min-height: 0;
+        padding: 1.45rem 0.95rem 0.9rem;
+        border-radius: 30px;
+    }
+
+    .completion-dialog-bubble::before {
+        left: 46px;
+        top: -24px;
+        bottom: auto;
+        transform: rotate(46deg);
+    }
+
+    .completion-dialog-bubble span {
+        text-align: center;
+        font-size: 1rem;
+        line-height: 1.34;
+    }
+
     .completion-overlay {
         padding: 0.75rem;
     }
@@ -5890,6 +6122,10 @@ body.is-modal-open {
 
     .completion-actions,
     .completion-actions.is-three-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .shop-confirm-actions {
         grid-template-columns: 1fr;
     }
 

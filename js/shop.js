@@ -4,6 +4,7 @@
     const modalContentRoot = document.getElementById("shop-modal-content");
     const api = window.CapyApi;
     const LOCK_ICON_PATH = "assets/shop-lock-icon.svg";
+    const SHOP_MUSIC_SRC = "assets/audio/shop/pizza-parlor.m4a";
     const uiAudio = createShopAudioSystem();
     let activeItemId = "";
 
@@ -13,6 +14,7 @@
 
     renderStore();
     bindEvents();
+    startAmbientAudio();
 
     function renderStore() {
         const profile = window.CapyCore.getProfile();
@@ -63,6 +65,7 @@
 
     function bindEvents() {
         gridRoot.addEventListener("click", function (event) {
+            uiAudio.startMusic();
             const inlineAction = event.target.closest("[data-item-action-inline]");
             const trigger = event.target.closest("[data-item-open]");
 
@@ -91,10 +94,27 @@
         });
 
         document.addEventListener("keydown", function (event) {
+            uiAudio.startMusic();
+            if (document.querySelector(".shop-confirm-overlay")) {
+                return;
+            }
             if (event.key === "Escape" && !modalRoot.classList.contains("is-hidden")) {
                 closeModal();
             }
         });
+    }
+
+    function startAmbientAudio() {
+        uiAudio.startMusic();
+        window.setTimeout(uiAudio.startMusic, 350);
+        document.addEventListener("pointerdown", uiAudio.startMusic, { once: true });
+        document.addEventListener("touchstart", uiAudio.startMusic, { once: true, passive: true });
+        window.addEventListener("visibilitychange", function () {
+            if (!document.hidden) {
+                uiAudio.startMusic();
+            }
+        });
+        window.addEventListener("beforeunload", uiAudio.stopMusic);
     }
 
     function openModal(itemId) {
@@ -196,9 +216,7 @@
                 await api.equipOutfit(item.id);
                 uiAudio.playEquip();
             } else {
-                const confirmed = window.confirm(
-                    "Vas a comprar " + item.name + " por " + getPriceLabel(item.cost) + ".\n\nEsta acción gastará tu XP actual."
-                );
+                const confirmed = await requestPurchaseConfirmation(item);
                 if (!confirmed) {
                     showStoreMessage("Compra cancelada.");
                     return;
@@ -389,6 +407,57 @@
         }, 2600);
     }
 
+    function requestPurchaseConfirmation(item) {
+        return new Promise(function (resolve) {
+            const dialog = document.createElement("div");
+            dialog.className = "shop-confirm-overlay";
+            dialog.setAttribute("role", "presentation");
+            dialog.innerHTML = [
+                "<section class=\"glass-surface shop-confirm-card\" role=\"dialog\" aria-modal=\"true\" aria-labelledby=\"shop-confirm-title\">",
+                "<p class=\"panel-kicker\">Confirmar compra</p>",
+                "<h2 id=\"shop-confirm-title\">", escapeHtml(item.name), "</h2>",
+                "<p class=\"shop-confirm-copy\">Vas a desbloquear este vestuario por <strong>", getPriceLabel(item.cost), "</strong>. Esta compra gastar&aacute; tu XP actual.</p>",
+                "<div class=\"shop-confirm-actions\">",
+                "<button class=\"scene-button ghost\" type=\"button\" data-shop-confirm=\"cancel\">Cancelar</button>",
+                "<button class=\"scene-button primary\" type=\"button\" data-shop-confirm=\"accept\">Comprar</button>",
+                "</div>",
+                "</section>"
+            ].join("");
+
+            function finish(confirmed) {
+                document.removeEventListener("keydown", onKeydown);
+                dialog.remove();
+                resolve(confirmed);
+            }
+
+            function onKeydown(event) {
+                if (event.key === "Escape") {
+                    finish(false);
+                }
+            }
+
+            dialog.addEventListener("click", function (event) {
+                const action = event.target.closest("[data-shop-confirm]");
+                if (action) {
+                    finish(action.dataset.shopConfirm === "accept");
+                    return;
+                }
+
+                if (event.target === dialog) {
+                    finish(false);
+                }
+            });
+
+            document.addEventListener("keydown", onKeydown);
+            document.body.appendChild(dialog);
+
+            const acceptButton = dialog.querySelector("[data-shop-confirm=\"accept\"]");
+            if (acceptButton) {
+                acceptButton.focus();
+            }
+        });
+    }
+
     function escapeHtml(value) {
         return window.CapyCore.escapeHtml(value);
     }
@@ -398,6 +467,12 @@
     }
     function createShopAudioSystem() {
         let context = null;
+        let backgroundPlayer = null;
+        let sourceNode = null;
+        let gainNode = null;
+        let musicRequested = false;
+        const musicVolume = 0.95;
+        const musicGain = 3;
 
         function ensureContext() {
             if (!context) {
@@ -413,6 +488,65 @@
             }
 
             return context;
+        }
+
+        function ensureMusicGraph(player) {
+            const ctx = ensureContext();
+            if (!ctx || sourceNode) {
+                return;
+            }
+
+            sourceNode = ctx.createMediaElementSource(player);
+            gainNode = ctx.createGain();
+            gainNode.gain.value = musicGain;
+            sourceNode.connect(gainNode);
+            gainNode.connect(ctx.destination);
+        }
+
+        function createBackgroundPlayer() {
+            if (backgroundPlayer) {
+                return backgroundPlayer;
+            }
+
+            backgroundPlayer = new Audio(SHOP_MUSIC_SRC);
+            backgroundPlayer.autoplay = true;
+            backgroundPlayer.loop = true;
+            backgroundPlayer.preload = "auto";
+            backgroundPlayer.playsInline = true;
+            backgroundPlayer.volume = musicVolume;
+            return backgroundPlayer;
+        }
+
+        function startMusic() {
+            musicRequested = true;
+            const player = createBackgroundPlayer();
+            ensureMusicGraph(player);
+
+            if (context && context.state === "suspended") {
+                const resumePromise = context.resume();
+                if (resumePromise && typeof resumePromise.catch === "function") {
+                    resumePromise.catch(function () {});
+                }
+            }
+
+            if (!player.paused) {
+                return;
+            }
+
+            const playPromise = player.play();
+            if (playPromise && typeof playPromise.catch === "function") {
+                playPromise.catch(function () {
+                    // Browsers may block unmuted autoplay until the first user gesture.
+                });
+            }
+        }
+
+        function stopMusic() {
+            musicRequested = false;
+            if (backgroundPlayer) {
+                backgroundPlayer.pause();
+                backgroundPlayer.currentTime = 0;
+            }
         }
 
         function playTone(frequency, duration, type, gainValue, delayMs) {
@@ -436,12 +570,20 @@
         }
 
         return {
+            startMusic: startMusic,
+            stopMusic: stopMusic,
             playPurchase: function () {
+                if (musicRequested) {
+                    startMusic();
+                }
                 playTone(392, 0.12, "triangle", 0.08, 0);
                 playTone(523, 0.14, "triangle", 0.08, 90);
                 playTone(659, 0.18, "sine", 0.09, 180);
             },
             playEquip: function () {
+                if (musicRequested) {
+                    startMusic();
+                }
                 playTone(523, 0.1, "sine", 0.07, 0);
                 playTone(659, 0.16, "sine", 0.08, 80);
             }

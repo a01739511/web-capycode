@@ -72,12 +72,20 @@
     }
 
     elements.primaryAction.addEventListener("click", onPrimaryAction);
+    audio.startMusic();
+    window.setTimeout(audio.startMusic, 350);
     document.addEventListener("pointerdown", audio.startMusic, { once: true });
+    document.addEventListener("touchstart", audio.startMusic, { once: true, passive: true });
     document.addEventListener("keydown", function (event) {
         audio.startMusic();
 
         if (event.key === "Enter" && event.ctrlKey) {
             onPrimaryAction();
+        }
+    });
+    document.addEventListener("visibilitychange", function () {
+        if (!document.hidden) {
+            audio.startMusic();
         }
     });
     window.addEventListener("beforeunload", audio.stopMusic);
@@ -375,7 +383,7 @@
             article.dataset.lineId = item.id;
             article.dataset.orderZone = zoneName;
             article.innerHTML = [
-                "<button class=\"drag-pill\" type=\"button\" draggable=\"true\" aria-label=\"Arrastrar linea ", index + 1, "\"><img src=\"assets/menu-icon.svg\" alt=\"\"></button>",
+                "<button class=\"drag-pill\" type=\"button\" draggable=\"true\" aria-label=\"Arrastrar línea ", index + 1, "\"><img src=\"assets/menu-icon.svg\" alt=\"\"></button>",
                 "<div class=\"sortable-row-code\">",
                 buildCodeLineMarkup(item.text, index + 1, items.length),
                 "</div>"
@@ -575,8 +583,8 @@
 
         build.insertAdjacentHTML("beforeend", [
             "<div class=\"sortable-empty-state\">",
-            "<strong>Construye tu respuesta aqui</strong>",
-            "<span>Suelta las lineas en esta zona para ordenarlas.</span>",
+            "<strong>Construye tu respuesta aquí</strong>",
+            "<span>Suelta las líneas en esta zona para ordenarlas.</span>",
             "</div>"
         ].join(""));
     }
@@ -849,8 +857,10 @@
         const copy = outcome && outcome.gameCompleted
             ? "Terminaste todos los niveles disponibles. Desde ahora puedes repetirlos como práctica."
             : (outcome && outcome.routeCompleted ? "Se desbloqueó la siguiente ruta. Puedes continuar desde el mapa." : (practice ? "Este intento fue de práctica, por eso no modifica XP ni racha." : "Ganaste XP y avanzaste al siguiente nivel."));
-        const hasStoryBeat = Boolean(storyBeat && storyBeat.message);
-        const leadMarkup = buildCompletionLeadMarkup({
+        const completionKind = outcome && outcome.gameCompleted
+            ? "game-completed"
+            : (outcome && outcome.routeCompleted ? "route-completed" : (practice ? "practice" : "level-completed"));
+        const retryMarkup = buildCompletionLeadMarkup({
             practice: practice,
             outcome: outcome,
             copy: copy
@@ -861,15 +871,15 @@
         overlay.innerHTML = [
             "<span class=\"completion-spotlight\" aria-hidden=\"true\"></span>",
             buildCompletionRadiance(),
-            "<section class=\"completion-screen", practice ? " is-practice" : "", hasStoryBeat ? " has-story-beat" : "", "\" role=\"dialog\" aria-modal=\"true\">",
+            "<section class=\"completion-screen", practice ? " is-practice" : "", " is-", completionKind, "\" role=\"dialog\" aria-modal=\"true\">",
             buildConfetti(),
-            storyBeat && storyBeat.message ? "" : "<div class=\"completion-screen-art\"><img src=\"assets/characters/Capythilda.webp\" alt=\"Capythilda\"></div>",
             "<div class=\"completion-screen-copy\">",
             "<p class=\"panel-kicker\">", practice ? "Práctica" : "Progreso guardado", "</p>",
             "<h2>", escapeHtml(title), "</h2>",
+            "<p class=\"completion-subtitle\">", escapeHtml(copy), "</p>",
             reward ? "<p class=\"level-reward-pill\">+" + window.CapyCore.formatNumber(reward) + " XP</p>" : "",
-            leadMarkup,
-            buildStoryBeatMarkup(storyBeat),
+            retryMarkup,
+            buildCompletionDialogMarkup(storyBeat, copy, completionKind),
             buildStreakCelebrationMarkup(streakCelebration),
             buildOutfitDiscoveryShowcase(celebrationOutfits),
             "<div class=\"completion-actions is-two-actions\">",
@@ -1000,7 +1010,7 @@
     function getOutfitDiscoveryCopy(item) {
         return item && item.unlockRouteName
             ? "Ya puedes comprarlo en la tienda."
-            : "Ya esta disponible en la tienda.";
+            : "Ya está disponible en la tienda.";
     }
 
     function buildStreakCelebrationMarkup(streakCelebration) {
@@ -1036,6 +1046,30 @@
             "</div>",
             "<div class=\"completion-story-copy\">",
             "<span>", escapeHtml(storyBeat.message), "</span>",
+            "</div>",
+            "</article>"
+        ].join("");
+    }
+
+    function buildCompletionDialogMarkup(storyBeat, fallbackMessage, kind) {
+        const hasStoryBeat = Boolean(storyBeat && storyBeat.message);
+        const characterImage = hasStoryBeat && storyBeat.characterImage
+            ? storyBeat.characterImage
+            : "assets/characters/Capythilda.webp";
+        const characterName = hasStoryBeat && storyBeat.characterName
+            ? storyBeat.characterName
+            : "Capythilda";
+        const message = hasStoryBeat
+            ? storyBeat.message
+            : fallbackMessage;
+
+        return [
+            "<article class=\"completion-dialog-card is-", escapeAttribute(kind || "level-completed"), "\">",
+            "<div class=\"completion-dialog-art\">",
+            "<img src=\"", escapeAttribute(characterImage), "\" alt=\"", escapeAttribute(characterName), "\">",
+            "</div>",
+            "<div class=\"completion-dialog-bubble\">",
+            "<span>", escapeHtml(message), "</span>",
             "</div>",
             "</article>"
         ].join("");
@@ -1168,7 +1202,7 @@
             ].join("");
         }
 
-        return "<p class=\"completion-lead\">" + escapeHtml(copy) + "</p>";
+        return "";
     }
 
     function bindRetryButtons(overlay) {
@@ -1369,7 +1403,9 @@
             }
 
             backgroundPlayer = new Audio();
+            backgroundPlayer.autoplay = true;
             backgroundPlayer.preload = "metadata";
+            backgroundPlayer.playsInline = true;
             backgroundPlayer.volume = backgroundVolume;
             backgroundPlayer.addEventListener("ended", playNextRandomTrack);
             backgroundPlayer.addEventListener("error", playNextRandomTrack);

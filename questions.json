@@ -2166,7 +2166,7 @@
         },
         {
           "tipo": "seleccionar_lineas",
-          "prompt": "Selecciona la línea que usa el operador modulo.",
+          "prompt": "Selecciona la línea que usa el operador módulo.",
           "lineas": [
             {
               "id": "A",
