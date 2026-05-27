@@ -1019,15 +1019,10 @@
         }
 
         return [
-            "<article class=\"streak-celebration-card\">",
-            "<div class=\"streak-celebration-icon\">",
-            "<img src=\"assets/hud-streak.svg\" alt=\"\">",
-            "</div>",
-            "<div class=\"streak-celebration-copy\">",
-            "<p class=\"unlock-reward-kicker\">Racha del día</p>",
-            "<strong>", escapeHtml(streakCelebration.title || "Racha actualizada"), "</strong>",
-            "<span>", escapeHtml(streakCelebration.description || ""), "</span>",
-            "</div>",
+            "<article class=\"streak-celebration-card\" aria-label=\"", escapeAttribute(streakCelebration.title || "Racha actualizada"), "\">",
+            "<img src=\"assets/hud-streak.svg\" alt=\"\" aria-hidden=\"true\">",
+            "<strong>+1</strong>",
+            "<span class=\"sr-only\">", escapeHtml(streakCelebration.description || "Tu racha diaria aumento en uno."), "</span>",
             "</article>"
         ].join("");
     }
