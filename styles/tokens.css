@@ -1,0 +1,33 @@
+/* Tokens globales: paleta, tipografias y constantes visuales. */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --bg-deep: #1b1230;
+    --bg-panel: rgba(63, 35, 104, 0.72);
+    --bg-panel-soft: rgba(58, 31, 100, 0.54);
+    --bg-card: rgba(34, 18, 61, 0.82);
+    --bg-card-soft: rgba(255, 255, 255, 0.05);
+    --border-soft: rgba(244, 233, 255, 0.14);
+    --border-bright: rgba(255, 255, 255, 0.24);
+    --text-main: #ffffff;
+    --text-soft: rgba(255, 255, 255, 0.78);
+    --text-muted: rgba(255, 255, 255, 0.56);
+    --accent-lilac: #d1a7ff;
+    --accent-pink: #f2b0ff;
+    --accent-cyan: #4cc2db;
+    --accent-cyan-soft: #8feeff;
+    --accent-blue: #8db9ff;
+    --success: #2bd872;
+    --success-soft: rgba(43, 216, 114, 0.16);
+    --error: #ff5e6a;
+    --error-soft: rgba(255, 94, 106, 0.16);
+    --glow: 0 24px 60px rgba(4, 2, 10, 0.42);
+    --font-body: "Nunito", sans-serif;
+    --font-display: "Metamorphous", serif;
+    --font-code: "JetBrains Mono", monospace;
+}

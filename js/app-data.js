@@ -265,7 +265,7 @@ window.CAPYCODE_APP_DATA = {
             content: "Secuencia básica, lectura de pasos y reconocimiento de orden lógico simple.",
             description: "Los libros se abren solos y te enseñan a seguir instrucciones en el orden correcto, paso a paso, antes de lanzar tu primer hechizo.",
             image: "assets/Libros.webp",
-            href: "p_opcionMultiple.html?tema=algoritmos&level=1",
+            href: "nivel.html?levelId=1",
             x: "17.8%",
             y: "55%"
         },
@@ -280,7 +280,7 @@ window.CAPYCODE_APP_DATA = {
             content: "Secuencia de instrucciones, consecuencias de cambiar el orden y primeros patrones iterativos sencillos.",
             description: "Cada acción tiene su momento. Aprende a reconocer cómo un algoritmo cambia cuando alteras el orden de sus pasos.",
             image: "assets/Libros.webp",
-            href: "p_opcionMultiple.html?tema=algoritmos&level=2",
+            href: "nivel.html?levelId=2",
             x: "33.8%",
             y: "42.2%"
         },
@@ -295,7 +295,7 @@ window.CAPYCODE_APP_DATA = {
             content: "Selección básica, condiciones simples y análisis de flujo lógico.",
             description: "No todos los caminos son iguales. Aquí descubrirás cómo tomar decisiones simples para elegir la acción correcta en cada caso.",
             image: "assets/Torre.webp",
-            href: "p_opcionMultiple.html?tema=algoritmos&level=3",
+            href: "nivel.html?levelId=3",
             x: "32.5%",
             y: "74.6%"
         },
@@ -310,7 +310,7 @@ window.CAPYCODE_APP_DATA = {
             content: "Repetición, acumuladores, conteo y patrones de recorrido sencillos.",
             description: "Algunos hechizos necesitan repetirse. Domina patrones básicos para ejecutar instrucciones varias veces sin perder el control.",
             image: "assets/Torre.webp",
-            href: "p_opcionMultiple.html?tema=algoritmos&level=4",
+            href: "nivel.html?levelId=4",
             x: "49.5%",
             y: "60.7%"
         },
@@ -325,7 +325,7 @@ window.CAPYCODE_APP_DATA = {
             content: "Combinación de secuencia, selección y repetición; predicción de resultados y razonamiento algorítmico compuesto.",
             description: "Combina orden, decisión y repetición para identificar cómo fluye una solución y predecir su resultado con mayor precisión.",
             image: "assets/Infinito.webp",
-            href: "p_opcionMultiple.html?tema=algoritmos&level=5",
+            href: "nivel.html?levelId=5",
             x: "67.9%",
             y: "40%"
         },
@@ -340,7 +340,7 @@ window.CAPYCODE_APP_DATA = {
             content: "Algoritmos más largos, revisión de lógica, corrección de estructuras y validación de soluciones más elaboradas.",
             description: "Los desafíos se vuelven más complejos. Analiza procesos completos, detecta errores de lógica y organiza soluciones más robustas.",
             image: "assets/Infinito.webp",
-            href: "p_opcionMultiple.html?tema=algoritmos&level=6",
+            href: "nivel.html?levelId=6",
             x: "89.1%",
             y: "52.7%"
         },
@@ -355,7 +355,7 @@ window.CAPYCODE_APP_DATA = {
             content: "Nivel final de consolidación que mezcla secuencia, selección y repetición como cierre de ruta.",
             description: "Enfrenta un reto integrador donde deberás usar secuencia, selección y repetición para completar un algoritmo digno de la Academia.",
             image: "assets/Libros.webp",
-            href: "p_opcionMultiple.html?tema=algoritmos&level=7",
+            href: "nivel.html?levelId=7",
             x: "77.7%",
             y: "73.4%"
         }

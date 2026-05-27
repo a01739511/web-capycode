@@ -1,27 +1,37 @@
 (function () {
-    const CONFIG = window.CAPYCODE_CONFIG = Object.assign({
-        API_BASE_URL: "",
-        DATA_SOURCE: "auto"
-    }, window.CAPYCODE_CONFIG || {});
+    const apiConfig = window.CapyApiConfig;
+    const apiStorage = window.CapyApiStorage;
+    const apiHttp = window.CapyApiHttp;
+    const catalogModule = window.CapyApiCatalog;
+    const userNormalizers = window.CapyUserNormalizers;
+    const shopRules = window.CapyShopRules;
+    const exerciseRules = window.CapyExerciseRules;
+    const progressRules = window.CapyProgressRules;
 
-    const BACKEND_BASE_URL = String(CONFIG.API_BASE_URL || "").replace(/\/+$/, "");
-    const DATA_SOURCE = String(CONFIG.DATA_SOURCE || "auto").toLowerCase();
-    const USERS_KEY = "capycodeUsersV3";
-    const SESSION_KEY = "capycodeSessionV3";
-    const BACKEND_USER_KEY = "capycodeBackendUserV1";
-    const BACKEND_TOKEN_KEY = "capycodeBackendTokenV1";
-    const LEGACY_SESSION_KEY = "capycodeSession";
-    const LEGACY_PROFILE_PREFIX = "capycodeProfile::";
-    const NEXT_USER_ID_KEY = "capycodeNextUserIdV3";
-    const DEFAULT_OUTFIT_ID = "Capibara";
-    const LEGACY_STARTER_OUTFIT_ID = "CapyBlack";
-    const USERNAME_MIN_LENGTH = 3;
-    const USERNAME_MAX_LENGTH = 20;
-    const PASSWORD_MIN_LENGTH = 8;
-    const PASSWORD_MAX_LENGTH = 64;
-    const TOTAL_LEVELS_PER_ROUTE = 7;
-    const EXERCISES_PER_LEVEL = 5;
-    const MEXICO_TIMEZONE = "America/Mexico_City";
+    if (!apiConfig || !apiStorage || !apiHttp || !catalogModule || !userNormalizers ||
+        !shopRules || !exerciseRules || !progressRules) {
+        throw new Error("CapyCode necesita cargar los modulos js/api antes de js/api-client.js.");
+    }
+
+    const CONFIG = apiConfig.config;
+    const BACKEND_BASE_URL = apiConfig.backendBaseUrl;
+    const DATA_SOURCE = apiConfig.dataSource;
+    const USERS_KEY = apiConfig.storageKeys.users;
+    const SESSION_KEY = apiConfig.storageKeys.session;
+    const BACKEND_USER_KEY = apiConfig.storageKeys.backendUser;
+    const BACKEND_TOKEN_KEY = apiConfig.storageKeys.backendToken;
+    const LEGACY_SESSION_KEY = apiConfig.storageKeys.legacySession;
+    const LEGACY_PROFILE_PREFIX = apiConfig.storageKeys.legacyProfilePrefix;
+    const NEXT_USER_ID_KEY = apiConfig.storageKeys.nextUserId;
+    const DEFAULT_OUTFIT_ID = apiConfig.defaults.outfitId;
+    const LEGACY_STARTER_OUTFIT_ID = apiConfig.defaults.legacyStarterOutfitId;
+    const USERNAME_MIN_LENGTH = apiConfig.validation.usernameMinLength;
+    const USERNAME_MAX_LENGTH = apiConfig.validation.usernameMaxLength;
+    const PASSWORD_MIN_LENGTH = apiConfig.validation.passwordMinLength;
+    const PASSWORD_MAX_LENGTH = apiConfig.validation.passwordMaxLength;
+    const TOTAL_LEVELS_PER_ROUTE = apiConfig.progression.totalLevelsPerRoute;
+    const EXERCISES_PER_LEVEL = apiConfig.progression.exercisesPerLevel;
+    const MEXICO_TIMEZONE = apiConfig.progression.timezone;
     const OUTFIT_TRANSPARENT_IMAGES = {
         Capibara: "assets/characters/no_bg/Capibara.webp",
         CapyBlack: "assets/characters/no_bg/Capy_Black.webp",
@@ -355,70 +365,26 @@
     ];
 
     let cachedQuestionDatasets = null;
+    const requestBackend = apiHttp.createRequester({
+        baseUrl: BACKEND_BASE_URL,
+        getToken: readBackendToken,
+        clearAuth: clearBackendAuth
+    });
 
     function isBackendMode() {
-        if (DATA_SOURCE === "local") {
-            return false;
-        }
-
-        if (DATA_SOURCE === "backend") {
-            return BACKEND_BASE_URL.length > 0;
-        }
-
-        return BACKEND_BASE_URL.length > 0;
+        return apiConfig.isBackendMode();
     }
 
     async function request(path, options) {
-        const requestOptions = options || {};
-        const hasBody = requestOptions.body !== undefined;
-        const token = readBackendToken();
-        const authHeaders = token
-            ? {
-                Authorization: "Bearer " + token,
-                "X-Capy-Token": token
-            }
-            : {};
-        const init = Object.assign({}, requestOptions, {
-            headers: Object.assign({
-                Accept: "application/json"
-            }, hasBody ? { "Content-Type": "application/json" } : {}, authHeaders, requestOptions.headers || {})
-        });
-
-        if (hasBody && typeof requestOptions.body !== "string") {
-            init.body = JSON.stringify(requestOptions.body);
-        }
-
-        const response = await fetch(BACKEND_BASE_URL + "/" + String(path || "").replace(/^\/+/, ""), init);
-        let payload = null;
-
-        try {
-            payload = await response.json();
-        } catch (error) {
-            payload = null;
-        }
-
-        if (!response.ok) {
-            if (response.status === 401) {
-                clearBackendAuth();
-            }
-            const message = payload && payload.error ? payload.error : "La API no pudo completar la solicitud.";
-            throw new Error(message);
-        }
-
-        return payload;
+        return requestBackend(path, options);
     }
 
     function getUsers() {
-        try {
-            const raw = localStorage.getItem(USERS_KEY);
-            return raw ? JSON.parse(raw) : {};
-        } catch (error) {
-            return {};
-        }
+        return apiStorage.readLocalJson(USERS_KEY, {});
     }
 
     function saveUsers(users) {
-        localStorage.setItem(USERS_KEY, JSON.stringify(users || {}));
+        apiStorage.writeLocalJson(USERS_KEY, users || {});
     }
 
     function getNextUserId() {
@@ -603,11 +569,12 @@
     }
 
     function getStarterDiscoveredOutfitIds() {
-        return STARTER_DISCOVERED_OUTFIT_IDS.slice();
+        return shopRules.getStarterDiscoveredOutfitIds(STARTER_DISCOVERED_OUTFIT_IDS);
     }
 
     function getUnlockRouteIdForOutfit(outfitId) {
-        return OUTFIT_ROUTE_REQUIREMENTS[String(outfitId)] || null;
+        const routeRequirements = catalogModule.OUTFIT_ROUTE_REQUIREMENTS || OUTFIT_ROUTE_REQUIREMENTS;
+        return routeRequirements[String(outfitId)] || null;
     }
 
     function getInferredUnlockedBadgeRouteIds(currentLevelId) {
@@ -621,50 +588,21 @@
     }
 
     function getDiscoveredOutfitIdsFromState(explicitIds, unlockedOutfitIds, unlockedBadgeRouteIds) {
-        const discovered = uniqueList(
-            arrayCopy(explicitIds)
-                .concat(arrayCopy(unlockedOutfitIds))
-                .concat(getStarterDiscoveredOutfitIds())
-        );
-
-        arrayCopy(unlockedBadgeRouteIds).forEach(function (routeId) {
-            const routeOutfit = getRouteRewardOutfitSync(routeId);
-            if (routeOutfit && !discovered.includes(routeOutfit.id)) {
-                discovered.push(routeOutfit.id);
-            }
+        return shopRules.getDiscoveredOutfitIdsFromState(explicitIds, unlockedOutfitIds, unlockedBadgeRouteIds, {
+            starterIds: STARTER_DISCOVERED_OUTFIT_IDS,
+            getRouteRewardOutfit: getRouteRewardOutfitSync,
+            uniqueList: uniqueList,
+            arrayCopy: arrayCopy
         });
-
-        return uniqueList(discovered);
     }
 
     function migrateLegacyStarterState(unlockedOutfitIds, currentOutfitId, unlockedBadgeRouteIds) {
-        let migratedUnlockedOutfitIds = uniqueList(arrayCopy(unlockedOutfitIds));
-        let migratedCurrentOutfitId = currentOutfitId;
-        const hasRouteOneBadge = arrayCopy(unlockedBadgeRouteIds).includes(1);
-
-        if (!hasRouteOneBadge) {
-            migratedUnlockedOutfitIds = migratedUnlockedOutfitIds.filter(function (outfitId) {
-                return outfitId !== LEGACY_STARTER_OUTFIT_ID;
-            });
-
-            if (!migratedUnlockedOutfitIds.includes(DEFAULT_OUTFIT_ID)) {
-                migratedUnlockedOutfitIds.unshift(DEFAULT_OUTFIT_ID);
-            }
-
-            if (migratedCurrentOutfitId === LEGACY_STARTER_OUTFIT_ID ||
-                !migratedUnlockedOutfitIds.includes(migratedCurrentOutfitId)) {
-                migratedCurrentOutfitId = DEFAULT_OUTFIT_ID;
-            }
-        }
-
-        if (!migratedUnlockedOutfitIds.includes(DEFAULT_OUTFIT_ID)) {
-            migratedUnlockedOutfitIds.unshift(DEFAULT_OUTFIT_ID);
-        }
-
-        return {
-            unlockedOutfitIds: uniqueList(migratedUnlockedOutfitIds),
-            currentOutfitId: migratedCurrentOutfitId || DEFAULT_OUTFIT_ID
-        };
+        return shopRules.migrateLegacyStarterState(unlockedOutfitIds, currentOutfitId, unlockedBadgeRouteIds, {
+            defaultOutfitId: DEFAULT_OUTFIT_ID,
+            legacyStarterOutfitId: LEGACY_STARTER_OUTFIT_ID,
+            uniqueList: uniqueList,
+            arrayCopy: arrayCopy
+        });
     }
 
     function normalizeUser(user, fallbackUsername) {
@@ -832,31 +770,11 @@
     }
 
     function validateUsername(username) {
-        const cleanUsername = String(username || "").trim();
-
-        if (!cleanUsername) {
-            throw new Error("Escribe un nombre de usuario.");
-        }
-
-        if (cleanUsername.length < USERNAME_MIN_LENGTH || cleanUsername.length > USERNAME_MAX_LENGTH) {
-            throw new Error("El usuario debe tener entre " + USERNAME_MIN_LENGTH + " y " + USERNAME_MAX_LENGTH + " caracteres.");
-        }
-
-        return cleanUsername;
+        return userNormalizers.validateUsername(username, USERNAME_MIN_LENGTH, USERNAME_MAX_LENGTH);
     }
 
     function validatePassword(password) {
-        const cleanPassword = String(password || "");
-
-        if (!cleanPassword) {
-            throw new Error("Escribe una contraseña.");
-        }
-
-        if (cleanPassword.length < PASSWORD_MIN_LENGTH || cleanPassword.length > PASSWORD_MAX_LENGTH) {
-            throw new Error("La contraseña debe tener entre " + PASSWORD_MIN_LENGTH + " y " + PASSWORD_MAX_LENGTH + " caracteres.");
-        }
-
-        return cleanPassword;
+        return userNormalizers.validatePassword(password, PASSWORD_MIN_LENGTH, PASSWORD_MAX_LENGTH);
     }
 
     async function registerUser(username, password) {
@@ -1068,7 +986,8 @@
         let storyBeat = null;
 
         if (!isPractice) {
-            reward = XP_REWARD[level.difficulty] || 0;
+            const xpReward = catalogModule.XP_REWARD || XP_REWARD;
+            reward = xpReward[level.difficulty] || 0;
             record.user.xp += reward;
             streakCelebration = updateStreakOnCompletion(record.user, new Date());
             nextLevelId = Math.min(numericLevelId + 1, totalLevels + 1);
@@ -1200,7 +1119,8 @@
     }
 
     function getRoutesSync() {
-        return ROUTE_DEFINITIONS.map(function (route, index) {
+        const routeDefinitions = catalogModule.ROUTE_DEFINITIONS || ROUTE_DEFINITIONS;
+        return routeDefinitions.map(function (route, index) {
             return {
                 id: route.id,
                 key: route.key,
@@ -1217,10 +1137,12 @@
     function getAllLevelsSync() {
         const anchors = getLevelAnchors();
         const levels = [];
+        const routeDefinitions = catalogModule.ROUTE_DEFINITIONS || ROUTE_DEFINITIONS;
+        const difficultyByRouteOrder = catalogModule.DIFFICULTY_BY_ROUTE_ORDER || DIFFICULTY_BY_ROUTE_ORDER;
 
-        ROUTE_DEFINITIONS.forEach(function (route, routeIndex) {
+        routeDefinitions.forEach(function (route, routeIndex) {
             for (let routeOrder = 1; routeOrder <= TOTAL_LEVELS_PER_ROUTE; routeOrder += 1) {
-                const difficulty = DIFFICULTY_BY_ROUTE_ORDER[routeOrder];
+                const difficulty = difficultyByRouteOrder[routeOrder];
                 const globalId = routeIndex * TOTAL_LEVELS_PER_ROUTE + routeOrder;
                 const anchor = anchors[routeOrder - 1] || {};
 
@@ -1300,19 +1222,24 @@
     }
 
     function getTotalLevelCountSync() {
-        return ROUTE_DEFINITIONS.length * TOTAL_LEVELS_PER_ROUTE;
+        const routeDefinitions = catalogModule.ROUTE_DEFINITIONS || ROUTE_DEFINITIONS;
+        return routeDefinitions.length * TOTAL_LEVELS_PER_ROUTE;
     }
 
     function getOutfitsSync() {
         const source = window.CAPYCODE_APP_DATA && Array.isArray(window.CAPYCODE_APP_DATA.shopItems)
             ? window.CAPYCODE_APP_DATA.shopItems
             : DEFAULT_OUTFITS;
+        const outfitOrder = catalogModule.OUTFIT_ORDER || OUTFIT_ORDER;
+        const outfitCosts = catalogModule.OUTFIT_COSTS || OUTFIT_COSTS;
+        const defaultOutfits = catalogModule.DEFAULT_OUTFITS || DEFAULT_OUTFITS;
+        const transparentImages = catalogModule.OUTFIT_TRANSPARENT_IMAGES || OUTFIT_TRANSPARENT_IMAGES;
         const sourceById = new Map(source.map(function (item) {
             return [item.id, item];
         }));
 
-        return OUTFIT_ORDER.map(function (outfitId) {
-            const item = sourceById.get(outfitId) || DEFAULT_OUTFITS.find(function (fallback) {
+        return outfitOrder.map(function (outfitId) {
+            const item = sourceById.get(outfitId) || defaultOutfits.find(function (fallback) {
                 return fallback.id === outfitId;
             }) || {};
 
@@ -1321,9 +1248,9 @@
                 name: item.name || item.nombre || outfitId,
                 description: item.description || item.descripcion || "Vestuario decorativo de CapyCode.",
                 tagline: item.tagline || item.slogan || item.perk || item.frase || "",
-                cost: OUTFIT_COSTS[outfitId],
+                cost: outfitCosts[outfitId],
                 image: item.image || ("assets/characters/" + outfitId + ".webp"),
-                transparentImage: OUTFIT_TRANSPARENT_IMAGES[outfitId] || item.transparentImage || item.image || ("assets/characters/" + outfitId + ".webp"),
+                transparentImage: transparentImages[outfitId] || item.transparentImage || item.image || ("assets/characters/" + outfitId + ".webp"),
                 unlockRouteId: readNumber(item.unlockRouteId, getUnlockRouteIdForOutfit(outfitId) || 0) || null,
                 unlockRouteName: (function () {
                     const routeId = readNumber(item.unlockRouteId, getUnlockRouteIdForOutfit(outfitId) || 0);
@@ -1418,7 +1345,8 @@
         }
 
         const difficulty = level.difficulty;
-        const bucketName = DIFFICULTY_BUCKETS[difficulty];
+        const difficultyBuckets = catalogModule.DIFFICULTY_BUCKETS || DIFFICULTY_BUCKETS;
+        const bucketName = difficultyBuckets[difficulty];
         const bucket = Array.isArray(theme[bucketName]) ? theme[bucketName].slice() : [];
 
         if (difficulty === "integrative" && !bucket.length) {
@@ -1553,31 +1481,7 @@
     }
 
     function validateExerciseAnswer(exercise, answer) {
-        if (!exercise || answer === undefined || answer === null) {
-            return false;
-        }
-
-        if (exercise.type === "MultipleChoiceExercise") {
-            return compareSets(answer.optionIds || [], exercise.answerData.correctOptionIds || []);
-        }
-
-        if (exercise.type === "NumericAnswerExercise") {
-            return Number(answer.value) === Number(exercise.answerData.correctValue);
-        }
-
-        if (exercise.type === "LineSelectionExercise") {
-            return compareSets(answer.lineIds || [], exercise.answerData.correctLineIds || []);
-        }
-
-        if (exercise.type === "LineOrderingExercise") {
-            return compareArrays(answer.lineIds || [], exercise.answerData.correctLineOrder || []);
-        }
-
-        if (exercise.type === "FillBlanksExercise") {
-            return compareObjects(answer.blanks || {}, exercise.answerData.correctBlanks || {});
-        }
-
-        return false;
+        return exerciseRules.validateExerciseAnswer(exercise, answer);
     }
 
     function mapExerciseType(type) {
@@ -1597,66 +1501,11 @@
     }
 
     function updateStreakOnCompletion(user, date) {
-        const nowIso = date.toISOString();
-        const todayKey = getMexicoDateKey(nowIso);
-        const lastKey = user.lastCompletionAt ? getMexicoDateKey(user.lastCompletionAt) : "";
-        const shouldCelebrate = lastKey !== todayKey;
-
-        if (!lastKey) {
-            user.streak = 1;
-        } else if (lastKey === todayKey) {
-            user.streak = Math.max(1, readNumber(user.streak, 1));
-        } else if (daysBetweenDateKeys(lastKey, todayKey) === 1) {
-            user.streak = Math.max(0, readNumber(user.streak, 0)) + 1;
-        } else {
-            user.streak = 1;
-        }
-
-        user.lastCompletionAt = nowIso;
-        return {
-            show: shouldCelebrate,
-            streak: readNumber(user.streak, 0),
-            title: "Racha activa x" + readNumber(user.streak, 0),
-            description: shouldCelebrate
-                ? "Tu primera actividad correcta de hoy quedo registrada."
-                : ""
-        };
+        return progressRules.updateStreakOnCompletion(user, date, MEXICO_TIMEZONE);
     }
 
     function getVisibleStreak(user) {
-        if (!user || !user.lastCompletionAt) {
-            return 0;
-        }
-
-        const lastKey = getMexicoDateKey(user.lastCompletionAt);
-        const todayKey = getMexicoDateKey(new Date().toISOString());
-        const dayGap = daysBetweenDateKeys(lastKey, todayKey);
-
-        return dayGap <= 1 ? readNumber(user.streak, 0) : 0;
-    }
-
-    function getMexicoDateKey(isoValue) {
-        const date = isoValue ? new Date(isoValue) : new Date();
-        const parts = new Intl.DateTimeFormat("en-US", {
-            timeZone: MEXICO_TIMEZONE,
-            year: "numeric",
-            month: "2-digit",
-            day: "2-digit"
-        }).formatToParts(date).reduce(function (accumulator, part) {
-            accumulator[part.type] = part.value;
-            return accumulator;
-        }, {});
-
-        return [parts.year, parts.month, parts.day].join("-");
-    }
-
-    function daysBetweenDateKeys(leftKey, rightKey) {
-        const left = leftKey.split("-").map(Number);
-        const right = rightKey.split("-").map(Number);
-        const leftTime = Date.UTC(left[0], left[1] - 1, left[2]);
-        const rightTime = Date.UTC(right[0], right[1] - 1, right[2]);
-
-        return Math.round((rightTime - leftTime) / 86400000);
+        return progressRules.getVisibleStreak(user, MEXICO_TIMEZONE);
     }
 
     function buildLevelContent(route, routeOrder, difficulty) {
@@ -1664,11 +1513,13 @@
             return "Reto integrador de " + route.name + " con ejercicios combinados.";
         }
 
-        return route.content + " Enfoque " + DIFFICULTY_LABELS[difficulty].toLowerCase() + ".";
+        const difficultyLabels = catalogModule.DIFFICULTY_LABELS || DIFFICULTY_LABELS;
+        return route.content + " Enfoque " + difficultyLabels[difficulty].toLowerCase() + ".";
     }
 
     function buildLevelStory(route, routeOrder) {
-        const routeMessages = STORY_MESSAGES[route.key] || [];
+        const catalogStories = catalogModule.STORY_MESSAGES || {};
+        const routeMessages = catalogStories[route.key] || STORY_MESSAGES[route.key] || [];
         return routeMessages[routeOrder - 1] || ("Una nueva parte del sendero se revela en " + route.name + ".");
     }
 
@@ -1692,8 +1543,9 @@
 
     function getSameDifficultyOrder(routeOrder, difficulty) {
         let count = 0;
+        const difficultyByRouteOrder = catalogModule.DIFFICULTY_BY_ROUTE_ORDER || DIFFICULTY_BY_ROUTE_ORDER;
         for (let order = 1; order <= routeOrder; order += 1) {
-            if (DIFFICULTY_BY_ROUTE_ORDER[order] === difficulty) {
+            if (difficultyByRouteOrder[order] === difficulty) {
                 count += 1;
             }
         }
@@ -1701,51 +1553,19 @@
     }
 
     function normalizeUsernameKey(username) {
-        return String(username || "").trim().toLowerCase();
+        return apiStorage.normalizeUsernameKey(username);
     }
 
     function readNumber(value, fallback) {
-        const parsed = Number(value);
-        return Number.isFinite(parsed) ? parsed : fallback;
+        return apiStorage.readNumber(value, fallback);
     }
 
     function uniqueList(items) {
-        return (Array.isArray(items) ? items : []).filter(function (item, index, list) {
-            return item && list.indexOf(item) === index;
-        });
+        return apiStorage.uniqueList(items);
     }
 
     function arrayCopy(value) {
-        return Array.isArray(value) ? value.slice() : [];
-    }
-
-    function compareArrays(left, right) {
-        if (!Array.isArray(left) || !Array.isArray(right) || left.length !== right.length) {
-            return false;
-        }
-
-        return left.every(function (item, index) {
-            return String(item) === String(right[index]);
-        });
-    }
-
-    function compareSets(left, right) {
-        const cleanLeft = (Array.isArray(left) ? left : []).map(String).sort();
-        const cleanRight = (Array.isArray(right) ? right : []).map(String).sort();
-        return compareArrays(cleanLeft, cleanRight);
-    }
-
-    function compareObjects(left, right) {
-        const leftKeys = Object.keys(left || {}).sort();
-        const rightKeys = Object.keys(right || {}).sort();
-
-        if (!compareArrays(leftKeys, rightKeys)) {
-            return false;
-        }
-
-        return leftKeys.every(function (key) {
-            return String(left[key]) === String(right[key]);
-        });
+        return apiStorage.arrayCopy(value);
     }
 
     window.CapyApi = {
@@ -1782,13 +1602,16 @@
         PASSWORD_MAX_LENGTH: PASSWORD_MAX_LENGTH,
         getVisibleStreak: getVisibleStreak,
         getDifficultyLabel: function (difficulty) {
-            return DIFFICULTY_LABELS[difficulty] || difficulty || "";
+            const difficultyLabels = catalogModule.DIFFICULTY_LABELS || DIFFICULTY_LABELS;
+            return difficultyLabels[difficulty] || difficulty || "";
         },
         getDifficultySeconds: function (difficulty) {
-            return TIMER_SECONDS[difficulty] || 30;
+            const timerSeconds = catalogModule.TIMER_SECONDS || TIMER_SECONDS;
+            return timerSeconds[difficulty] || 30;
         },
         getDifficultyXp: function (difficulty) {
-            return XP_REWARD[difficulty] || 0;
+            const xpReward = catalogModule.XP_REWARD || XP_REWARD;
+            return xpReward[difficulty] || 0;
         },
         isBackendMode: isBackendMode,
         getDataSource: function () {

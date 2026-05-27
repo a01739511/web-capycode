@@ -8,12 +8,7 @@
         tutorial: "tutorial.html",
         nivel: "nivel.html",
         iniciar_sesion: "iniciar_sesion.html",
-        registro: "registro.html",
-        p_opcionMultiple: "p_opcionMultiple.html",
-        p_ordenarLineas: "p_ordenarLineas.html",
-        p_respuestaNumerica: "p_respuestaNumerica.html",
-        p_seleccionarLineas: "p_seleccionarLineas.html",
-        p_completarPlantilla: "p_completarPlantilla.html"
+        registro: "registro.html"
     };
 
     const existing = window.CAPYCODE_CONFIG || {};

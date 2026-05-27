@@ -1,4 +1,4 @@
-(function () {
+﻿(function () {
     const app = document.querySelector("[data-level-runner=\"true\"]");
     const api = window.CapyApi;
     const PYTHON_KEYWORDS = new Set([
@@ -12,7 +12,9 @@
         "str", "bool", "sum", "min", "max"
     ]);
 
-    if (!app || !api || !window.CapyCore) {
+    if (!app || !api || !window.CapyCore || !window.CapyGameState || !window.CapyGameAnswers ||
+        !window.CapyGameRenderer || !window.CapyGameDragSort || !window.CapyGameCompletion ||
+        !window.CapyGameAudio) {
         return;
     }
 
@@ -43,27 +45,9 @@
         timer: document.getElementById("exercise-timer")
     };
 
-    const state = {
-        sourceExercises: [],
-        exercises: [],
-        currentIndex: 0,
-        answers: [],
-        selectedOptionIds: [],
-        selectedLineIds: [],
-        blankAnswers: {},
-        activeBlankKey: "",
-        orderItems: [],
-        orderBankItems: [],
-        numericValue: "",
-        remainingSeconds: timerSeconds,
-        timerId: 0,
-        locked: false,
-        isCompleting: false,
-        draggedLineId: "",
-        pointerDragLineId: ""
-    };
+    const state = window.CapyGameState.createInitialState(timerSeconds);
 
-    const audio = createAudioSystem();
+    const audio = window.CapyGameAudio.createAudioSystem(LEVEL_MUSIC_TRACKS);
     let answerPopupTimer = 0;
 
     if (!level) {
@@ -125,7 +109,7 @@
         stopTimer();
         clearAnswerPopup();
         clearCompletionOverlay();
-        state.exercises = shuffleArray(state.sourceExercises).slice(0, 5).map(prepareExerciseForAttempt);
+        state.exercises = window.CapyGameState.prepareAttemptExercises(state.sourceExercises, 5);
         state.currentIndex = 0;
         state.answers = [];
         state.locked = false;
@@ -500,9 +484,9 @@
             const shouldPlaceAfter = event.clientY > rect.top + rect.height / 2;
 
             if (shouldPlaceAfter) {
-                list.insertBefore(draggedRow, targetRow.nextSibling);
+                window.CapyGameDragSort.moveRowAfter(draggedRow, targetRow);
             } else {
-                list.insertBefore(draggedRow, targetRow);
+                window.CapyGameDragSort.moveRowBefore(draggedRow, targetRow);
             }
 
             syncOrderItemsFromDom(getCurrentExercise());
@@ -534,7 +518,7 @@
             return null;
         }
 
-        return Array.from(document.querySelectorAll("[data-line-id]")).find(function (row) {
+        return window.CapyGameDragSort.getDraggedRow("[data-line-id]", function (row) {
             return row.dataset.lineId === state.pointerDragLineId;
         }) || null;
     }
@@ -544,7 +528,7 @@
             return null;
         }
 
-        return Array.from(document.querySelectorAll("[data-line-id]")).find(function (row) {
+        return window.CapyGameDragSort.getDraggedRow("[data-line-id]", function (row) {
             return row.dataset.lineId === state.draggedLineId;
         }) || null;
     }
@@ -1175,12 +1159,10 @@
     }
 
     function buildRetryActionMarkup(label) {
-        return [
-            "<button class=\"scene-button ghost icon-only-action\" type=\"button\" data-retry-level aria-label=\"", escapeAttribute(label), "\" title=\"", escapeAttribute(label), "\">",
-            "<img src=\"assets/icons/retry-level.svg\" alt=\"\" aria-hidden=\"true\">",
-            "<span class=\"sr-only\">", escapeHtml(label), "</span>",
-            "</button>"
-        ].join("");
+        return window.CapyGameCompletion.buildRetryActionMarkup(label, {
+            escapeAttribute: escapeAttribute,
+            escapeHtml: escapeHtml
+        });
     }
 
     function buildCompletionLeadMarkup(context) {
@@ -1283,25 +1265,11 @@
     }
 
     function toggleListValue(list, value) {
-        const index = list.indexOf(value);
-        if (index >= 0) {
-            list.splice(index, 1);
-            return;
-        }
-        list.push(value);
+        window.CapyGameAnswers.toggleListValue(list, value);
     }
 
     function shuffleArray(items) {
-        const copy = (items || []).slice();
-
-        for (let index = copy.length - 1; index > 0; index -= 1) {
-            const swapIndex = Math.floor(Math.random() * (index + 1));
-            const current = copy[index];
-            copy[index] = copy[swapIndex];
-            copy[swapIndex] = current;
-        }
-
-        return copy;
+        return window.CapyGameState.shuffleArray(items);
     }
 
     function normalizeLevelId(rawLevelId) {
@@ -1321,202 +1289,11 @@
     }
 
     function escapeHtml(value) {
-        return window.CapyCore.escapeHtml(value);
+        return window.CapyGameRenderer.escapeHtml(value);
     }
 
     function escapeAttribute(value) {
-        return window.CapyCore.escapeAttribute(value);
+        return window.CapyGameRenderer.escapeAttribute(value);
     }
 
-    function createAudioSystem() {
-        let context = null;
-        let backgroundPlayer = null;
-        let musicStarted = false;
-        let shuffledTracks = [];
-        let activeTrackSrc = "";
-        let lastGameOverPattern = -1;
-        const volumeMultiplier = 5;
-        const backgroundVolume = 0.42;
-
-        function ensureContext() {
-            if (!context) {
-                const AudioContext = window.AudioContext || window.webkitAudioContext;
-                if (!AudioContext) {
-                    return null;
-                }
-                context = new AudioContext();
-            }
-
-            if (context.state === "suspended") {
-                context.resume();
-            }
-
-            return context;
-        }
-
-        function playTone(frequency, duration, type, gainValue) {
-            const ctx = ensureContext();
-            if (!ctx) {
-                return;
-            }
-
-            const oscillator = ctx.createOscillator();
-            const gain = ctx.createGain();
-            oscillator.type = type || "sine";
-            oscillator.frequency.value = frequency;
-            gain.gain.setValueAtTime((gainValue || 0.045) * volumeMultiplier, ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
-            oscillator.connect(gain);
-            gain.connect(ctx.destination);
-            oscillator.start();
-            oscillator.stop(ctx.currentTime + duration);
-        }
-
-        function playSequence(notes, options) {
-            const ctx = ensureContext();
-            if (!ctx || !Array.isArray(notes)) {
-                return;
-            }
-
-            const baseDelay = (options && options.stepDelay) || 120;
-            notes.forEach(function (note, index) {
-                const tone = Array.isArray(note) ? note : [note];
-                window.setTimeout(function () {
-                    playTone(
-                        tone[0],
-                        tone[1] || 0.16,
-                        tone[2] || "sine",
-                        (tone[3] || 0.1) * 5
-                    );
-                }, baseDelay * index);
-            });
-        }
-
-        function createBackgroundPlayer() {
-            if (backgroundPlayer || !LEVEL_MUSIC_TRACKS.length) {
-                return backgroundPlayer;
-            }
-
-            backgroundPlayer = new Audio();
-            backgroundPlayer.autoplay = true;
-            backgroundPlayer.preload = "metadata";
-            backgroundPlayer.playsInline = true;
-            backgroundPlayer.volume = backgroundVolume;
-            backgroundPlayer.addEventListener("ended", playNextRandomTrack);
-            backgroundPlayer.addEventListener("error", playNextRandomTrack);
-            return backgroundPlayer;
-        }
-
-        function buildShuffledTracks() {
-            const pool = LEVEL_MUSIC_TRACKS.slice();
-
-            for (let index = pool.length - 1; index > 0; index -= 1) {
-                const randomIndex = Math.floor(Math.random() * (index + 1));
-                const temp = pool[index];
-                pool[index] = pool[randomIndex];
-                pool[randomIndex] = temp;
-            }
-
-            if (pool.length > 1 && pool[0].src === activeTrackSrc) {
-                pool.push(pool.shift());
-            }
-
-            return pool;
-        }
-
-        function playNextRandomTrack() {
-            if (!musicStarted || !LEVEL_MUSIC_TRACKS.length) {
-                return;
-            }
-
-            if (!shuffledTracks.length) {
-                shuffledTracks = buildShuffledTracks();
-            }
-
-            const nextTrack = shuffledTracks.shift();
-            const player = createBackgroundPlayer();
-            if (!nextTrack || !player) {
-                return;
-            }
-
-            activeTrackSrc = nextTrack.src;
-            if (player.src !== new URL(nextTrack.src, window.location.href).href) {
-                player.src = nextTrack.src;
-            }
-
-            const playPromise = player.play();
-            if (playPromise && typeof playPromise.catch === "function") {
-                playPromise.catch(function () {
-                    // Ignore autoplay rejections; the next interaction retries playback.
-                });
-            }
-        }
-
-        function pickNextGameOverPattern() {
-            const patterns = [
-                [[220, 0.18, "triangle", 0.22], [165, 0.26, "sawtooth", 0.2], [131, 0.44, "sine", 0.18]],
-                [[196, 0.2, "square", 0.22], [147, 0.24, "triangle", 0.2], [123, 0.42, "sawtooth", 0.18]],
-                [[233, 0.16, "triangle", 0.22], [185, 0.26, "triangle", 0.2], [139, 0.46, "sine", 0.18]]
-            ];
-            let nextIndex = Math.floor(Math.random() * patterns.length);
-            if (patterns.length > 1 && nextIndex === lastGameOverPattern) {
-                nextIndex = (nextIndex + 1) % patterns.length;
-            }
-            lastGameOverPattern = nextIndex;
-            return patterns[nextIndex];
-        }
-
-        function startMusic() {
-            ensureContext();
-            if (musicStarted) {
-                if (backgroundPlayer && backgroundPlayer.paused) {
-                    playNextRandomTrack();
-                }
-                return;
-            }
-
-            musicStarted = true;
-            playNextRandomTrack();
-        }
-
-        function stopMusic() {
-            musicStarted = false;
-            shuffledTracks = [];
-            activeTrackSrc = "";
-
-            if (backgroundPlayer) {
-                backgroundPlayer.pause();
-                backgroundPlayer.currentTime = 0;
-            }
-        }
-
-        return {
-            startMusic: startMusic,
-            stopMusic: stopMusic,
-            playCorrect: function () {
-                playTone(660, 0.13, "sine", 0.14);
-                window.setTimeout(function () { playTone(880, 0.13, "sine", 0.12); }, 90);
-            },
-            playIncorrect: function () {
-                playTone(170, 0.2, "sawtooth", 0.105);
-            },
-            playComplete: function () {
-                playTone(523, 0.16, "sine", 0.13);
-                window.setTimeout(function () { playTone(659, 0.16, "sine", 0.13); }, 110);
-                window.setTimeout(function () { playTone(784, 0.24, "sine", 0.13); }, 220);
-            },
-            playUnlock: function () {
-                playSequence([
-                    [523, 0.12, "triangle", 0.1],
-                    [659, 0.14, "triangle", 0.11],
-                    [784, 0.16, "triangle", 0.12],
-                    [1047, 0.28, "sine", 0.13]
-                ], { stepDelay: 105 });
-            },
-            playGameOver: function () {
-                playSequence(pickNextGameOverPattern(), { stepDelay: 120 });
-            }
-        };
-    }
 }());
-
