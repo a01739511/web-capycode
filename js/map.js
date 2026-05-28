@@ -1,4 +1,6 @@
 (function () {
+    // El mapa no decide progreso: solo refleja el estado actual del usuario
+    // sobre el catalogo de niveles y las rutas disponibles.
     const root = document.getElementById("map-levels");
     const routeList = document.getElementById("map-route-list");
     const routeTrigger = document.getElementById("map-route-trigger");
@@ -8,6 +10,7 @@
     const tooltip = document.getElementById("map-tooltip");
     const stage = root ? root.closest(".map-stage") : null;
     const api = window.CapyApi;
+    const viewHelpers = window.CapyViewHelpers;
     const LOCK_ICON_PATH = "assets/lock-icon.svg";
     const DEFAULT_LEVEL_ORB_PATH = "assets/esfera_nivel.webp";
     const ACTIVE_ROUTE_KEY = "capycodeActiveRouteIdV3";
@@ -17,40 +20,6 @@
     const UNLOCK_ALL_LEVELS_FOR_PREVIEW = Boolean(
         window.CAPYCODE_CONFIG && window.CAPYCODE_CONFIG.UNLOCK_ALL_LEVELS_FOR_PREVIEW
     );
-    const ROUTE_MASCOTS = {
-        algoritmos: {
-            name: "CapyBlack",
-            image: "assets/characters/no_bg/Capy_Black.webp"
-        },
-        tipos_de_datos: {
-            name: "CapyRuna",
-            image: "assets/characters/no_bg/Capy_Runa.webp"
-        },
-        expresiones: {
-            name: "CapyAqua",
-            image: "assets/characters/no_bg/Capy_Aqua..webp"
-        },
-        condicionales: {
-            name: "CapyConstelation",
-            image: "assets/characters/no_bg/Capy_Constelation.webp"
-        },
-        ciclos: {
-            name: "CapyEarth",
-            image: "assets/characters/no_bg/Capy_Earth.webp"
-        },
-        funciones: {
-            name: "CapyKing",
-            image: "assets/characters/no_bg/Capy_King.webp"
-        },
-        estructuras_de_datos: {
-            name: "CapySun",
-            image: "assets/characters/no_bg/Capy_Sun.webp"
-        },
-        archivos_de_texto_plano: {
-            name: "CapyCandy",
-            image: "assets/characters/no_bg/Capy_Candy.webp"
-        }
-    };
     const FALLBACK_LAYOUT_ANCHORS = {
         sidebar: [
             { x: "16.2%", y: "52%" },
@@ -74,7 +43,7 @@
         ]
     };
 
-    if (!root || !routeList || !routeTrigger || !routePopover || !routeOrder || !routeTitle || !tooltip || !stage || !api || !window.CapyCore) {
+    if (!root || !routeList || !routeTrigger || !routePopover || !routeOrder || !routeTitle || !tooltip || !stage || !api || !window.CapyCore || !viewHelpers) {
         return;
     }
 
@@ -193,7 +162,7 @@
     function renderRouteCopy() {
         routeOrder.textContent = "Ruta " + activeRoute.orderIndex;
         routeTitle.textContent = normalizeDisplayText(activeRoute.name);
-        stage.style.setProperty("--map-background-image", "url(\"" + (activeRoute.backgroundImage || "assets/fondo1.webp") + "\")");
+        stage.style.setProperty("--map-background-image", "url(\"" + escapeAttribute(resolveAssetUrl(activeRoute.backgroundImage || "assets/fondo1.webp")) + "\")");
     }
 
     function renderRouteSwitcher() {
@@ -414,9 +383,14 @@
     }
 
     function getRouteMascot() {
-        return activeRoute && activeRoute.key
-            ? ROUTE_MASCOTS[activeRoute.key] || null
-            : null;
+        if (!activeRoute || !activeRoute.storyCharacterImage) {
+            return null;
+        }
+
+        return {
+            name: activeRoute.storyCharacterName || "Mascota",
+            image: activeRoute.storyCharacterImage
+        };
     }
 
     function getActiveOrbImage() {
@@ -530,6 +504,24 @@
         return [point && point.x ? point.x : "", point && point.y ? point.y : ""].join("|");
     }
 
+    function resolveAssetUrl(path) {
+        const rawPath = String(path || "").trim();
+
+        if (!rawPath) {
+            return "";
+        }
+
+        if (/^(?:https?:)?\/\//i.test(rawPath) || rawPath.indexOf("data:") === 0) {
+            return rawPath;
+        }
+
+        try {
+            return new URL(rawPath, window.location.href).href;
+        } catch (error) {
+            return rawPath;
+        }
+    }
+
     function normalizeDisplayText(value) {
         const text = String(value || "");
 
@@ -546,5 +538,9 @@
 
     function escapeHtml(value) {
         return window.CapyCore.escapeHtml(value);
+    }
+
+    function escapeAttribute(value) {
+        return window.CapyCore.escapeAttribute(value);
     }
 }());

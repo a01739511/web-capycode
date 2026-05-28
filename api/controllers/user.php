@@ -1,5 +1,6 @@
 <?php
 
+// Operaciones de cuenta del usuario autenticado.
 function capy_handle_user_request(PDO $pdo, array $config, string $path, string $method): bool
 {
     if ($path === '/me' && $method === 'GET') {

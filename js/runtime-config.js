@@ -1,4 +1,6 @@
 (function () {
+    // Esta deteccion mantiene sincronizado el modo de datos sin obligar al
+    // equipo a cambiar URLs a mano entre preview estatico y servidor PHP.
     const PAGE_ALIASES = {
         "": "index.html",
         index: "index.html",
@@ -16,6 +18,8 @@
     const hostname = String(window.location.hostname || "").toLowerCase();
     const port = String(window.location.port || "");
     const isHttp = protocol === "http:" || protocol === "https:";
+    const isLocalDevHost = hostname === "127.0.0.1" || hostname === "localhost" || hostname === "::1" || hostname === "[::1]";
+    const isStaticPreviewMode = protocol === "file:" || (isLocalDevHost && /^55\d\d$/.test(port));
     const canonicalAppBase = String(
         existing.CANONICAL_APP_BASE_URL || "http://10.50.67.76/TC2005B_601_3/capycode/"
     );
@@ -40,15 +44,17 @@
         return;
     }
 
+    // En previews estaticos como Live Server la app usa modo local.
+    // En la instancia canonica o en un servidor PHP local usa la API vecina.
     const inferredBase = existing.API_BASE_URL !== undefined
         ? existing.API_BASE_URL
-        : (isCanonicalApp ? "api/index.php" : canonicalApiBase);
+        : (isStaticPreviewMode ? "" : ((isCanonicalApp || isLocalDevHost) ? "api/index.php" : canonicalApiBase));
 
     window.CAPYCODE_CONFIG = Object.assign({
         API_BASE_URL: inferredBase,
         DATA_SOURCE: existing.DATA_SOURCE !== undefined
             ? existing.DATA_SOURCE
-            : "backend",
+            : (isStaticPreviewMode ? "local" : "backend"),
         CANONICAL_APP_BASE_URL: canonicalAppBase,
         CANONICAL_API_BASE_URL: canonicalApiBase
     }, existing);

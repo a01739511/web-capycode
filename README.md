@@ -14,10 +14,15 @@ Abre `http://127.0.0.1:8000/iniciar_sesion.html`.
 
 - `index.html`, `iniciar_sesion.html`, `registro.html`, `mapa.html`, `nivel.html`, `tienda.html`, `perfil.html`, `tutorial.html`: paginas publicas conservadas.
 - `style.css`: entrada publica de estilos; importa modulos planos en `styles/`.
+- `content/`: datos publicos consumidos por la app, como el banco unico de preguntas y configuraciones visuales.
+- `js/core/`: shell comun de la app y helpers compartidos entre pantallas.
 - `js/`: inicializadores de pantalla y modulos clasicos sin build step.
 - `api/`: API PHP compatible con SQLite local y MySQL por configuracion local.
+- `api/lib/database.php`: punto de entrada estable de base de datos; reparte la logica interna en `api/lib/database/`.
+- `api/lib/game_data.php`: punto de entrada estable del contenido jugable; reparte reglas en `api/lib/game-data/`.
+- `api/lib/repositories.php`: punto de entrada estable de consultas y reglas de dominio; reparte funciones en `api/lib/repositories/`.
 - `assets/`: imagenes, iconos y audio.
-- `questions.json`, `levels.json`, `levels_algoritmos_complementado.json`: fuentes de ejercicios para semilla/respaldo.
+- `content/question-bank.json`: banco unico y canonico de ejercicios.
 
 ## Contratos que no deben romperse
 
@@ -26,4 +31,4 @@ Abre `http://127.0.0.1:8000/iniciar_sesion.html`.
 - Los endpoints de `api/index.php` mantienen el mismo JSON y las mismas rutas.
 - La base de datos conserva nombres de tablas y columnas.
 
-Consulta `docs/architecture.md`, `docs/database.md` y `docs/deployment-imac.md` para la explicacion completa.
+Consulta `docs/architecture.md`, `docs/database.md`, `docs/deployment-imac.md`, `docs/diagramas-mermaid.md`, `docs/manual-de-usuario.md` y `docs/definicion-pruebas-estaticas-y-manuales.md` para la explicacion completa.

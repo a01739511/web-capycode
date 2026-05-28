@@ -1,5 +1,7 @@
 <?php
 
+// Carga la configuracion final, inicia la sesion HTTP y deja lista la conexion
+// a BD antes de que cualquier controlador intente responder.
 $config = require __DIR__ . '/config.php';
 $localConfigPath = __DIR__ . '/config.local.php';
 if (is_file($localConfigPath)) {

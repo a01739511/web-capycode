@@ -1,12 +1,15 @@
 (function () {
+    // El perfil solo presenta datos ya resueltos por la capa de API para no
+    // duplicar reglas de progreso, desbloqueo o sesion dentro de la vista.
     const heroRoot = document.getElementById("profile-hero");
     const collectionRoot = document.getElementById("profile-collection");
     const collectionCountRoot = document.getElementById("profile-collection-count");
     const badgesRoot = document.getElementById("profile-badges");
     const api = window.CapyApi;
+    const viewHelpers = window.CapyViewHelpers;
     let activeCollectionId = "";
 
-    if (!heroRoot || !collectionRoot || !collectionCountRoot || !badgesRoot || !api || !window.CapyCore) {
+    if (!heroRoot || !collectionRoot || !collectionCountRoot || !badgesRoot || !api || !window.CapyCore || !viewHelpers) {
         return;
     }
 
@@ -16,12 +19,9 @@
 
     function renderProfile() {
         const profile = window.CapyCore.getProfile();
-        const equipped = api.getOutfitByIdSync(profile.currentOutfitId) || api.getOutfitsSync()[0];
+        const equipped = viewHelpers.getActiveOutfit(api, profile) || api.getOutfitsSync()[0];
         const unlockedItems = getUnlockedItems(profile);
-        const route = api.getCurrentRouteForUserSync(profile);
-        const totalLevels = api.getTotalLevelCountSync();
-        const isGameCompleted = profile.currentLevelId === totalLevels + 1;
-        const routeCopy = isGameCompleted ? "Juego completado" : (route ? route.name : "Ruta actual");
+        const routeCopy = viewHelpers.getCurrentRouteLabel(api, profile);
 
         if (!activeCollectionId || !isUnlocked(activeCollectionId, profile)) {
             activeCollectionId = equipped.id;
@@ -86,18 +86,7 @@
     }
 
     function getUnlockedRouteBadgeIds(profile) {
-        if (Array.isArray(profile.unlockedBadgeRouteIds) && profile.unlockedBadgeRouteIds.length) {
-            return profile.unlockedBadgeRouteIds.map(Number);
-        }
-
-        const levelsPerRoute = 7;
-        const highestCompletedLevel = Math.max(0, Math.min(api.getTotalLevelCountSync(), Number(profile.currentLevelId || 1) - 1));
-
-        return api.getRoutesSync().filter(function (route) {
-            return highestCompletedLevel >= route.orderIndex * levelsPerRoute;
-        }).map(function (route) {
-            return Number(route.id);
-        });
+        return viewHelpers.getUnlockedRouteBadgeIds(api, profile, 7);
     }
 
     function renderCollection(profile) {
@@ -408,19 +397,18 @@
     }
 
     function isUnlocked(itemId, profile) {
-        const unlocked = profile.unlockedOutfitIds || profile.unlockedCharacters || [];
-        return unlocked.includes(itemId);
+        return viewHelpers.isUnlockedOutfit(profile, itemId);
     }
 
     function getTransparentImage(item) {
-        return item.transparentImage || item.image;
+        return viewHelpers.getTransparentOutfitImage(item);
     }
 
     function escapeHtml(value) {
-        return window.CapyCore.escapeHtml(value);
+        return viewHelpers.escapeHtml(value);
     }
 
     function escapeAttribute(value) {
-        return window.CapyCore.escapeAttribute(value);
+        return viewHelpers.escapeAttribute(value);
     }
 }());

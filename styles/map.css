@@ -221,7 +221,7 @@ body.sidebar-animating .sidebar-main {
     min-height: clamp(400px, 38vw, 540px);
     overflow: hidden;
     padding: clamp(0.75rem, 1.6vw, 1rem);
-    background-image: linear-gradient(rgba(21, 12, 39, 0.24), rgba(21, 12, 39, 0.52)), var(--map-background-image, url("assets/fondo1.webp"));
+    background-image: linear-gradient(rgba(21, 12, 39, 0.24), rgba(21, 12, 39, 0.52)), var(--map-background-image, url("../assets/fondo1.webp"));
     background-position: center 70%;
     background-size: cover;
     background-repeat: no-repeat;

@@ -1,10 +1,12 @@
 (function () {
+    // Este shell concentra lo que todas las pantallas autenticadas comparten:
+    // sesion, HUD, barra lateral, logout y pequenos comportamientos globales.
     if (window.CAPYCODE_MOBILE_DOWNLOAD_ONLY) {
         return;
     }
 
-    const data = window.CAPYCODE_APP_DATA || {};
     const api = window.CapyApi;
+    const viewHelpers = window.CapyViewHelpers;
 
     if (!api) {
         return;
@@ -15,6 +17,8 @@
             return;
         }
 
+        // Estas piezas viven en el shell comun para que mapa, perfil, tienda y
+        // nivel compartan exactamente la misma sesion, HUD y barra lateral.
         applySidebarState();
         renderSidebarNav();
         updateHud();
@@ -51,12 +55,6 @@
 
     function getSession() {
         return api.getCurrentUserSync();
-    }
-
-    function saveSession(username) {
-        api.saveCurrentUserSync({
-            username: username
-        });
     }
 
     function logout() {
@@ -123,7 +121,6 @@
         document.querySelectorAll("[data-player-streak]").forEach(function (element) {
             element.textContent = String(profile.visibleStreak || 0);
         });
-
     }
 
     function bindLogout() {
@@ -134,7 +131,7 @@
 
     function renderSidebarSkins() {
         const profile = getProfile();
-        const equipped = api.getOutfitByIdSync(profile.currentOutfitId || profile.equippedCharacter);
+        const equipped = viewHelpers ? viewHelpers.getActiveOutfit(api, profile) : api.getOutfitByIdSync(profile.currentOutfitId || profile.equippedCharacter);
         if (!equipped) {
             return;
         }
@@ -380,49 +377,6 @@
         };
     }
 
-    function getShopItem(id) {
-        return api.getOutfitByIdSync(id);
-    }
-
-    function getItemName(item) {
-        return item && item.name ? item.name : "";
-    }
-
-    function getItemSlogan(item) {
-        return item && item.tagline ? item.tagline : "";
-    }
-
-    function getItemCost(item) {
-        return item && Number.isFinite(Number(item.cost)) ? Number(item.cost) : 0;
-    }
-
-    function isUnlocked(itemId, profile) {
-        const currentProfile = profile || getProfile();
-        const unlocked = currentProfile.unlockedOutfitIds || currentProfile.unlockedCharacters || [];
-        return unlocked.includes(itemId);
-    }
-
-    function completeActivity() {
-        return {
-            firstCompletion: false,
-            profile: getProfile()
-        };
-    }
-
-    function completeLevel(levelId, config) {
-        const profile = getProfile();
-        const reward = config && config.bonusXp ? Number(config.bonusXp) : 0;
-        profile.currentLevelId = Math.max(profile.currentLevelId || 1, Number(levelId) + 1);
-        profile.level = profile.currentLevelId;
-        profile.xp += Number.isFinite(reward) ? reward : 0;
-        saveProfile(profile);
-        updateHud();
-        return {
-            firstCompletion: true,
-            profile: profile
-        };
-    }
-
     function getTotalPlayableLevels() {
         return api.getTotalLevelCountSync();
     }
@@ -448,7 +402,7 @@
     }
 
     function escapeHtml(value) {
-        return String(value === undefined || value === null ? "" : value)
+        return viewHelpers ? viewHelpers.escapeHtml(value) : String(value === undefined || value === null ? "" : value)
             .replace(/&/g, "&amp;")
             .replace(/</g, "&lt;")
             .replace(/>/g, "&gt;")
@@ -457,24 +411,16 @@
     }
 
     function escapeAttribute(value) {
-        return escapeHtml(value);
+        return viewHelpers ? viewHelpers.escapeAttribute(value) : escapeHtml(value);
     }
 
     window.CapyCore = {
         getSession: getSession,
-        saveSession: saveSession,
         logout: logout,
         getProfile: getProfile,
         saveProfile: saveProfile,
-        getShopItem: getShopItem,
-        getItemName: getItemName,
-        getItemSlogan: getItemSlogan,
-        getItemCost: getItemCost,
-        isUnlocked: isUnlocked,
         formatNumber: formatNumber,
         updateHud: updateHud,
-        completeActivity: completeActivity,
-        completeLevel: completeLevel,
         refreshInteractiveTilts: refreshInteractiveTilts,
         renderSidebarSkins: renderSidebarSkins,
         escapeHtml: escapeHtml,

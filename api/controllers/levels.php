@@ -1,5 +1,7 @@
 <?php
 
+// El frontend consulta ejercicios por nivel y confirma aqui el cierre de cada
+// practica para mantener una sola fuente de verdad del progreso.
 function capy_handle_levels_request(PDO $pdo, array $config, string $path, string $method): bool
 {
     if (preg_match('#^/levels/([^/]+)/exercises$#', $path, $matches) && $method === 'GET') {

@@ -1,5 +1,7 @@
 <?php
 
+// Registro, login y logout conservan el mismo contrato JSON usado por el
+// frontend, tanto en local como contra la base de datos real.
 function capy_handle_auth_request(PDO $pdo, array $config, string $path, string $method): bool
 {
     if ($path === '/auth/register' && $method === 'POST') {

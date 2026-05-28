@@ -1,5 +1,7 @@
 <?php
 
+// La tienda separa desbloqueo y equipamiento, pero ambas acciones responden con
+// el mismo formato de usuario publico que consume el frontend.
 function capy_handle_outfits_request(PDO $pdo, array $config, string $path, string $method): bool
 {
     if ($path === '/outfits' && $method === 'GET') {

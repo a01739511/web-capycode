@@ -29,6 +29,51 @@
     background: linear-gradient(180deg, rgba(70, 40, 118, 0.9), rgba(58, 32, 99, 0.92));
 }
 
+.exercise-context-card {
+    display: grid;
+    gap: 0.58rem;
+    padding: 0.9rem 1rem;
+    border-radius: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.exercise-context-scene,
+.exercise-context-task,
+.exercise-context-note {
+    color: var(--text-soft);
+    line-height: 1.5;
+}
+
+.exercise-context-task strong,
+.exercise-context-note strong,
+.exercise-context-label {
+    color: var(--text-main);
+}
+
+.exercise-context-list-block {
+    display: grid;
+    gap: 0.35rem;
+}
+
+.exercise-context-label {
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.exercise-context-list {
+    margin: 0;
+    padding-left: 1.1rem;
+    display: grid;
+    gap: 0.3rem;
+    color: var(--text-soft);
+}
+
+.exercise-context-note.is-warning {
+    color: #ffe0ae;
+}
+
 .code-stage {
     padding: 0.9rem 1rem;
     border-radius: 20px;

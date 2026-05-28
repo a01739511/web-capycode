@@ -14,8 +14,11 @@
             numericValue: "",
             remainingSeconds: timerSeconds,
             timerId: 0,
+            transitionTimeoutId: 0,
             locked: false,
             isCompleting: false,
+            completionQueued: false,
+            completionStarted: false,
             draggedLineId: "",
             pointerDragLineId: ""
         };

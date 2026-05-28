@@ -1,5 +1,6 @@
 <?php
 
+// Endpoints de solo lectura que publican el catalogo navegable del juego.
 function capy_handle_catalog_request(PDO $pdo, array $config, string $path, string $method): bool
 {
     if ($path === '/' || $path === '') {

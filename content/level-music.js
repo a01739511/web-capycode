@@ -1,4 +1,7 @@
-window.CAPYCODE_LEVEL_MUSIC = [
+(function () {
+    // La musica de nivel se mantiene como catalogo plano para que el runner
+    // pueda elegir pistas sin depender de HTML adicional ni de una API.
+    window.CAPYCODE_LEVEL_MUSIC = [
     { title: "Night Shade", src: "assets/audio/level-music/01-night-shade.mp3" },
     { title: "Underclocked", src: "assets/audio/level-music/02-underclocked.mp3" },
     { title: "MAZE", src: "assets/audio/level-music/03-maze.mp3" },
@@ -21,4 +24,5 @@ window.CAPYCODE_LEVEL_MUSIC = [
     { title: "Robot City", src: "assets/audio/level-music/21-robot-city.mp3" },
     { title: "Operatic 3", src: "assets/audio/level-music/23-operatic-3.mp3" },
     { title: "Floating Also", src: "assets/audio/level-music/24-floating-also.mp3" }
-];
+    ];
+}());

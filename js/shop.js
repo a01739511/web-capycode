@@ -1,14 +1,17 @@
 (function () {
+    // La tienda deriva todo su estado desde el catalogo y el perfil actual para
+    // que comprar y equipar usen exactamente las mismas reglas que el backend.
     const gridRoot = document.getElementById("store-grid");
     const modalRoot = document.getElementById("shop-modal");
     const modalContentRoot = document.getElementById("shop-modal-content");
     const api = window.CapyApi;
+    const viewHelpers = window.CapyViewHelpers;
     const LOCK_ICON_PATH = "assets/shop-lock-icon.svg";
     const SHOP_MUSIC_SRC = "assets/audio/shop/pizza-parlor.m4a";
     const uiAudio = createShopAudioSystem();
     let activeItemId = "";
 
-    if (!gridRoot || !modalRoot || !modalContentRoot || !api || !window.CapyCore) {
+    if (!gridRoot || !modalRoot || !modalContentRoot || !api || !window.CapyCore || !viewHelpers) {
         return;
     }
 
@@ -355,8 +358,7 @@
     }
 
     function isUnlocked(itemId, profile) {
-        const unlocked = profile.unlockedOutfitIds || profile.unlockedCharacters || [];
-        return unlocked.includes(itemId);
+        return viewHelpers.isUnlockedOutfit(profile, itemId);
     }
 
     function buildLockedArtMarkup(state) {
@@ -375,8 +377,7 @@
     }
 
     function isDiscovered(itemId, profile) {
-        const discovered = profile.discoveredOutfitIds || profile.availableOutfitIds || [];
-        return discovered.includes(itemId) || isUnlocked(itemId, profile);
+        return viewHelpers.isDiscoveredOutfit(profile, itemId);
     }
 
     function getUnlockRouteLabel(item) {
@@ -459,11 +460,11 @@
     }
 
     function escapeHtml(value) {
-        return window.CapyCore.escapeHtml(value);
+        return viewHelpers.escapeHtml(value);
     }
 
     function escapeAttribute(value) {
-        return window.CapyCore.escapeAttribute(value);
+        return viewHelpers.escapeAttribute(value);
     }
     function createShopAudioSystem() {
         let context = null;
@@ -473,6 +474,7 @@
         let musicRequested = false;
         const musicVolume = 0.95;
         const musicGain = 3;
+        const effectGainMultiplier = 25;
 
         function ensureContext() {
             if (!context) {
@@ -560,7 +562,9 @@
                 const gain = ctx.createGain();
                 oscillator.type = type || "sine";
                 oscillator.frequency.value = frequency;
-                gain.gain.setValueAtTime((gainValue || 0.08) * 5, ctx.currentTime);
+                // Los efectos de tienda se elevan varias veces por encima del
+                // ajuste original para que sigan siendo audibles sobre la musica.
+                gain.gain.setValueAtTime((gainValue || 0.08) * effectGainMultiplier, ctx.currentTime);
                 gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
                 oscillator.connect(gain);
                 gain.connect(ctx.destination);

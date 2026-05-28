@@ -9,7 +9,7 @@
 body.login-page {
     min-height: 100svh;
     overflow: hidden;
-    background: linear-gradient(rgba(18, 10, 34, 0.4), rgba(18, 10, 34, 0.72)), url("assets/fondo_login.webp") center / cover fixed no-repeat;
+    background: linear-gradient(rgba(18, 10, 34, 0.4), rgba(18, 10, 34, 0.72)), url("../assets/fondo_login.webp") center / cover fixed no-repeat;
 }
 
 a {

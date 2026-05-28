@@ -1,5 +1,7 @@
 <?php
 
+// Este archivo solo enruta. Toda la logica vive en controladores y librerias
+// para que el contrato HTTP sea facil de seguir y probar.
 $app = require __DIR__ . '/bootstrap.php';
 $config = $app['config'];
 $pdo = $app['pdo'];

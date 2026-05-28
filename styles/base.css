@@ -4,7 +4,7 @@ body {
     min-height: 100vh;
     font-family: var(--font-body);
     color: var(--text-main);
-    background: linear-gradient(rgba(18, 10, 34, 0.45), rgba(18, 10, 34, 0.68)), url("assets/fondo.webp") center / cover fixed no-repeat;
+    background: linear-gradient(rgba(18, 10, 34, 0.45), rgba(18, 10, 34, 0.68)), url("../assets/fondo.webp") center / cover fixed no-repeat;
 }
 
 body.scene-body {

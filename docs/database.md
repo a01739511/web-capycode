@@ -4,6 +4,9 @@
 
 `api/config.php` define SQLite local por defecto. En la iMac o servidor se debe crear `api/config.local.php` para sobreescribir la configuracion sin tocar el repo.
 
+Internamente, la inicializacion y semillas viven en `api/lib/database/`, pero `api/lib/database.php` se conserva como punto de entrada estable para no romper includes existentes.
+El contenido jugable que alimenta esas semillas vive en `content/question-bank.json` y se resuelve desde `api/lib/game-data/`.
+
 Campos importantes:
 
 - `db_driver`: `sqlite` o `mysql`.
@@ -26,6 +29,16 @@ La API autoinicializa las tablas necesarias con el prefijo configurado. Por defe
 - `app_meta`
 
 No se cambiaron nombres de tablas, columnas ni relaciones durante el refactor.
+
+## Organizacion Interna
+
+- `runtime.php`: configuracion activa, driver y nombres fisicos de tabla.
+- `connection.php`: conexion PDO para SQLite o MySQL.
+- `schema.php`: creacion de tablas y columnas compatibles con versiones previas.
+- `routes.php`: seed y sincronizacion del catalogo de rutas.
+- `catalog.php`: seed, resincronizacion y fingerprint de niveles y ejercicios.
+- `meta.php`: lecturas y escrituras de `app_meta`.
+- `outfits.php`: seed, sincronizacion y migracion del vestuario por defecto.
 
 ## Endpoints
 

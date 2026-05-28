@@ -150,12 +150,12 @@
 
 .topbar-right .hud-stat:nth-of-type(1)::before {
     background-color: rgba(255, 154, 104, 0.22);
-    background-image: url("assets/hud-streak.svg");
+    background-image: url("../assets/hud-streak.svg");
 }
 
 .topbar-right .hud-stat:nth-of-type(2)::before {
     background-color: rgba(115, 233, 255, 0.22);
-    background-image: url("assets/hud-xp.svg");
+    background-image: url("../assets/hud-xp.svg");
 }
 
 .hud-stat span {

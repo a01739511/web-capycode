@@ -1,4 +1,6 @@
 (function () {
+    // Login y registro comparten la misma vista base. El HTML solo marca que
+    // modo desea usar y este script aplica la accion correcta.
     if (window.CAPYCODE_MOBILE_DOWNLOAD_ONLY) {
         return;
     }
