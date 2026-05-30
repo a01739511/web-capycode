@@ -275,7 +275,21 @@
             state.orderItems = Array.from(build.querySelectorAll("[data-line-id]")).map(function (row) {
                 return itemsById.get(String(row.dataset.lineId));
             }).filter(Boolean);
+            renumberSortableZone(bank);
+            renumberSortableZone(build);
             renderSortableBuildPlaceholder(build);
+        }
+
+        function renumberSortableZone(zoneElement) {
+            const rows = Array.from(zoneElement.querySelectorAll(".sortable-row"));
+
+            rows.forEach(function (row, index) {
+                const lineNumber = row.querySelector(".code-line-number");
+
+                if (lineNumber && renderer && renderer.formatLineNumber) {
+                    lineNumber.textContent = renderer.formatLineNumber(index + 1, rows.length);
+                }
+            });
         }
 
         function renderSortableBuildPlaceholder(build) {
