@@ -371,6 +371,10 @@
         max-height: 250px;
     }
 
+    .collection-focus-card[data-outfit-id="Capibara"] .collection-focus-art img {
+        max-height: 198px;
+    }
+
     .profile-hero-art-shell img {
         transform: scale(1.1);
     }

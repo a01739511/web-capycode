@@ -472,8 +472,8 @@
         let sourceNode = null;
         let gainNode = null;
         let musicRequested = false;
-        const musicVolume = 0.95;
-        const musicGain = 3;
+        const musicVolume = 0.357;
+        const musicGain = 1;
         const effectGainMultiplier = 25;
 
         function ensureContext() {

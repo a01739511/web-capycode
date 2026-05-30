@@ -113,7 +113,7 @@
             "\">",
             hasMultipleItems ? "<button class=\"collection-nav\" type=\"button\" data-collection-nav=\"prev\" aria-label=\"Mostrar vestuario anterior\">&#8249;</button>" : "",
             hasSideItems ? buildSideCard(previousItem, "prev") : "",
-            "<article class=\"collection-focus-card", equippedNow ? " is-equipped" : "", "\" data-interactive-tilt=\"shop-card\">",
+            "<article class=\"collection-focus-card", equippedNow ? " is-equipped" : "", "\" data-outfit-id=\"", escapeAttribute(currentItem.id), "\" data-interactive-tilt=\"shop-card\">",
             "<span class=\"collection-focus-glow\" aria-hidden=\"true\"></span>",
             "<div class=\"collection-focus-art\">",
             "<img src=\"", escapeAttribute(getTransparentImage(currentItem)), "\" alt=\"", escapeAttribute(currentItem.name), "\">",
@@ -153,7 +153,7 @@
 
     function buildSideCard(item, variant) {
         return [
-            "<button class=\"collection-side-card is-", variant, "\" type=\"button\" data-collection-select=\"", item.id, "\" aria-label=\"Ver ", escapeAttribute(item.name), "\">",
+            "<button class=\"collection-side-card is-", variant, "\" type=\"button\" data-outfit-id=\"", escapeAttribute(item.id), "\" data-collection-select=\"", item.id, "\" aria-label=\"Ver ", escapeAttribute(item.name), "\">",
             "<div class=\"collection-side-art\">",
             "<img src=\"", escapeAttribute(getTransparentImage(item)), "\" alt=\"", escapeAttribute(item.name), "\">",
             "</div>",

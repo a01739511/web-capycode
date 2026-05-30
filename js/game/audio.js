@@ -12,7 +12,7 @@
         let activeTrackSrc = "";
         let lastGameOverPattern = -1;
         const volumeMultiplier = 5;
-        const backgroundVolume = 0.42;
+        const backgroundVolume = 0.12;
 
         function ensureContext() {
             if (!context) {

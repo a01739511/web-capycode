@@ -352,6 +352,11 @@
     filter: drop-shadow(0 18px 18px rgba(0, 0, 0, 0.18));
 }
 
+.collection-side-card[data-outfit-id="Capibara"] .collection-side-art img {
+    width: min(100px, 76%);
+    max-height: 122px;
+}
+
 .collection-side-copy {
     margin-top: 0.65rem;
     text-align: center;
@@ -436,6 +441,11 @@
     filter:
         drop-shadow(0 18px 12px rgba(0, 0, 0, 0.16))
         drop-shadow(0 28px 26px rgba(0, 0, 0, 0.2));
+}
+
+.collection-focus-card[data-outfit-id="Capibara"] .collection-focus-art img {
+    width: min(200px, 80%);
+    max-height: 232px;
 }
 
 .collection-focus-copy {
