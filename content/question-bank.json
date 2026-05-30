@@ -2525,7 +2525,7 @@
             },
             {
               "type": "drag_and_drop",
-              "prompt": "Completa la plantilla con el operador correcto.",
+              "prompt": "Completa el código para restar dos números.",
               "template": [
                 "resultado = 9 {h1} 2",
                 "print(resultado)"
@@ -2692,7 +2692,7 @@
             },
             {
               "type": "drag_and_drop",
-              "prompt": "Completa la plantilla con el operador relacional correcto.",
+              "prompt": "Completa la comparación: 3 es menor que 5.",
               "template": [
                 "print(3 {h1} 5)"
               ],
@@ -2852,7 +2852,7 @@
             },
             {
               "type": "drag_and_drop",
-              "prompt": "Completa la plantilla con el operador lógico correcto.",
+              "prompt": "Completa la expresión para que el resultado sea True.",
               "template": [
                 "print(True {h1} False)"
               ],
@@ -4651,7 +4651,7 @@
             },
             {
               "type": "drag_and_drop",
-              "prompt": "Completa la plantilla con la condición adecuada.",
+              "prompt": "Completa la condición para comprobar que tesoro vale 2.",
               "template": [
                 "tesoro = 2",
                 "if tesoro {h1} 2:",
@@ -5218,7 +5218,7 @@
             },
             {
               "type": "drag_and_drop",
-              "prompt": "Completa los huecos para actualizar el contador.",
+              "prompt": "Completa la actualización para sumar 1 al contador.",
               "template": [
                 "vueltas = 0",
                 "while vueltas < 2:",
@@ -5763,7 +5763,7 @@
             },
             {
               "type": "drag_and_drop",
-              "prompt": "Completa la plantilla con el comparador del while.",
+              "prompt": "Completa el while para repetir mientras energía sea menor que 4.",
               "template": [
                 "energia = 1",
                 "while energia {h1} 4:",
@@ -5943,7 +5943,7 @@
             },
             {
               "type": "drag_and_drop",
-              "prompt": "Completa la plantilla con la instrucción correcta para detener al llegar a 4.",
+              "prompt": "Completa la instrucción para detener el ciclo al llegar a 4.",
               "template": [
                 "for paso in range(6):",
                 "    if paso == 4:",
@@ -6833,7 +6833,7 @@
             },
             {
               "type": "drag_and_drop",
-              "prompt": "Completa la plantilla con el argumento correcto en la llamada.",
+              "prompt": "Completa la llamada para que triple imprima 9.",
               "template": [
                 "def triple(x):",
                 "    return x * 3",
@@ -8208,7 +8208,7 @@
             },
             {
               "type": "drag_and_drop",
-              "prompt": "Completa la plantilla con el índice de fila correcto.",
+              "prompt": "Completa el índice de fila para mostrar 4.",
               "template": [
                 "mapa = [[1, 2], [3, 4]]",
                 "print(mapa[{h1}][1])"
@@ -8555,7 +8555,7 @@
             },
             {
               "type": "drag_and_drop",
-              "prompt": "Completa la plantilla con el índice de columna correcto.",
+              "prompt": "Completa el índice de columna para sumar 6 y 7.",
               "template": [
                 "matriz = [[5, 6], [7, 8]]",
                 "print(matriz[0][{h1}] + matriz[1][0])"
