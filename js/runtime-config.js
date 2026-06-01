@@ -21,7 +21,7 @@
     const isLocalDevHost = hostname === "127.0.0.1" || hostname === "localhost" || hostname === "::1" || hostname === "[::1]";
     const isStaticPreviewMode = protocol === "file:" || (isLocalDevHost && /^55\d\d$/.test(port));
     const canonicalAppBase = String(
-        existing.CANONICAL_APP_BASE_URL || "http://10.50.67.76/TC2005B_601_3/"
+        existing.CANONICAL_APP_BASE_URL || "http://10.50.67.76/TC2005B_601_3/CapyCode/"
     );
     const canonicalApiBase = String(
         existing.CANONICAL_API_BASE_URL || (canonicalAppBase.replace(/\/+$/, "") + "/api/index.php")
