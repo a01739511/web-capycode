@@ -31,4 +31,4 @@ Abre `http://127.0.0.1:8000/iniciar_sesion.html`.
 - Los endpoints de `api/index.php` mantienen el mismo JSON y las mismas rutas.
 - La base de datos conserva nombres de tablas y columnas.
 
-Consulta `docs/architecture.md`, `docs/database.md`, `docs/deployment-imac.md`, `docs/diagramas-mermaid.md`, `docs/manual-de-usuario.md` y `docs/definicion-pruebas-estaticas-y-manuales.md` para la explicacion completa.
+Consulta `docs/architecture.md`, `docs/database.md`, `docs/deployment-imac.md`, `docs/diagrama-objetos.md`, `docs/diagrama-despliegue.md`, `docs/manual-de-usuario.md` y `docs/definicion-pruebas-estaticas-y-manuales.md` para la explicacion completa.

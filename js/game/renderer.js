@@ -119,8 +119,6 @@
         const dragSortRuntime = settings.dragSortRuntime || null;
 
         function renderExercise(exercise) {
-            renderExerciseContext(exercise);
-
             if (exercise.type === "MultipleChoiceExercise") {
                 renderMultipleChoice(exercise);
                 return;
