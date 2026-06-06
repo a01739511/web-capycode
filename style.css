@@ -1,0 +1,11 @@
+/* Entrada publica de estilos. Mantiene el enlace HTML existente y delega la organizacion en modulos planos. */
+@import url("styles/tokens.css?v=20260528a");
+@import url("styles/base.css?v=20260528a");
+@import url("styles/auth.css?v=20260528a");
+@import url("styles/layout.css?v=20260528a");
+@import url("styles/level.css?v=20260528a");
+@import url("styles/map.css?v=20260528a");
+@import url("styles/shop.css?v=20260528a");
+@import url("styles/profile.css?v=20260528a");
+@import url("styles/utilities.css?v=20260528a");
+@import url("styles/responsive.css?v=20260528a");

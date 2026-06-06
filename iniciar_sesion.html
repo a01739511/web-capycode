@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CapyCode | Iniciar sesi&oacute;n</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Metamorphous&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/favicons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/favicons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/favicons/favicon-16x16.png">
+    <link rel="icon" href="assets/favicons/favicon.ico">
+    <link rel="manifest" href="site.webmanifest?v=20260528a">
+    <link rel="stylesheet" href="style.css?v=20260528a">
+    <script>
+        (function () {
+            var mobileRegex = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|Silk/i;
+            var userAgent = navigator.userAgent || navigator.vendor || window.opera || "";
+            var isMobileDevice = mobileRegex.test(userAgent);
+            window.CAPYCODE_MOBILE_DOWNLOAD_ONLY = isMobileDevice;
+
+            if (isMobileDevice) {
+                document.documentElement.classList.add("mobile-download-mode");
+            }
+        }());
+    </script>
+    <style>
+        html.mobile-download-mode body {
+            margin: 0;
+            overflow: hidden;
+            background: #120a22;
+        }
+
+        html.mobile-download-mode body > :not(.mobile-download-shell) {
+            display: none !important;
+        }
+
+        html.mobile-download-mode .mobile-download-shell {
+            display: grid !important;
+        }
+    </style>
+</head>
+<body class="login-page" data-auth-mode="login">
+    <div class="mobile-download-shell">
+        <main class="mobile-download-screen glass-surface">
+            <div class="mobile-download-copy">
+                <p class="eyebrow">CapyCode</p>
+                <h1>Descarga la app</h1>
+                <p>La versi&oacute;n m&oacute;vil de CapyCode vive en la app. Inst&aacute;lala para seguir explorando niveles, rutas y personajes.</p>
+                <div class="mobile-download-actions">
+                    <a class="mobile-download-button" href="https://drive.google.com/file/d/145FS1bvHmpr1v1R_6B2WZRpDA2tC1vvf/view" target="_blank" rel="noopener noreferrer">Descargar la app</a>
+                </div>
+            </div>
+            <div class="mobile-download-art">
+                <img src="assets/characters/no_bg/Capy_Runa.webp" alt="Capy Runa">
+            </div>
+        </main>
+    </div>
+    <div class="logo-container">
+        <img src="assets/logo-capycode.webp" alt="Logo de CapyCode">
+    </div>
+
+    <div class="login-wrapper">
+        <main class="login-card glass-surface">
+            <p class="eyebrow">CapyCode</p>
+            <h1 class="login-title">&iexcl;Bienvenido!</h1>
+            <p class="auth-description">
+                Entra a CapyCode y vuelve al mapa, desbloquea vestuarios y &iexcl;aprende Python!
+            </p>
+
+            <form class="login-form" id="auth-form" novalidate>
+                <div class="input-group">
+                    <label for="username">Usuario</label>
+                    <input
+                        type="text"
+                        id="username"
+                        name="username"
+                        placeholder="Ingresa tu usuario"
+                        autocomplete="username"
+                        required
+                        maxlength="20"
+                    >
+                </div>
+
+                <div class="input-group">
+                    <label for="password">Contrase&ntilde;a</label>
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        placeholder="Ingresa tu contrase&ntilde;a"
+                        autocomplete="current-password"
+                        required
+                        maxlength="64"
+                    >
+                </div>
+
+                <p class="form-message" id="form-message" aria-live="polite"></p>
+
+                <button type="submit" class="btn-primary">Entrar a la academia</button>
+            </form>
+
+            <p class="register-link">
+                &iquest;No tienes cuenta?
+                <a href="registro.html">Reg&iacute;strate</a>
+            </p>
+        </main>
+    </div>
+
+    <script src="js/runtime-config.js?v=20260601d"></script>
+    <script src="js/hotkeys.js?v=20260528a"></script>
+    <script src="js/api/config.js?v=20260528a"></script>
+    <script src="js/api/storage.js?v=20260528a"></script>
+    <script src="js/api/http.js?v=20260528a"></script>
+    <script src="js/api/catalog.js?v=20260528a"></script>
+    <script src="js/api/normalizers.js?v=20260528a"></script>
+    <script src="js/api/shop.js?v=20260528a"></script>
+    <script src="js/api/exercises.js?v=20260528a"></script>
+    <script src="js/api/progress.js?v=20260528a"></script>
+    <script src="js/api-client.js?v=20260528a"></script>
+    <script src="js/auth.js?v=20260528a"></script>
+</body>
+</html>

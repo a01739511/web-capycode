@@ -1,0 +1,28 @@
+(function () {
+    // La musica de nivel se mantiene como catalogo plano para que el runner
+    // pueda elegir pistas sin depender de HTML adicional ni de una API.
+    window.CAPYCODE_LEVEL_MUSIC = [
+    { title: "Night Shade", src: "assets/audio/level-music/01-night-shade.mp3" },
+    { title: "Underclocked", src: "assets/audio/level-music/02-underclocked.mp3" },
+    { title: "MAZE", src: "assets/audio/level-music/03-maze.mp3" },
+    { title: "A Night Of Dizzy Spells", src: "assets/audio/level-music/04-a-night-of-dizzy-spells.mp3" },
+    { title: "Powerup!", src: "assets/audio/level-music/05-powerup.mp3" },
+    { title: "Sour Rock", src: "assets/audio/level-music/06-sour-rock.mp3" },
+    { title: "Dub Hub", src: "assets/audio/level-music/07-dub-hub.mp3" },
+    { title: "Mountain Trials", src: "assets/audio/level-music/08-mountain-trials.mp3" },
+    { title: "Chopsticks", src: "assets/audio/level-music/09-chopsticks.mp3" },
+    { title: "8bit Dungeon Boss", src: "assets/audio/level-music/10-8bit-dungeon-boss.mp3" },
+    { title: "8bit Dungeon Level", src: "assets/audio/level-music/11-8bit-dungeon-level.mp3" },
+    { title: "Itty Bitty 8 Bit", src: "assets/audio/level-music/12-itty-bitty-8-bit.mp3" },
+    { title: "Pixelland", src: "assets/audio/level-music/13-pixelland.mp3" },
+    { title: "Virtual Boy", src: "assets/audio/level-music/14-virtual-boy.mp3" },
+    { title: "Digestive biscuit", src: "assets/audio/level-music/16-digestive-biscuit.mp3" },
+    { title: "Up In My Jam", src: "assets/audio/level-music/17-up-in-my-jam.mp3" },
+    { title: "Soundtrack", src: "assets/audio/level-music/18-soundtrack.mp3" },
+    { title: "Coupe", src: "assets/audio/level-music/19-coupe.mp3" },
+    { title: "8-Bit Dreamscape", src: "assets/audio/level-music/20-8-bit-dreamscape.mp3" },
+    { title: "Robot City", src: "assets/audio/level-music/21-robot-city.mp3" },
+    { title: "Operatic 3", src: "assets/audio/level-music/23-operatic-3.mp3" },
+    { title: "Floating Also", src: "assets/audio/level-music/24-floating-also.mp3" }
+    ];
+}());
